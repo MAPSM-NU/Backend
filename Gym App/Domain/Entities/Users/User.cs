@@ -1,0 +1,49 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Gym_App.Domain.Entities.Users
+{
+    public class User
+    {
+        [Required]
+        public int UserID { get; set; }
+        [Required]
+        [Column(TypeName = "nvarchar(100)")]
+        public string Name { get; set; }
+        [Required]
+        [Column(TypeName = "varchar(100)")]
+        public string Email { get; set; }
+        //public bool isEmailConfirmed { get; set; } = false;
+        [Required]
+        [Column(TypeName = "varchar(100)")]
+        public string Password{ get; set; }
+        [Column(TypeName = "nvarchar(1000)")]
+        public string? Bio { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime DOB { get; set; }
+        [Column(TypeName = "nvarchar(100)")]
+        public string? State { get; set; }
+        [Column(TypeName = "nvarchar(100)")]
+        public string? City { get; set; }
+        [Column(TypeName = "nvarchar(100)")]
+        public string? Country { get; set; }
+        [Column(TypeName = "varchar(30)")]
+        public string? PhoneNumber { get; set; }
+        [Column(TypeName = "varchar(500)")]
+        public string? ProfilePictureUrl { get; set; }
+        [Column(TypeName = "varchar(50)")]
+        public string? subscriptionPlan { get; set; }
+
+        //Relationships
+        public ICollection<PastInjuries>? PastInjuries  { get; set; } = new List<PastInjuries>();
+        public ICollection<Challenges>? Challenges { get; set; } = new List<Challenges>();
+        public ICollection<LiveFeedback>? LiveFeedbacks { get; set; } = new List<LiveFeedback>();
+        public ICollection<Feedback>? Feedbacks { get; set; } = new List<Feedback>();
+        public ICollection<Transaction>? Transactions { get; set; } = new List<Transaction>();
+        public ICollection<Notification>? Notifications { get; set; } = new List<Notification>();
+        public ICollection<Message>? Messages { get; set; } = new List<Message>();
+        public ICollection<Schedule>? Schedules { get; set; } = new List<Schedule>();
+        public ICollection<Workout>? Workouts { get; set; } = new List<Workout>();
+
+    }
+}

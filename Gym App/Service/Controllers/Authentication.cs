@@ -1,10 +1,13 @@
 ﻿using Gym_App.Domain.DTOs;
+using Gym_App.Domain.Entities;
 using Gym_App.Domain.Entities.Users;
 using Gym_App.Service.Functions.Interfaces;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Gym_App.Service.Controllers
@@ -15,24 +18,33 @@ namespace Gym_App.Service.Controllers
     {
         private readonly IUserF _userF;
         private readonly IEmailSender _emailSender;
-        private readonly IConfiguration _config;
-        public Authentication(IUserF userF , IConfiguration config, IEmailSender emailSender)
+        private readonly ITokenHandler _tokenHandler;
+        public Authentication(IUserF userF , IEmailSender emailSender,ITokenHandler tokenHandler)
         {
             _userF = userF;
-            _config = config;
             _emailSender = emailSender;
+            _tokenHandler = tokenHandler;
         }
         [HttpPost]
         [Route("/Sign Up")]
         public async Task<IActionResult> NewUser([FromBody] UserDTO user)
         {
-            bool result = await _userF.AddUser(user);
-
-            if (result)
+            int result = await _userF.SignUpUser(user);
+            if (result == 0) return BadRequest("Missing Credentials");
+            else if (result == 1) return BadRequest("Name is already in use");
+            else if (result == 2) return BadRequest("Email is already in use");
+            else if (result == 3) return BadRequest("Email is not valid");
+            else if (result == 4) return BadRequest("Password is not valid");
+            else if (result == 5)
             {
-                var token = CreateToken(user);
-                //await _emailSender.SendEmailAsync(user.Email);
-                return Ok(token);
+                var token = await _tokenHandler.CreateAccessToken(user);
+                var RefreshToken = await _tokenHandler.CreateRefreshToken(user);
+                var res = new Response
+                {
+                    AccessToken = token,
+                    RefreshToken = RefreshToken
+                };
+                return Ok(res);
             }
 
             else return BadRequest("Failed to Add User");
@@ -41,15 +53,23 @@ namespace Gym_App.Service.Controllers
         [Route("/Sign In")]
         public async Task<IActionResult> LoginUser([FromBody] UserDTO user)
         {
-            bool result = await _userF.LoginUser(user);
-
-            if (result)
+            int result = await _userF.LoginUser(user);
+            if(result == 0)  return BadRequest("Email not found");
+            else if (result == 1) return BadRequest("Password is wrong");
+            else if (result == 2)
             {
-                var token = CreateToken(user);
+                var token = "";
                 return Ok(token);
             }
-
-            else return BadRequest("Email or Password is wrong");
+            return BadRequest("Failed to Login");
+        }
+        [HttpPost]
+        [Route("/Login by Token")]
+        public async Task<IActionResult> LoginByToken([FromBody] string Refreshtoken)
+        {
+            var result = await _tokenHandler.ValidateAccessToken(Refreshtoken);
+            if (result == null) return BadRequest("Invalid Token");
+            else return Ok(result);
         }
         [HttpGet]
         [Route("/Get All Users")]
@@ -58,28 +78,20 @@ namespace Gym_App.Service.Controllers
             var users = await _userF.GetAllUsers();
             return Ok(users);
         }
-        private string CreateToken(UserDTO u)
+        [HttpDelete]
+        [Route("/Delete User")]
+        public async Task<IActionResult> DeleteUser([FromBody] Guid UserID)
         {
-            var claims = new List<Claim>
-            {
-                new Claim("name", u.Name),
-                new Claim("email", u.Email),
-                new Claim("userId", u.UserID.ToString())
-                //new Claim(ClaimTypes.Role,u.Role)
-            };
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_config.GetValue<string>("JwtSettings:Token")!));
-
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var TokenDescriptor = new JwtSecurityToken(
-                issuer: _config.GetValue<string>("JwtSettings:Issuer"),
-                audience: _config.GetValue<string>("JwtSettings:Audience"),
-                claims: claims,
-                expires: DateTime.UtcNow.AddDays(2),//EXPIRATION DATE
-                signingCredentials: creds
-                );
-            return new JwtSecurityTokenHandler().WriteToken(TokenDescriptor);
+            var result = await _userF.DeleteUser(UserID);
+            if (result) return Ok("User Deleted Successfully");
+            return BadRequest("Failed to Delete User");
+        }
+        [HttpGet]
+        [Route("/Get Tokens")]
+        public async Task<IActionResult> GetTokens()
+        {
+            var result = await _tokenHandler.GetAllRefreshTokens();
+            return Ok(result);
         }
     }
 

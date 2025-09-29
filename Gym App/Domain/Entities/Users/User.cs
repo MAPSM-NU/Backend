@@ -6,14 +6,14 @@ namespace Gym_App.Domain.Entities.Users
     public class User
     {
         [Required]
-        public int UserID { get; set; }
+        public Guid UserID { get; set; }
         [Required]
         [Column(TypeName = "nvarchar(100)")]
         public string Name { get; set; }
         [Required]
         [Column(TypeName = "varchar(100)")]
         public string Email { get; set; }
-        //public bool isEmailConfirmed { get; set; } = false;
+        public bool isEmailConfirmed { get; set; } = false;
         [Required]
         [Column(TypeName = "varchar(100)")]
         public string Password{ get; set; }
@@ -44,6 +44,7 @@ namespace Gym_App.Domain.Entities.Users
         public ICollection<Message>? Messages { get; set; } = new List<Message>();
         public ICollection<Schedule>? Schedules { get; set; } = new List<Schedule>();
         public ICollection<Workout>? Workouts { get; set; } = new List<Workout>();
+        public ICollection<RefreshTokens>? RefreshTokens { get; set; } = new List<RefreshTokens>();
 
     }
 }

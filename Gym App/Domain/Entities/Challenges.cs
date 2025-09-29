@@ -7,7 +7,7 @@ namespace Gym_App.Domain.Entities
     public class Challenges
     {
         [Key]
-        public int ChallengeId { get; set; }
+        public Guid ChallengeId { get; set; }
         [Required]
         [Column(TypeName = "varchar(100)")]
         public string Name { get; set; }

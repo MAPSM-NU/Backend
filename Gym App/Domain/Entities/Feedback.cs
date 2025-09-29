@@ -7,7 +7,7 @@ namespace Gym_App.Domain.Entities
     public class Feedback
     {
         [Key]
-        public int FeedbackID { get; set; }
+        public Guid FeedbackID { get; set; }
         [Required]
         public DateTime Date { get; set; }
         [Required]

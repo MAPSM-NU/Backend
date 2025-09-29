@@ -7,7 +7,7 @@ namespace Gym_App.Domain.Entities
     public class PastInjuries
     {
         [Key]
-        public int InjuryID { get; set; }
+        public Guid InjuryID { get; set; }
         public DateTime InjuryDate { get; set; }
         [Required]
         [Column(TypeName = "varchar(1000)")]

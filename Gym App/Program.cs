@@ -22,9 +22,10 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IUserF, UserF>();
+builder.Services.AddScoped<ITokenHandler, Gym_App.Service.Functions.The_Applied.TokenHandler>();
 builder.Services.AddDbContext<DbBase>(options =>
 {
-    options.UseSqlServer("Data Source=DESKTOP-OR6CO4J\\SQLEXPRESS;Initial Catalog=GymApp;Integrated Security=True;Trust Server Certificate=True");
+    options.UseSqlServer("Data Source=DESKTOP-OR6CO4J\\SQLEXPRESS;Initial Catalog=FitTracker;Integrated Security=True;Trust Server Certificate=True");
 });
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
     AddJwtBearer(options =>
@@ -42,7 +43,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
 
         };
     });
-builder.Services.AddControllers().AddJsonOptions(x =>
+builder.Services.AddControllersWithViews().AddJsonOptions(x =>
    x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);//yezabat error beta3 recurrsion taba3 el json
 var app = builder.Build();
 

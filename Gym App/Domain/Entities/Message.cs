@@ -8,7 +8,7 @@ namespace Gym_App.Domain.Entities
     public class Message
     {
         [Key]
-        public int MessageId { get; set; }
+        public Guid MessageId { get; set; }
         [Required]
         [Column(TypeName = "varchar(5000)")]
         public string Content { get; set; }

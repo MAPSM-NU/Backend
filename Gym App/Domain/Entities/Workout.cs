@@ -6,7 +6,7 @@ namespace Gym_App.Domain.Entities
     public class Workout
     {
         [Key]
-        public int WorkoutID { get; set; }
+        public Guid WorkoutID { get; set; }
         [Required]
         [Column(TypeName = "varchar(100)")]
         public string Name { get; set; }

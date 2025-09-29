@@ -7,7 +7,7 @@ namespace Gym_App.Domain.Entities
     public class Schedule
     {
         [Key]
-        public int ScheduleID { get; set; }
+        public Guid ScheduleID { get; set; }
         [Required]
         [Column(TypeName = "varchar(100)")]
         public string Name { get; set; }

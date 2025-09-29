@@ -7,7 +7,7 @@ namespace Gym_App.Domain.Entities
     public class Notification
     {
         [Key]
-        public int NotificationID { get; set; }
+        public Guid NotificationID { get; set; }
         public DateTime Date { get; set; }
         [Required]
         [Column(TypeName = "varchar(1000)")]

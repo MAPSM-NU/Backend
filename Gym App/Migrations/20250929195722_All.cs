@@ -6,27 +6,16 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Gym_App.Migrations
 {
     /// <inheritdoc />
-    public partial class EntitiesMigration : Migration
+    public partial class All : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "ID",
-                table: "Users",
-                newName: "UserID");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_Users_ID",
-                table: "Users",
-                newName: "IX_Users_UserID");
-
             migrationBuilder.CreateTable(
                 name: "Challenges",
                 columns: table => new
                 {
-                    ChallengeId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ChallengeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "varchar(100)", nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -42,8 +31,7 @@ namespace Gym_App.Migrations
                 name: "Exercises",
                 columns: table => new
                 {
-                    ExerciseID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ExerciseID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "varchar(100)", nullable: false),
                     Description = table.Column<string>(type: "varchar(1000)", nullable: true),
                     Difficulty = table.Column<string>(type: "varchar(20)", nullable: true),
@@ -55,15 +43,121 @@ namespace Gym_App.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Muscles",
+                columns: table => new
+                {
+                    MusclesID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "varchar(100)", nullable: false),
+                    Description = table.Column<string>(type: "varchar(1000)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Muscles", x => x.MusclesID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    NotificationID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Content = table.Column<string>(type: "varchar(1000)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.NotificationID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", nullable: false),
+                    Email = table.Column<string>(type: "varchar(100)", nullable: false),
+                    isEmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    Password = table.Column<string>(type: "varchar(100)", nullable: false),
+                    Bio = table.Column<string>(type: "nvarchar(1000)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DOB = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    State = table.Column<string>(type: "nvarchar(100)", nullable: true),
+                    City = table.Column<string>(type: "nvarchar(100)", nullable: true),
+                    Country = table.Column<string>(type: "nvarchar(100)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "varchar(30)", nullable: true),
+                    ProfilePictureUrl = table.Column<string>(type: "varchar(500)", nullable: true),
+                    subscriptionPlan = table.Column<string>(type: "varchar(50)", nullable: true),
+                    UserType = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: false),
+                    Coach_Specialty = table.Column<string>(type: "varchar(100)", nullable: true),
+                    Coach_ExperienceYears = table.Column<int>(type: "int", nullable: true),
+                    Coach_Certifications = table.Column<string>(type: "varchar(500)", nullable: true),
+                    Specialty = table.Column<string>(type: "varchar(100)", nullable: true),
+                    ExperienceYears = table.Column<int>(type: "int", nullable: true),
+                    Certifications = table.Column<string>(type: "varchar(500)", nullable: true),
+                    HeightCm = table.Column<int>(type: "int", nullable: true),
+                    WeightKg = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.UserID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ExerciseMuscles",
+                columns: table => new
+                {
+                    ExercisesExerciseID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MusclesID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExerciseMuscles", x => new { x.ExercisesExerciseID, x.MusclesID });
+                    table.ForeignKey(
+                        name: "FK_ExerciseMuscles_Exercises_ExercisesExerciseID",
+                        column: x => x.ExercisesExerciseID,
+                        principalTable: "Exercises",
+                        principalColumn: "ExerciseID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ExerciseMuscles_Muscles_MusclesID",
+                        column: x => x.MusclesID,
+                        principalTable: "Muscles",
+                        principalColumn: "MusclesID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChallengesUser",
+                columns: table => new
+                {
+                    ChallengesChallengeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ParticipantsUserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChallengesUser", x => new { x.ChallengesChallengeId, x.ParticipantsUserID });
+                    table.ForeignKey(
+                        name: "FK_ChallengesUser_Challenges_ChallengesChallengeId",
+                        column: x => x.ChallengesChallengeId,
+                        principalTable: "Challenges",
+                        principalColumn: "ChallengeId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ChallengesUser_Users_ParticipantsUserID",
+                        column: x => x.ParticipantsUserID,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Feedbacks",
                 columns: table => new
                 {
-                    FeedbackID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FeedbackID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Type = table.Column<string>(type: "varchar(20)", nullable: false),
                     FeedbackText = table.Column<string>(type: "varchar(2000)", nullable: false),
-                    UserID = table.Column<int>(type: "int", nullable: false)
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -80,11 +174,10 @@ namespace Gym_App.Migrations
                 name: "LiveFeedbacks",
                 columns: table => new
                 {
-                    LiveID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LiveID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     FeedbackText = table.Column<string>(type: "varchar(20)", nullable: false),
-                    UserID = table.Column<int>(type: "int", nullable: false)
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -98,42 +191,37 @@ namespace Gym_App.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Muscles",
+                name: "NotificationUser",
                 columns: table => new
                 {
-                    MusclesID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "varchar(100)", nullable: false),
-                    Description = table.Column<string>(type: "varchar(1000)", nullable: true)
+                    NotificationsNotificationID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Muscles", x => x.MusclesID);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    NotificationID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Content = table.Column<string>(type: "varchar(1000)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notifications", x => x.NotificationID);
+                    table.PrimaryKey("PK_NotificationUser", x => new { x.NotificationsNotificationID, x.UserID });
+                    table.ForeignKey(
+                        name: "FK_NotificationUser_Notifications_NotificationsNotificationID",
+                        column: x => x.NotificationsNotificationID,
+                        principalTable: "Notifications",
+                        principalColumn: "NotificationID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_NotificationUser_Users_UserID",
+                        column: x => x.UserID,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
                 name: "PastInjuries",
                 columns: table => new
                 {
-                    InjuryID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InjuryID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     InjuryDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Description = table.Column<string>(type: "varchar(1000)", nullable: false),
-                    UserID = table.Column<int>(type: "int", nullable: false)
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -147,14 +235,33 @@ namespace Gym_App.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RefreshTokens",
+                columns: table => new
+                {
+                    RefreshTokenID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RefreshToken = table.Column<string>(type: "varchar(500)", nullable: false),
+                    Expires = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RefreshTokens", x => x.RefreshTokenID);
+                    table.ForeignKey(
+                        name: "FK_RefreshTokens_Users_UserID",
+                        column: x => x.UserID,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Schedules",
                 columns: table => new
                 {
-                    ScheduleID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ScheduleID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "varchar(100)", nullable: false),
                     Type = table.Column<string>(type: "varchar(50)", nullable: false),
-                    UserID = table.Column<int>(type: "int", nullable: false)
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -171,14 +278,13 @@ namespace Gym_App.Migrations
                 name: "Sessions",
                 columns: table => new
                 {
-                    SessionID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SessionID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     StartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SessionType = table.Column<string>(type: "nvarchar(21)", maxLength: 21, nullable: false),
-                    CoachUserID = table.Column<int>(type: "int", nullable: true),
-                    CoachTraineeSession_TraineeUserID = table.Column<int>(type: "int", nullable: true),
-                    DoctorUserID = table.Column<int>(type: "int", nullable: true),
-                    TraineeUserID = table.Column<int>(type: "int", nullable: true)
+                    CoachUserID = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CoachTraineeSession_TraineeUserID = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    DoctorUserID = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    TraineeUserID = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -209,13 +315,12 @@ namespace Gym_App.Migrations
                 name: "Transactions",
                 columns: table => new
                 {
-                    PaymentID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PaymentID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Description = table.Column<string>(type: "varchar(1000)", nullable: false),
                     PaymentType = table.Column<string>(type: "varchar(50)", nullable: false),
-                    UserID = table.Column<int>(type: "int", nullable: true)
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -228,90 +333,17 @@ namespace Gym_App.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ChallengesUser",
-                columns: table => new
-                {
-                    ChallengesChallengeId = table.Column<int>(type: "int", nullable: false),
-                    ParticipantsUserID = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ChallengesUser", x => new { x.ChallengesChallengeId, x.ParticipantsUserID });
-                    table.ForeignKey(
-                        name: "FK_ChallengesUser_Challenges_ChallengesChallengeId",
-                        column: x => x.ChallengesChallengeId,
-                        principalTable: "Challenges",
-                        principalColumn: "ChallengeId",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ChallengesUser_Users_ParticipantsUserID",
-                        column: x => x.ParticipantsUserID,
-                        principalTable: "Users",
-                        principalColumn: "UserID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ExerciseMuscles",
-                columns: table => new
-                {
-                    ExercisesExerciseID = table.Column<int>(type: "int", nullable: false),
-                    MusclesID = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ExerciseMuscles", x => new { x.ExercisesExerciseID, x.MusclesID });
-                    table.ForeignKey(
-                        name: "FK_ExerciseMuscles_Exercises_ExercisesExerciseID",
-                        column: x => x.ExercisesExerciseID,
-                        principalTable: "Exercises",
-                        principalColumn: "ExerciseID",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ExerciseMuscles_Muscles_MusclesID",
-                        column: x => x.MusclesID,
-                        principalTable: "Muscles",
-                        principalColumn: "MusclesID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "NotificationUser",
-                columns: table => new
-                {
-                    NotificationsNotificationID = table.Column<int>(type: "int", nullable: false),
-                    UserID = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_NotificationUser", x => new { x.NotificationsNotificationID, x.UserID });
-                    table.ForeignKey(
-                        name: "FK_NotificationUser_Notifications_NotificationsNotificationID",
-                        column: x => x.NotificationsNotificationID,
-                        principalTable: "Notifications",
-                        principalColumn: "NotificationID",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_NotificationUser_Users_UserID",
-                        column: x => x.UserID,
-                        principalTable: "Users",
-                        principalColumn: "UserID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Workouts",
                 columns: table => new
                 {
-                    WorkoutID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    WorkoutID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "varchar(100)", nullable: false),
                     Description = table.Column<string>(type: "varchar(1000)", nullable: true),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Difficulty = table.Column<string>(type: "varchar(20)", nullable: false),
                     Day = table.Column<string>(type: "varchar(15)", nullable: false),
-                    ScheduleID = table.Column<int>(type: "int", nullable: false),
-                    UserID = table.Column<int>(type: "int", nullable: true)
+                    ScheduleID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -333,13 +365,12 @@ namespace Gym_App.Migrations
                 name: "Messages",
                 columns: table => new
                 {
-                    MessageId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MessageId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Content = table.Column<string>(type: "varchar(5000)", nullable: false),
                     Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsRead = table.Column<bool>(type: "bit", nullable: false),
-                    SenderUserID = table.Column<int>(type: "int", nullable: false),
-                    SessionID = table.Column<int>(type: "int", nullable: false)
+                    SenderUserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SessionID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -362,8 +393,8 @@ namespace Gym_App.Migrations
                 name: "ExerciseWorkout",
                 columns: table => new
                 {
-                    ExercisesExerciseID = table.Column<int>(type: "int", nullable: false),
-                    WorkoutsWorkoutID = table.Column<int>(type: "int", nullable: false)
+                    ExercisesExerciseID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    WorkoutsWorkoutID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -428,6 +459,11 @@ namespace Gym_App.Migrations
                 column: "UserID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_UserID",
+                table: "RefreshTokens",
+                column: "UserID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Schedules_UserID",
                 table: "Schedules",
                 column: "UserID");
@@ -456,6 +492,12 @@ namespace Gym_App.Migrations
                 name: "IX_Transactions_UserID",
                 table: "Transactions",
                 column: "UserID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_UserID",
+                table: "Users",
+                column: "UserID",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Workouts_ScheduleID",
@@ -496,6 +538,9 @@ namespace Gym_App.Migrations
                 name: "PastInjuries");
 
             migrationBuilder.DropTable(
+                name: "RefreshTokens");
+
+            migrationBuilder.DropTable(
                 name: "Transactions");
 
             migrationBuilder.DropTable(
@@ -519,15 +564,8 @@ namespace Gym_App.Migrations
             migrationBuilder.DropTable(
                 name: "Schedules");
 
-            migrationBuilder.RenameColumn(
-                name: "UserID",
-                table: "Users",
-                newName: "ID");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_Users_UserID",
-                table: "Users",
-                newName: "IX_Users_ID");
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }

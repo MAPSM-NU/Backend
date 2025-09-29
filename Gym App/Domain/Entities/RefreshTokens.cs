@@ -4,16 +4,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain.Entities
 {
-    public class LiveFeedback
+    public class RefreshTokens
     {
         [Key]
-        public Guid LiveID { get; set; }
+        public Guid RefreshTokenID { get; set; }
+        public Guid UserID { get; set; }
         [Required]
-        public DateTime Date { get; set; }
-        [Required]
-        [Column(TypeName = "varchar(20)")]
-        public string FeedbackText { get; set; }
-
+        [Column(TypeName = "varchar(500)")]
+        public string RefreshToken { get; set; }
+        public DateTime Expires { get; set; }
         //Relationships
         [Required]
         public User User { get; set; }

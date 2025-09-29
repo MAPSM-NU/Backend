@@ -28,7 +28,7 @@ namespace Gym_App
         public DbSet<Challenges> Challenges { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
 
-
+        public DbSet<RefreshTokens> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -69,7 +69,11 @@ namespace Gym_App
             modelBuilder.Entity<Transaction>()
                 .Property(t => t.Amount)
                 .HasColumnType("decimal(18,2)");
-
+            modelBuilder.Entity<RefreshTokens>()
+                .HasOne(rt => rt.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(rt => rt.UserID);
+            modelBuilder.Entity<RefreshTokens>();
         }
     }
 }

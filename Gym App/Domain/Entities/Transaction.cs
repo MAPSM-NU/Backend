@@ -6,7 +6,7 @@ namespace Gym_App.Domain.Entities
     public class Transaction
     {
         [Key]
-        public int PaymentID { get; set; }
+        public Guid PaymentID { get; set; }
         [Required]
         public DateTime Date { get; set; }
         [Required]

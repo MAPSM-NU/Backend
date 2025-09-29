@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym_App.Migrations
 {
     [DbContext(typeof(DbBase))]
-    [Migration("20250926161354_EntitiesMigration")]
-    partial class EntitiesMigration
+    [Migration("20250929195722_All")]
+    partial class All
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,11 +27,11 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("ChallengesUser", b =>
                 {
-                    b.Property<int>("ChallengesChallengeId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ChallengesChallengeId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("ParticipantsUserID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ParticipantsUserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("ChallengesChallengeId", "ParticipantsUserID");
 
@@ -42,11 +42,11 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("ExerciseMuscles", b =>
                 {
-                    b.Property<int>("ExercisesExerciseID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ExercisesExerciseID")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("MusclesID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("MusclesID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("ExercisesExerciseID", "MusclesID");
 
@@ -57,11 +57,11 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("ExerciseWorkout", b =>
                 {
-                    b.Property<int>("ExercisesExerciseID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ExercisesExerciseID")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("WorkoutsWorkoutID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("WorkoutsWorkoutID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("ExercisesExerciseID", "WorkoutsWorkoutID");
 
@@ -72,11 +72,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Challenges", b =>
                 {
-                    b.Property<int>("ChallengeId")
+                    b.Property<Guid>("ChallengeId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ChallengeId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -102,11 +100,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Exercise", b =>
                 {
-                    b.Property<int>("ExerciseID")
+                    b.Property<Guid>("ExerciseID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ExerciseID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
                         .HasColumnType("varchar(1000)");
@@ -128,11 +124,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Feedback", b =>
                 {
-                    b.Property<int>("FeedbackID")
+                    b.Property<Guid>("FeedbackID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FeedbackID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -145,8 +139,8 @@ namespace Gym_App.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(20)");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("FeedbackID");
 
@@ -157,11 +151,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.LiveFeedback", b =>
                 {
-                    b.Property<int>("LiveID")
+                    b.Property<Guid>("LiveID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LiveID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -170,8 +162,8 @@ namespace Gym_App.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(20)");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("LiveID");
 
@@ -182,11 +174,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Message", b =>
                 {
-                    b.Property<int>("MessageId")
+                    b.Property<Guid>("MessageId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MessageId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -195,11 +185,11 @@ namespace Gym_App.Migrations
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
 
-                    b.Property<int>("SenderUserID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("SenderUserID")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("SessionID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("SessionID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
@@ -215,11 +205,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Muscles", b =>
                 {
-                    b.Property<int>("MusclesID")
+                    b.Property<Guid>("MusclesID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MusclesID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
                         .HasColumnType("varchar(1000)");
@@ -235,11 +223,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Notification", b =>
                 {
-                    b.Property<int>("NotificationID")
+                    b.Property<Guid>("NotificationID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificationID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -255,11 +241,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.PastInjuries", b =>
                 {
-                    b.Property<int>("InjuryID")
+                    b.Property<Guid>("InjuryID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InjuryID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -268,8 +252,8 @@ namespace Gym_App.Migrations
                     b.Property<DateTime>("InjuryDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("InjuryID");
 
@@ -278,13 +262,34 @@ namespace Gym_App.Migrations
                     b.ToTable("PastInjuries");
                 });
 
+            modelBuilder.Entity("Gym_App.Domain.Entities.RefreshTokens", b =>
+                {
+                    b.Property<Guid>("RefreshTokenID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Expires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("RefreshTokenID");
+
+                    b.HasIndex("UserID");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("Gym_App.Domain.Entities.Schedule", b =>
                 {
-                    b.Property<int>("ScheduleID")
+                    b.Property<Guid>("ScheduleID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ScheduleID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -294,8 +299,8 @@ namespace Gym_App.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(50)");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("ScheduleID");
 
@@ -306,11 +311,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Sessions.Session", b =>
                 {
-                    b.Property<int>("SessionID")
+                    b.Property<Guid>("SessionID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SessionID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("SessionType")
                         .IsRequired()
@@ -331,11 +334,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Transaction", b =>
                 {
-                    b.Property<int>("PaymentID")
+                    b.Property<Guid>("PaymentID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
@@ -351,8 +352,8 @@ namespace Gym_App.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(50)");
 
-                    b.Property<int?>("UserID")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("PaymentID");
 
@@ -363,11 +364,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Users.User", b =>
                 {
-                    b.Property<int>("UserID")
+                    b.Property<Guid>("UserID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Bio")
                         .HasColumnType("nvarchar(1000)");
@@ -410,6 +409,9 @@ namespace Gym_App.Migrations
                         .HasMaxLength(8)
                         .HasColumnType("nvarchar(8)");
 
+                    b.Property<bool>("isEmailConfirmed")
+                        .HasColumnType("bit");
+
                     b.Property<string>("subscriptionPlan")
                         .HasColumnType("varchar(50)");
 
@@ -427,11 +429,9 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Workout", b =>
                 {
-                    b.Property<int>("WorkoutID")
+                    b.Property<Guid>("WorkoutID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WorkoutID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -451,11 +451,11 @@ namespace Gym_App.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(100)");
 
-                    b.Property<int>("ScheduleID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ScheduleID")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("UserID")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("WorkoutID");
 
@@ -468,11 +468,11 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("NotificationUser", b =>
                 {
-                    b.Property<int>("NotificationsNotificationID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("NotificationsNotificationID")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("NotificationsNotificationID", "UserID");
 
@@ -485,11 +485,11 @@ namespace Gym_App.Migrations
                 {
                     b.HasBaseType("Gym_App.Domain.Entities.Sessions.Session");
 
-                    b.Property<int?>("CoachUserID")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("CoachUserID")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("TraineeUserID")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("TraineeUserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasIndex("CoachUserID");
 
@@ -508,11 +508,11 @@ namespace Gym_App.Migrations
                 {
                     b.HasBaseType("Gym_App.Domain.Entities.Sessions.Session");
 
-                    b.Property<int?>("DoctorUserID")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("DoctorUserID")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("TraineeUserID")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("TraineeUserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasIndex("DoctorUserID");
 
@@ -675,6 +675,17 @@ namespace Gym_App.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Gym_App.Domain.Entities.RefreshTokens", b =>
+                {
+                    b.HasOne("Gym_App.Domain.Entities.Users.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Gym_App.Domain.Entities.Schedule", b =>
                 {
                     b.HasOne("Gym_App.Domain.Entities.Users.User", "User")
@@ -772,6 +783,8 @@ namespace Gym_App.Migrations
                     b.Navigation("Messages");
 
                     b.Navigation("PastInjuries");
+
+                    b.Navigation("RefreshTokens");
 
                     b.Navigation("Schedules");
 

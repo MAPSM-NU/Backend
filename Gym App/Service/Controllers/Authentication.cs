@@ -29,22 +29,16 @@ namespace Gym_App.Service.Controllers
         [Route("/Sign Up")]
         public async Task<IActionResult> NewUser([FromBody] UserDTO user)
         {
-            int result = await _userF.SignUpUser(user);
-            if (result == 0) return BadRequest("Missing Credentials");
-            else if (result == 1) return BadRequest("Name is already in use");
-            else if (result == 2) return BadRequest("Email is already in use");
-            else if (result == 3) return BadRequest("Email is not valid");
-            else if (result == 4) return BadRequest("Password is not valid");
-            else if (result == 5)
+            var result = await _userF.SignUpUser(user);
+            if (result.Status == 0) return BadRequest("Missing Credentials");
+            else if (result.Status == 1) return BadRequest("Name is already in use");
+            else if (result.Status == 2) return BadRequest("Email is already in use");
+            else if (result.Status == 3) return BadRequest("Email is not valid");
+            else if (result.Status == 4) return BadRequest("Password is not valid");
+            else if (result.Status == 5)
             {
-                var token = await _tokenHandler.CreateAccessToken(user);
-                var RefreshToken = await _tokenHandler.CreateRefreshToken(user);
-                var res = new Response
-                {
-                    AccessToken = token,
-                    RefreshToken = RefreshToken
-                };
-                return Ok(res);
+                
+                return Ok(result);
             }
 
             else return BadRequest("Failed to Add User");
@@ -53,13 +47,12 @@ namespace Gym_App.Service.Controllers
         [Route("/Sign In")]
         public async Task<IActionResult> LoginUser([FromBody] UserDTO user)
         {
-            int result = await _userF.LoginUser(user);
-            if(result == 0)  return BadRequest("Email not found");
-            else if (result == 1) return BadRequest("Password is wrong");
-            else if (result == 2)
+            var result = await _userF.LoginUser(user);
+            if(result.Status == 0)  return BadRequest("Email not found");
+            else if (result.Status == 1) return BadRequest("Password is wrong");
+            else if (result.Status == 2)
             {
-                var token = "";
-                return Ok(token);
+                return Ok(result);
             }
             return BadRequest("Failed to Login");
         }

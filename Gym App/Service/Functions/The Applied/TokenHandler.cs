@@ -18,16 +18,14 @@ namespace Gym_App.Service.Functions.The_Applied
             _db = db;
             _config = config;
         }
-        public Task<string> CreateAccessToken(UserDTO u)
+        public Task<string> CreateAccessToken(UserDTO u) // For creating access Tokens
         {
-            Guid userID = (from usr in _db.Users
-                           where usr.Name == u.Name
-                           select u.UserID).FirstOrDefault();
+            
             var claims = new List<Claim>
             {
                 new Claim("name", u.Name),
                 new Claim("email", u.Email),
-                new Claim("userId",userID.ToString())
+                new Claim("userId",u.UserID.ToString())
                 //new Claim(ClaimTypes.Role,u.Role)
             };
             var key = new SymmetricSecurityKey(
@@ -44,23 +42,34 @@ namespace Gym_App.Service.Functions.The_Applied
                 );
             return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(TokenDescriptor));
         }
-        public async Task<string> CreateRefreshToken(UserDTO u)//could be optimized more
+        public Task<string> CreateRefreshToken(Guid UserID)//For creating new RefreshTokens
         {
-            Guid userID = (from usr in _db.Users
-                       where usr.Name == u.Name
-                       select usr.UserID).FirstOrDefault();
+            
             var refreshToken = new RefreshTokens
             {
                 RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
                 Expires = DateTime.Now.AddDays(4),
-                UserID = userID,
+                UserID = UserID,
             };
-            _db.RefreshTokens.Add(refreshToken);
-            await _db.SaveChangesAsync();
-            return await Task.FromResult(refreshToken.RefreshToken);
+            return Task.FromResult(refreshToken.RefreshToken);
+        }
+        public async Task<string>? RefreshingToken(Guid UserID) //For logging in
+        {
+            var isTokenExists = (from token in _db.RefreshTokens
+                                 where token.UserID == UserID
+                                 select token).FirstOrDefault();
+            if (isTokenExists == null) return null;
+            else
+            {
+                isTokenExists.Expires = DateTime.UtcNow.AddDays(4);
+                isTokenExists.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+                _db.RefreshTokens.Update(isTokenExists);
+                await _db.SaveChangesAsync();
+                return await Task.FromResult(isTokenExists.RefreshToken);
+            }
         }
 
-        public async Task<Response>? ValidateAccessToken(string Refreshtoken)
+        public async Task<Response>? ValidateAccessToken(string Refreshtoken) // for logging in with Tokens
         {
             var result = _db.RefreshTokens.FirstOrDefault(t => t.RefreshToken == Refreshtoken);
             if (result == null || result.Expires < DateTime.UtcNow)
@@ -81,6 +90,7 @@ namespace Gym_App.Service.Functions.The_Applied
             result.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             var Response = new Response
             {
+                Status = 1,
                 AccessToken = Token,
                 RefreshToken = result.RefreshToken,
             };

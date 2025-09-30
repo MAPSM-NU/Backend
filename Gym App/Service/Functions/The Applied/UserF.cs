@@ -1,4 +1,5 @@
 ﻿using Gym_App.Domain.DTOs;
+using Gym_App.Domain.Entities;
 using Gym_App.Domain.Entities.Users;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -9,17 +10,21 @@ namespace Gym_App.Service.Functions.The_Applied
     public class UserF : IUserF
     {
         private readonly DbBase _db;
-        public UserF(DbBase db) {
+        private readonly ITokenHandler _tokenHandler;
+        public UserF(DbBase db, ITokenHandler tokenHandler)
+        {
             _db = db;
+            _tokenHandler = tokenHandler;
         }
-        public async Task<int> SignUpUser(UserDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
+        public async Task<Response> SignUpUser(UserDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
             //5 == Succesful signup
         {
-            if(u.Name == null || u.Email == null || u.Password == null)return await Task.FromResult(0);
-            if (!isNameValid(u.Name)) return await Task.FromResult(1);
-            if (EmailExists(u.Email)) return await Task.FromResult(2);
-            if(!IsEmailValid(u.Email)) return await Task.FromResult(3);
-            if(!IsPasswordValid(u.Password).Result) return await Task.FromResult(4);
+            //Signing up the user
+            if (u.Name == null || u.Email == null || u.Password == null)return await Task.FromResult(new Response { Status = 0 });
+            if (!isNameValid(u.Name)) return await Task.FromResult(new Response { Status = 1});
+            if (EmailExists(u.Email)) return await Task.FromResult(new Response { Status = 2 });
+            if(!IsEmailValid(u.Email)) return await Task.FromResult(new Response { Status = 3 });
+            if(!IsPasswordValid(u.Password).Result) return await Task.FromResult(new Response { Status = 4 });
             var user = new Trainee
             {
                 UserID = Guid.NewGuid(),
@@ -28,22 +33,40 @@ namespace Gym_App.Service.Functions.The_Applied
                 Password = new PasswordHasher<UserDTO>().HashPassword(u, u.Password),
                 CreatedAt = DateTime.Now
             };
+            //Making the Tokens and saving them to the database
+            u.UserID = user.UserID;
+            var Token = await _tokenHandler.CreateAccessToken(u);
+            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
             _db.Users.Add(user);
+            _db.RefreshTokens.Add(new RefreshTokens
+            {
+                UserID = user.UserID,
+                RefreshToken = RefreshToken,
+                Expires = DateTime.Now.AddDays(4)
+            });
             await _db.SaveChangesAsync();
-            return await Task.FromResult(5);
+            return await Task.FromResult(new Response {
+                Status = 5,
+                AccessToken = Token,
+                RefreshToken = RefreshToken
+            });
         }
 
-        public Task<int> LoginUser(UserDTO u) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
-        {
+        public async Task<Response> LoginUser(UserDTO u) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
+        {   //Checking if the user exists
             var _user = (from user in _db.Users
                          where user.Email.ToLower() == u.Email.ToLower()
                          select user).FirstOrDefault();
-            if (_user is null) return Task.FromResult(0);
+            if (_user is null) return await Task.FromResult(new Response { Status=0});
             var result = new PasswordHasher<User>().VerifyHashedPassword(_user, _user.Password, u.Password);
-            if (result == PasswordVerificationResult.Success) return Task.FromResult(2);
-            else
+            if (result == PasswordVerificationResult.Failed) return await Task.FromResult(new Response { Status = 1  });
+            else //Successful login and returning new Tokens
             {
-                return Task.FromResult(1);
+                var RefreshToken = await _tokenHandler.RefreshingToken(_user.UserID); 
+                return await Task.FromResult(new Response { 
+                    Status = 2 ,
+                    RefreshToken = RefreshToken
+                });
             }
         }
         public Task<IQueryable<UserDTO>> GetAllUsers()

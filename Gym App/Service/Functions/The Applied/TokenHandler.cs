@@ -69,7 +69,7 @@ namespace Gym_App.Service.Functions.The_Applied
             }
         }
 
-        public async Task<Response>? ValidateAccessToken(string Refreshtoken) // for logging in with Tokens
+        public async Task<ResponseToken>? ValidateAccessToken(string Refreshtoken) // for logging in with Tokens
         {
             var result = _db.RefreshTokens.FirstOrDefault(t => t.RefreshToken == Refreshtoken);
             if (result == null || result.Expires < DateTime.UtcNow)
@@ -88,7 +88,7 @@ namespace Gym_App.Service.Functions.The_Applied
             var Token = CreateAccessToken(user).Result;
             result.Expires = DateTime.UtcNow.AddDays(4);
             result.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            var Response = new Response
+            var Response = new ResponseToken
             {
                 Status = 1,
                 AccessToken = Token,

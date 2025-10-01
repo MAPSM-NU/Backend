@@ -1,6 +1,6 @@
 ﻿namespace Gym_App.Domain.Entities
 {
-    public class Response
+    public class ResponseToken // used to transfer tokens inside the authentication controller and UserF class
     {
         public int Status { get; set; }
         public string? AccessToken { get; set; }

@@ -4,6 +4,7 @@ using Gym_App;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym_App.Migrations
 {
     [DbContext(typeof(DbBase))]
-    partial class DbBaseModelSnapshot : ModelSnapshot
+    [Migration("20250930185036_UpdatingExerciseEntity")]
+    partial class UpdatingExerciseEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -105,13 +108,13 @@ namespace Gym_App.Migrations
                         .HasColumnType("varchar(40)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("varchar(8000)");
+                        .HasColumnType("varchar(1000)");
 
                     b.Property<string>("Difficulty")
                         .HasColumnType("varchar(20)");
 
                     b.Property<string>("Grip")
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("Name")
                         .IsRequired()

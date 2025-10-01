@@ -10,7 +10,7 @@ namespace Gym_App.Domain.Entities
         [Required]
         [Column(TypeName = "varchar(100)")]
         public string Name { get; set; }
-        [Column(TypeName = "varchar(1000)")]
+        [Column(TypeName = "varchar(8000)")]
         public string? Description { get; set; }
         //[Required]
         //[Column(TypeName = "varchar(100)")]
@@ -19,6 +19,10 @@ namespace Gym_App.Domain.Entities
         public string? Difficulty { get; set; }
         [Column(TypeName = "varchar(500)")]
         public string? VideoUrl { get; set; }
+        [Column(TypeName = "varchar(40)")]
+        public string? Category { get; set; }
+        [Column(TypeName = "varchar(50)")]
+        public string? Grip { get; set; }
 
         //Relationships
         public ICollection<Muscles>? Muscles { get; set; } = new List<Muscles>();

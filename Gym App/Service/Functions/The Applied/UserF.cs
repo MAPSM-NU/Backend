@@ -16,15 +16,15 @@ namespace Gym_App.Service.Functions.The_Applied
             _db = db;
             _tokenHandler = tokenHandler;
         }
-        public async Task<Response> SignUpUser(UserDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
+        public async Task<ResponseToken> SignUpUser(UserDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
             //5 == Succesful signup
         {
             //Signing up the user
-            if (u.Name == null || u.Email == null || u.Password == null)return await Task.FromResult(new Response { Status = 0 });
-            if (!isNameValid(u.Name)) return await Task.FromResult(new Response { Status = 1});
-            if (EmailExists(u.Email)) return await Task.FromResult(new Response { Status = 2 });
-            if(!IsEmailValid(u.Email)) return await Task.FromResult(new Response { Status = 3 });
-            if(!IsPasswordValid(u.Password).Result) return await Task.FromResult(new Response { Status = 4 });
+            if (u.Name == null || u.Email == null || u.Password == null)return await Task.FromResult(new ResponseToken { Status = 0 });
+            if (!isNameValid(u.Name)) return await Task.FromResult(new ResponseToken { Status = 1});
+            if (EmailExists(u.Email)) return await Task.FromResult(new ResponseToken { Status = 2 });
+            if(!IsEmailValid(u.Email)) return await Task.FromResult(new ResponseToken { Status = 3 });
+            if(!IsPasswordValid(u.Password).Result) return await Task.FromResult(new ResponseToken { Status = 4 });
             var user = new Trainee
             {
                 UserID = Guid.NewGuid(),
@@ -45,25 +45,25 @@ namespace Gym_App.Service.Functions.The_Applied
                 Expires = DateTime.Now.AddDays(4)
             });
             await _db.SaveChangesAsync();
-            return await Task.FromResult(new Response {
+            return await Task.FromResult(new ResponseToken {
                 Status = 5,
                 AccessToken = Token,
                 RefreshToken = RefreshToken
             });
         }
 
-        public async Task<Response> LoginUser(UserDTO u) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
+        public async Task<ResponseToken> LoginUser(UserDTO u) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
         {   //Checking if the user exists
             var _user = (from user in _db.Users
                          where user.Email.ToLower() == u.Email.ToLower()
                          select user).FirstOrDefault();
-            if (_user is null) return await Task.FromResult(new Response { Status=0});
+            if (_user is null) return await Task.FromResult(new ResponseToken { Status=0});
             var result = new PasswordHasher<User>().VerifyHashedPassword(_user, _user.Password, u.Password);
-            if (result == PasswordVerificationResult.Failed) return await Task.FromResult(new Response { Status = 1  });
+            if (result == PasswordVerificationResult.Failed) return await Task.FromResult(new ResponseToken { Status = 1  });
             else //Successful login and returning new Tokens
             {
                 var RefreshToken = await _tokenHandler.RefreshingToken(_user.UserID); 
-                return await Task.FromResult(new Response { 
+                return await Task.FromResult(new ResponseToken { 
                     Status = 2 ,
                     RefreshToken = RefreshToken
                 });

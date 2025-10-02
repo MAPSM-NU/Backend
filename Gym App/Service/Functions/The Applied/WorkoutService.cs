@@ -82,10 +82,29 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return await Task.FromResult(1);
         }
-
+        public async Task<int> SetExercisesOfWorkout(WorkoutExerciseDTO workoutExercise)
+        {
+            var isWorkoutExist = (from w in _db.Workouts.Include(w => w.Exercises)
+                                  where w.WorkoutID == workoutExercise.WorkoutID
+                                  select w).FirstOrDefault();
+            if (isWorkoutExist == null) return await Task.FromResult(0);
+            isWorkoutExist.Exercises.Clear();
+            foreach (var exerciseId in workoutExercise.ExercisesID)
+            {
+                var exercise = _db.Exercises.FirstOrDefault(e => e.ExerciseID == exerciseId);
+                if (exercise != null)
+                {
+                    isWorkoutExist.Exercises.Add(exercise);
+                }
+            }
+            _db.Workouts.Update(isWorkoutExist);
+            await _db.SaveChangesAsync();
+            return await Task.FromResult(1);
+        }
         public async Task<int> DeleteExercisesFromWorkout(WorkoutExerciseDTO workoutExercise)
         {
             bool DeletedAny = false;
+            bool AddedAny = false;
             var isWorkoutExist = (from w in _db.Workouts.Include(w => w.Exercises)
                                   where w.WorkoutID == workoutExercise.WorkoutID
                                   select w).FirstOrDefault();
@@ -93,7 +112,7 @@ namespace Gym_App.Service.Functions.The_Applied
             foreach (var exerciseId in workoutExercise.ExercisesID)
             {
                 var exercise = _db.Exercises.FirstOrDefault(e => e.ExerciseID == exerciseId);
-                if (exercise != null && isWorkoutExist.Exercises.Any(e => e.ExerciseID == exerciseId))
+                if (exercise != null)
                 {
                     isWorkoutExist.Exercises.Remove(exercise);
                     DeletedAny = true;
@@ -102,16 +121,16 @@ namespace Gym_App.Service.Functions.The_Applied
             if(!DeletedAny) { return await Task.FromResult(0); }
             _db.Workouts.Update(isWorkoutExist);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(0);
+            return await Task.FromResult(1);
         }
         public Task<Workout> GetWorkoutByName(string name)
         {
-            var Workout = _db.Workouts.Include(w => w.Exercises).FirstOrDefault(w => w.Name == name);
+            var Workout = _db.Workouts.Include(w => w.Exercises).Include(w =>w.User).FirstOrDefault(w => w.Name == name);
             return Task.FromResult(Workout!);
         }
         public Task<IQueryable<Workout>> GetAllWorkouts()
         {
-            var Workouts = _db.Workouts.Include(w => w.Exercises).AsQueryable();
+            var Workouts = _db.Workouts.Include(w => w.Exercises).Include(w => w.User).AsQueryable();
             return Task.FromResult(Workouts);
         }
 

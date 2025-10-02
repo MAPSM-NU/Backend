@@ -39,6 +39,13 @@ namespace Gym_App.Service.Controllers
             if(result==0) return BadRequest(new { message = "Adding exercises to workout failed." });
             return Ok(new { message = "Exercises added to workout successfully." });
         }
+        [HttpPost("Set Exercises of Workout")]
+        public async Task<IActionResult> SetExercisesOfWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
+        {
+            var result = await _workoutService.SetExercisesOfWorkout(workoutExercise);
+            if(result==0) return BadRequest(new { message = "Setting exercises of workout failed." });
+            return Ok(new { message = "Exercises set to workout successfully." });
+        }
         [HttpDelete("Delete Exercises from Workout")]
         public async Task<IActionResult> DeleteExercisesFromWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
         {
@@ -46,7 +53,7 @@ namespace Gym_App.Service.Controllers
             if(result==0) return BadRequest(new { message = "Deleting exercises from workout failed." });
             return Ok(new { message = "Exercises deleted from workout successfully." });
         }
-        [HttpGet("Get Workout by Name")]
+        [HttpPost("Get Workout by Name")]
         public async Task<IActionResult> GetWorkoutByName([FromBody] string name)
         {
             var result = await _workoutService.GetWorkoutByName(name);

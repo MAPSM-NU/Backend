@@ -3,6 +3,7 @@ using Gym_App.Domain.Entities;
 using Gym_App.Domain.Entities.Users;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace Gym_App.Service.Functions.The_Applied
@@ -69,17 +70,12 @@ namespace Gym_App.Service.Functions.The_Applied
                 });
             }
         }
-        public Task<IQueryable<UserDTO>> GetAllUsers()
+        public async Task<IQueryable<User>> GetAllUsers()
         {
-            var users = (from u in _db.Users
-                         select new UserDTO
-                         {
-                             UserID = u.UserID,
-                             Name = u.Name,
-                             Email = u.Email,
-                             Password = u.Password
-                         }).AsQueryable();
-            return Task.FromResult(users);
+            var users = from u in _db.Users.Include(us => us.Workouts)
+                                           .Include(us => us.Schedules)
+                        select u;
+            return await Task.FromResult(users);
         }
         public bool isNameValid(string name)//checks if the name is already taken
         {

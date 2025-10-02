@@ -16,8 +16,8 @@ namespace Gym_App.Service.Controllers
                                                //connected to the WorkoutData class
                                                //Pls do make sure you don't run this when the data is already in the database
     {
-        private readonly IWorkoutData _workoutData;
-        public AddCsvToDatabase(IWorkoutData workoutData)
+        private readonly IExerciseData _workoutData;
+        public AddCsvToDatabase(IExerciseData workoutData)
         {
             _workoutData = workoutData;
         }

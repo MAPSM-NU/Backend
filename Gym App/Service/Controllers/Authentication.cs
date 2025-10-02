@@ -16,10 +16,10 @@ namespace Gym_App.Service.Controllers
     [Route("[controller]")]
     public class Authentication : Controller
     {
-        private readonly IUserF _userF;
+        private readonly IUserServise _userF;
         private readonly IEmailSender _emailSender;
         private readonly ITokenHandler _tokenHandler;
-        public Authentication(IUserF userF , IEmailSender emailSender,ITokenHandler tokenHandler)
+        public Authentication(IUserServise userF , IEmailSender emailSender,ITokenHandler tokenHandler)
         {
             _userF = userF;
             _emailSender = emailSender;

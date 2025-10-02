@@ -4,7 +4,7 @@ using Gym_App.Domain.Entities.Users;
 
 namespace Gym_App.Service.Functions.Interfaces
 {
-    public interface IUserF
+    public interface IUserServise
     {
         public Task<ResponseToken> SignUpUser(UserDTO user);
         public Task<ResponseToken> LoginUser(UserDTO user);

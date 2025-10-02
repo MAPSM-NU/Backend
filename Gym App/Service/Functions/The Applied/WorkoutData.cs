@@ -5,7 +5,7 @@ using System.Globalization;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
-    public class WorkoutData : IWorkoutData // This class is used for the adding and merging of the alr made dataset we have. Not applicable to the runtime of the app
+    public class WorkoutData : IExerciseData // This class is used for the adding and merging of the alr made dataset we have. Not applicable to the runtime of the app
                                             //connected to the controller AddCsvToDatabase
                                             //Pls do make sure you don't run this when the data is already in the database (plan to add checks later)
     {

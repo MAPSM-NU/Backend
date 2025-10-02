@@ -7,11 +7,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
-    public class UserF : IUserF
+    public class UserService : IUserServise
     {
         private readonly DbBase _db;
         private readonly ITokenHandler _tokenHandler;
-        public UserF(DbBase db, ITokenHandler tokenHandler)
+        public UserService(DbBase db, ITokenHandler tokenHandler)
         {
             _db = db;
             _tokenHandler = tokenHandler;

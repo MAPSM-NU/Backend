@@ -21,9 +21,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();
-builder.Services.AddScoped<IUserF, UserF>();
+builder.Services.AddScoped<IUserServise, UserService>();
 builder.Services.AddScoped<ITokenHandler, Gym_App.Service.Functions.The_Applied.TokenHandler>();
-builder.Services.AddScoped<IWorkoutData, WorkoutData>();
+builder.Services.AddScoped<IExerciseData, WorkoutData>();
+builder.Services.AddScoped<IExerciseService, ExerciseService>();
+builder.Services.AddScoped<IMuscleService, MuscleService>();
 builder.Services.AddDbContext<DbBase>(options =>
 {
     options.UseSqlServer("Data Source=DESKTOP-OR6CO4J\\SQLEXPRESS;Initial Catalog=FitTracker;Integrated Security=True;Trust Server Certificate=True");

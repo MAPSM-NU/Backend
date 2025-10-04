@@ -12,7 +12,7 @@ namespace Gym_App.Domain.Entities
         [Column(TypeName = "varchar(100)")]
         public string Name { get; set; }
         [Required]
-        [Column(TypeName = "nvarchar(100)")]
+        [Column(TypeName = "varchar(100)")]
         public string Title { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }

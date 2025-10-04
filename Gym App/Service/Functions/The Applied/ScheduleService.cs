@@ -128,7 +128,7 @@ namespace Gym_App.Service.Functions.The_Applied
 
         public Task<IQueryable<Schedule?>> GetSchedulesByOfUser(Guid UserID)
         {
-            var schedules = from s in _db.Schedules
+            var schedules = from s in _db.Schedules.Include(s => s.User).Include(s => s.Workouts)
                             where s.User.UserID == UserID
                             select s;
             if(schedules == null) return null;
@@ -137,7 +137,7 @@ namespace Gym_App.Service.Functions.The_Applied
 
         public Task<IQueryable<Schedule?>> GetAllSchedules()
         {
-            var schedules = from s in _db.Schedules
+            var schedules = from s in _db.Schedules.Include(s => s.User).Include(s => s.Workouts)
                             select s;
             if (schedules == null) return null;
             return Task.FromResult(schedules);

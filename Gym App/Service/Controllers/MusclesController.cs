@@ -32,7 +32,7 @@ namespace Gym_App.Service.Controllers
             }
             return BadRequest(new { Message = "Failed to delete muscle" });
         }
-        [HttpPost]
+        [HttpPut]
         [Route("/Modify Muscle")]
         public async Task<IActionResult> ModifyMuscle([FromBody] Domain.DTOs.MuscleDTO muscle)
         {

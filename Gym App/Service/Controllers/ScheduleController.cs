@@ -27,7 +27,7 @@ namespace Gym_App.Service.Controllers
             return Ok(new { message = "Schedule updated successfully" });
         }
         [HttpDelete("Delete a Schedule")]
-        public async Task<IActionResult> DeleteSchedule([FromQuery] Guid scheduleID)
+        public async Task<IActionResult> DeleteSchedule([FromBody] Guid scheduleID)
         {
             var result = await _scheduleService.DeleteSchedule(scheduleID);
             if (result == 0) return BadRequest(new { message = "Could not delete Schedule" });
@@ -55,14 +55,14 @@ namespace Gym_App.Service.Controllers
             return Ok(new { message = "Workouts deleted from Schedule successfully" });
         }
         [HttpPost("Get Schedule by ID")]
-        public async Task<IActionResult> GetScheduleById([FromQuery] Guid scheduleID)
+        public async Task<IActionResult> GetScheduleById([FromBody] Guid scheduleID)
         {
             var schedule = await _scheduleService.GetScheduleById(scheduleID);
             if (schedule == null) return NotFound(new { message = "Schedule not found" });
             return Ok(schedule);
         }
         [HttpPost("Get Schedules of a User")]
-        public async Task<IActionResult> GetSchedulesByOfUser([FromQuery] Guid userID)
+        public async Task<IActionResult> GetSchedulesByOfUser([FromBody] Guid userID)
         {
             var schedules = await _scheduleService.GetSchedulesByOfUser(userID);
             return Ok(schedules);

@@ -50,7 +50,7 @@ namespace Gym_App.Service.Controllers
 
         [HttpPost]
         [Route("/Add Muscles to Exercise")]
-        public async Task<IActionResult> AddMusclesToExercise([FromBody] ExerciseMusclesListDTO Muscles)
+        public async Task<IActionResult> AddMusclesToExercise([FromBody] ExerciseMusclesDTO Muscles)
         {
             var result = await _exerciseService.AddMusclesToExercise(Muscles.ExerciseID, Muscles.Muscles);
             if (result > 0)
@@ -62,7 +62,7 @@ namespace Gym_App.Service.Controllers
 
         [HttpDelete]
         [Route("/Remove Muscles from Exercise")]
-        public async Task<IActionResult> RemoveMusclesFromExercise([FromBody] ExerciseMusclesListDTO Muscles)//fe 8alta hena
+        public async Task<IActionResult> RemoveMusclesFromExercise([FromBody] ExerciseMusclesDTO Muscles)//fe 8alta hena
         {
             var result = await _exerciseService.RemoveMusclesFromExercise(Muscles.ExerciseID, Muscles.Muscles);
             if (result > 0)
@@ -77,6 +77,14 @@ namespace Gym_App.Service.Controllers
         {
             var result = await _exerciseService.GetExerciseByName(name);
             if (result == null) return BadRequest(new { Message = "Exercise not found" });
+            return Ok(result);
+        }
+        [HttpPost]
+        [Route("Get Exercise By Muscle")]
+        public async Task<IActionResult> GetWorkoutsByMuscle([FromBody] ExerciseListDTO muscles)
+        {
+            var result = await _exerciseService.GetExercisesByMuscle(muscles);
+            if(result == null) return BadRequest(new { Message = "Either you entered the muscles wrong or no Exercise was found." });
             return Ok(result);
         }
         [HttpGet]

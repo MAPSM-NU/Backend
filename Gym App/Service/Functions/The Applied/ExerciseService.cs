@@ -2,6 +2,7 @@
 using Gym_App.Domain.Entities;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
@@ -91,8 +92,7 @@ namespace Gym_App.Service.Functions.The_Applied
         {
             bool DeletedAny = false;
             var exercise = (from e in _db.Exercises.Include(m =>m.Muscles)//really important. If you dont add the include the db will give you the Exercise without its muscles
-                            where e.ExerciseID == exerciseId              //so when you try to access the muscles, the list will always be empty.
-                            where e.ExerciseID == exerciseId              
+                            where e.ExerciseID == exerciseId              //so when you try to access the muscles, the list will always be empty.       
                             select e).FirstOrDefault();
             if (exercise == null) return await Task.FromResult(0);
             foreach (var muscleId in muscleIds)
@@ -116,6 +116,35 @@ namespace Gym_App.Service.Functions.The_Applied
                             select e).FirstOrDefault();
             if (Exercise == null) return Task.FromResult(Exercise);
             return Task.FromResult(Exercise);
+        }
+        public Task<IQueryable<Exercise>>? GetExercisesByMuscle(ExerciseListDTO muscles)//Not Working for some reason
+        {
+            //List<Muscles> Muscles = new List<Muscles>();
+            //IQueryable<Exercise> ExercisesList = _db.Exercises.Include(e => e.Muscles);
+            //foreach (var muscle in muscles.Muscles)
+            //{
+            //    var mus = (from m in _db.Muscles
+            //               where m.Name.ToLower() == muscle.ToLower()
+            //               select m).FirstOrDefault();
+            //    if (mus != null)Muscles.Add(mus);
+            //    else return null;
+            //}
+            //foreach(var muscle in Muscles)
+            //{
+            //    var Exercises = (from E in ExercisesList
+            //                    where E.Muscles.Any(M => M.MusclesID == muscle.MusclesID)
+            //                    select E);
+            //    if (Exercises != null) ExercisesList = Exercises;
+            //    else return null;
+            //}
+            
+            //return Task.FromResult(ExercisesList);
+            IQueryable<Exercise> ExercisesList = _db.Exercises.Include(e => e.Muscles);
+            foreach (var muscle in muscles.Muscles)
+            {
+                ExercisesList = ExercisesList.Where(e => e.Muscles.Any(m => m.Name.ToLower() == muscle.ToLower()));
+            }
+            return Task.FromResult(ExercisesList);
         }
         public Task<IQueryable<Exercise>> GetAllExercises()
         {

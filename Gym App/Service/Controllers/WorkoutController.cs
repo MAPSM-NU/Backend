@@ -18,7 +18,7 @@ namespace Gym_App.Service.Controllers
             if (result == 0) return BadRequest(new { message = "Workout creation failed." });
             return Ok(new { message = "Workout created successfully." });
         }
-        [HttpPost("Modify Workout")]
+        [HttpPut("Modify Workout")]
         public async Task<IActionResult> UpdateWorkout([FromBody] WorkoutDTO workout)
         {
             var result = await _workoutService.UpdateWorkout(workout);

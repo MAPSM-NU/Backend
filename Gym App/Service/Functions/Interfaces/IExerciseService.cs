@@ -11,6 +11,7 @@ namespace Gym_App.Service.Functions.Interfaces
         public Task<int> AddMusclesToExercise(Guid exerciseId, List<Guid> muscleIds);
         public Task<int> RemoveMusclesFromExercise(Guid exerciseId, List<Guid> muscleIds);
         public Task<Exercise?> GetExerciseByName(string name);
-        public Task<IQueryable<Domain.Entities.Exercise>> GetAllExercises();
+        public Task<IQueryable<Exercise>>? GetExercisesByMuscle(ExerciseListDTO muscles);
+        public Task<IQueryable<Exercise>> GetAllExercises();
     }
 }

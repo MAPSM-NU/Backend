@@ -23,10 +23,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IUserServise, UserService>();
 builder.Services.AddScoped<ITokenHandler, Gym_App.Service.Functions.The_Applied.TokenHandler>();
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();
 builder.Services.AddScoped<IExerciseService, ExerciseService>();
 builder.Services.AddScoped<IMuscleService, MuscleService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddDbContext<DbBase>(options =>
 {
     options.UseSqlServer("Data Source=DESKTOP-OR6CO4J\\SQLEXPRESS;Initial Catalog=FitTracker;Integrated Security=True;Trust Server Certificate=True");

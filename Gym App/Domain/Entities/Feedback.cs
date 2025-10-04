@@ -10,9 +10,6 @@ namespace Gym_App.Domain.Entities
         public Guid FeedbackID { get; set; }
         [Required]
         public DateTime Date { get; set; }
-        [Required] 
-        [Column(TypeName = "varchar(100)")]
-        public string Title { get; set; }
         [Required]
         [Column(TypeName = "varchar(20)")]
         public string Type { get; set; }

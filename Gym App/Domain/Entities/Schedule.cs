@@ -16,8 +16,7 @@ namespace Gym_App.Domain.Entities
         public string Type { get; set; }
 
         //Relationships
-        [Required]
-        public ICollection<Workout> Workouts { get; set; } = new List<Workout>();
+        public ICollection<Workout>? Workouts { get; set; } = new List<Workout>();
         [Required]
         public User User { get; set; }
     }

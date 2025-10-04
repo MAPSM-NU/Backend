@@ -14,7 +14,6 @@ namespace Gym_App.Domain.Entities
         public string Description { get; set; }
 
         //Relationships
-        [Required]
-        public User User { get; set; }
+        public User? User { get; set; }
     }
 }

@@ -17,9 +17,6 @@ namespace Gym_App.Domain.Entities
         [Column(TypeName = "varchar(20)")]
         public string Type { get; set; }
         [Required]
-        [Column(TypeName = "nvarchar(100)")]
-        public string Title { get; set; }
-        [Required]
         [Column(TypeName = "varchar(2000)")]
         public string FeedbackText { get; set; }
 

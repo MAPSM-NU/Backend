@@ -1,5 +1,4 @@
-﻿using Gym_App.Domain.Entities.Users;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain.Entities
@@ -27,5 +26,6 @@ namespace Gym_App.Domain.Entities
         public Schedule? Schedule { get; set; }
         public ICollection<Exercise>? Exercises { get; set; } = new List<Exercise>();
         public User User { get; set; }
+        public Feedback? Feedback { get; set; }
+        }
     }
-}

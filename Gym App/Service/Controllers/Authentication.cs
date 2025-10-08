@@ -1,6 +1,5 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
-using Gym_App.Domain.Entities.Users;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -16,12 +15,12 @@ namespace Gym_App.Service.Controllers
     [Route("[controller]")]
     public class Authentication : Controller
     {
-        private readonly IUserServise _userF;
+        private readonly IUserServise _user;
         private readonly IEmailSender _emailSender;
         private readonly ITokenHandler _tokenHandler;
         public Authentication(IUserServise userF , IEmailSender emailSender,ITokenHandler tokenHandler)
         {
-            _userF = userF;
+            _user = userF;
             _emailSender = emailSender;
             _tokenHandler = tokenHandler;
         }
@@ -29,7 +28,7 @@ namespace Gym_App.Service.Controllers
         [Route("/Sign Up")]
         public async Task<IActionResult> NewUser([FromBody] UserDTO user)
         {
-            var result = await _userF.SignUpUser(user);
+            var result = await _user.SignUpUser(user);
             if (result.Status == 0) return BadRequest("Missing Credentials");
             else if (result.Status == 1) return BadRequest("Name is already in use");
             else if (result.Status == 2) return BadRequest("Email is already in use");
@@ -47,7 +46,7 @@ namespace Gym_App.Service.Controllers
         [Route("/Sign In")]
         public async Task<IActionResult> LoginUser([FromBody] UserDTO user)
         {
-            var result = await _userF.LoginUser(user);
+            var result = await _user.LoginUser(user);
             if(result.Status == 0)  return BadRequest("Email not found");
             else if (result.Status == 1) return BadRequest("Password is wrong");
             else if (result.Status == 2)
@@ -63,21 +62,6 @@ namespace Gym_App.Service.Controllers
             var result = await _tokenHandler.ValidateAccessToken(Refreshtoken);
             if (result == null) return BadRequest("Invalid Token");
             else return Ok(result);
-        }
-        [HttpGet]
-        [Route("/Get All Users")]
-        public async Task<IActionResult> GetAllUsers()
-        {
-            var users = await _userF.GetAllUsers();
-            return Ok(users);
-        }
-        [HttpDelete]
-        [Route("/Delete User")]
-        public async Task<IActionResult> DeleteUser([FromBody] Guid UserID)
-        {
-            var result = await _userF.DeleteUser(UserID);
-            if (result) return Ok("User Deleted Successfully");
-            return BadRequest("Failed to Delete User");
         }
         [HttpGet]
         [Route("/Get Tokens")]

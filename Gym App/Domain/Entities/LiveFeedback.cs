@@ -1,5 +1,4 @@
-﻿using Gym_App.Domain.Entities.Users;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain.Entities

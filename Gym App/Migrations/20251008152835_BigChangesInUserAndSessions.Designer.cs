@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym_App.Migrations
 {
     [DbContext(typeof(DbBase))]
-    [Migration("20250930200836_nowWeUpdatingGrips")]
-    partial class nowWeUpdatingGrips
+    [Migration("20251008152835_BigChangesInUserAndSessions")]
+    partial class BigChangesInUserAndSessions
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -93,6 +93,10 @@ namespace Gym_App.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
                     b.HasKey("ChallengeId");
 
                     b.ToTable("Challenges");
@@ -134,12 +138,22 @@ namespace Gym_App.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("CaloriesBurned")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("int");
 
                     b.Property<string>("FeedbackText")
                         .IsRequired()
                         .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -148,9 +162,15 @@ namespace Gym_App.Migrations
                     b.Property<Guid>("UserID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("WorkoutID")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("FeedbackID");
 
                     b.HasIndex("UserID");
+
+                    b.HasIndex("WorkoutID")
+                        .IsUnique();
 
                     b.ToTable("Feedbacks");
                 });
@@ -180,7 +200,7 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Message", b =>
                 {
-                    b.Property<Guid>("MessageId")
+                    b.Property<Guid>("MessageID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -200,7 +220,7 @@ namespace Gym_App.Migrations
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("MessageId");
+                    b.HasKey("MessageID");
 
                     b.HasIndex("SenderUserID");
 
@@ -240,6 +260,10 @@ namespace Gym_App.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("varchar(100)");
+
                     b.HasKey("NotificationID");
 
                     b.ToTable("Notifications");
@@ -258,7 +282,7 @@ namespace Gym_App.Migrations
                     b.Property<DateTime>("InjuryDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserID")
+                    b.Property<Guid?>("UserID")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("InjuryID");
@@ -315,7 +339,7 @@ namespace Gym_App.Migrations
                     b.ToTable("Schedules");
                 });
 
-            modelBuilder.Entity("Gym_App.Domain.Entities.Sessions.Session", b =>
+            modelBuilder.Entity("Gym_App.Domain.Entities.Session", b =>
                 {
                     b.Property<Guid>("SessionID")
                         .ValueGeneratedOnAdd()
@@ -323,8 +347,7 @@ namespace Gym_App.Migrations
 
                     b.Property<string>("SessionType")
                         .IsRequired()
-                        .HasMaxLength(21)
-                        .HasColumnType("nvarchar(21)");
+                        .HasColumnType("varchar(21)");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime2");
@@ -332,10 +355,6 @@ namespace Gym_App.Migrations
                     b.HasKey("SessionID");
 
                     b.ToTable("Sessions");
-
-                    b.HasDiscriminator<string>("SessionType").HasValue("Session");
-
-                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Transaction", b =>
@@ -368,7 +387,7 @@ namespace Gym_App.Migrations
                     b.ToTable("Transactions");
                 });
 
-            modelBuilder.Entity("Gym_App.Domain.Entities.Users.User", b =>
+            modelBuilder.Entity("Gym_App.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("UserID")
                         .ValueGeneratedOnAdd()
@@ -376,6 +395,9 @@ namespace Gym_App.Migrations
 
                     b.Property<string>("Bio")
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Certifications")
+                        .HasColumnType("varchar(500)");
 
                     b.Property<string>("City")
                         .HasColumnType("nvarchar(100)");
@@ -393,6 +415,12 @@ namespace Gym_App.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(100)");
 
+                    b.Property<int?>("ExperienceYears")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("HeightCm")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(100)");
@@ -407,13 +435,18 @@ namespace Gym_App.Migrations
                     b.Property<string>("ProfilePictureUrl")
                         .HasColumnType("varchar(500)");
 
+                    b.Property<string>("Specialty")
+                        .HasColumnType("varchar(100)");
+
                     b.Property<string>("State")
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("UserType")
                         .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("nvarchar(8)");
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<int?>("WeightKg")
+                        .HasColumnType("int");
 
                     b.Property<bool>("isEmailConfirmed")
                         .HasColumnType("bit");
@@ -423,14 +456,7 @@ namespace Gym_App.Migrations
 
                     b.HasKey("UserID");
 
-                    b.HasIndex("UserID")
-                        .IsUnique();
-
                     b.ToTable("Users");
-
-                    b.HasDiscriminator<string>("UserType").HasValue("User");
-
-                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Workout", b =>
@@ -457,10 +483,10 @@ namespace Gym_App.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(100)");
 
-                    b.Property<Guid>("ScheduleID")
+                    b.Property<Guid?>("ScheduleID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("UserID")
+                    b.Property<Guid>("UserID")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("WorkoutID");
@@ -487,101 +513,19 @@ namespace Gym_App.Migrations
                     b.ToTable("NotificationUser");
                 });
 
-            modelBuilder.Entity("Gym_App.Domain.Entities.Sessions.CoachTraineeSession", b =>
+            modelBuilder.Entity("SessionUser", b =>
                 {
-                    b.HasBaseType("Gym_App.Domain.Entities.Sessions.Session");
-
-                    b.Property<Guid?>("CoachUserID")
+                    b.Property<Guid>("SessionsSessionID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("TraineeUserID")
+                    b.Property<Guid>("UsersUserID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasIndex("CoachUserID");
+                    b.HasKey("SessionsSessionID", "UsersUserID");
 
-                    b.HasIndex("TraineeUserID");
+                    b.HasIndex("UsersUserID");
 
-                    b.ToTable("Sessions", t =>
-                        {
-                            t.Property("TraineeUserID")
-                                .HasColumnName("CoachTraineeSession_TraineeUserID");
-                        });
-
-                    b.HasDiscriminator().HasValue("CoachTraineeSession");
-                });
-
-            modelBuilder.Entity("Gym_App.Domain.Entities.Sessions.DoctorTraineeSession", b =>
-                {
-                    b.HasBaseType("Gym_App.Domain.Entities.Sessions.Session");
-
-                    b.Property<Guid?>("DoctorUserID")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("TraineeUserID")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasIndex("DoctorUserID");
-
-                    b.HasIndex("TraineeUserID");
-
-                    b.HasDiscriminator().HasValue("DoctorTraineeSession");
-                });
-
-            modelBuilder.Entity("Gym_App.Domain.Entities.Users.Coach", b =>
-                {
-                    b.HasBaseType("Gym_App.Domain.Entities.Users.User");
-
-                    b.Property<string>("Certifications")
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<int?>("ExperienceYears")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Specialty")
-                        .HasColumnType("varchar(100)");
-
-                    b.ToTable("Users", t =>
-                        {
-                            t.Property("Certifications")
-                                .HasColumnName("Coach_Certifications");
-
-                            t.Property("ExperienceYears")
-                                .HasColumnName("Coach_ExperienceYears");
-
-                            t.Property("Specialty")
-                                .HasColumnName("Coach_Specialty");
-                        });
-
-                    b.HasDiscriminator().HasValue("Coach");
-                });
-
-            modelBuilder.Entity("Gym_App.Domain.Entities.Users.Doctor", b =>
-                {
-                    b.HasBaseType("Gym_App.Domain.Entities.Users.User");
-
-                    b.Property<string>("Certifications")
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<int?>("ExperienceYears")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Specialty")
-                        .HasColumnType("varchar(100)");
-
-                    b.HasDiscriminator().HasValue("Doctor");
-                });
-
-            modelBuilder.Entity("Gym_App.Domain.Entities.Users.Trainee", b =>
-                {
-                    b.HasBaseType("Gym_App.Domain.Entities.Users.User");
-
-                    b.Property<int?>("HeightCm")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("WeightKg")
-                        .HasColumnType("int");
-
-                    b.HasDiscriminator().HasValue("Trainee");
+                    b.ToTable("SessionUser");
                 });
 
             modelBuilder.Entity("ChallengesUser", b =>
@@ -592,7 +536,7 @@ namespace Gym_App.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Gym_App.Domain.Entities.Users.User", null)
+                    b.HasOne("Gym_App.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("ParticipantsUserID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -631,18 +575,26 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Feedback", b =>
                 {
-                    b.HasOne("Gym_App.Domain.Entities.Users.User", "User")
+                    b.HasOne("Gym_App.Domain.Entities.User", "User")
                         .WithMany("Feedbacks")
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Gym_App.Domain.Entities.Workout", "Workout")
+                        .WithOne("Feedback")
+                        .HasForeignKey("Gym_App.Domain.Entities.Feedback", "WorkoutID")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("User");
+
+                    b.Navigation("Workout");
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Entities.LiveFeedback", b =>
                 {
-                    b.HasOne("Gym_App.Domain.Entities.Users.User", "User")
+                    b.HasOne("Gym_App.Domain.Entities.User", "User")
                         .WithMany("LiveFeedbacks")
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -653,13 +605,13 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Message", b =>
                 {
-                    b.HasOne("Gym_App.Domain.Entities.Users.User", "Sender")
+                    b.HasOne("Gym_App.Domain.Entities.User", "Sender")
                         .WithMany("Messages")
                         .HasForeignKey("SenderUserID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Gym_App.Domain.Entities.Sessions.Session", "Session")
+                    b.HasOne("Gym_App.Domain.Entities.Session", "Session")
                         .WithMany("Messages")
                         .HasForeignKey("SessionID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -672,18 +624,16 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.PastInjuries", b =>
                 {
-                    b.HasOne("Gym_App.Domain.Entities.Users.User", "User")
+                    b.HasOne("Gym_App.Domain.Entities.User", "User")
                         .WithMany("PastInjuries")
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("UserID");
 
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Entities.RefreshTokens", b =>
                 {
-                    b.HasOne("Gym_App.Domain.Entities.Users.User", "User")
+                    b.HasOne("Gym_App.Domain.Entities.User", "User")
                         .WithMany("RefreshTokens")
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -694,7 +644,7 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Schedule", b =>
                 {
-                    b.HasOne("Gym_App.Domain.Entities.Users.User", "User")
+                    b.HasOne("Gym_App.Domain.Entities.User", "User")
                         .WithMany("Schedules")
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -705,7 +655,7 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Transaction", b =>
                 {
-                    b.HasOne("Gym_App.Domain.Entities.Users.User", null)
+                    b.HasOne("Gym_App.Domain.Entities.User", null)
                         .WithMany("Transactions")
                         .HasForeignKey("UserID");
                 });
@@ -714,15 +664,17 @@ namespace Gym_App.Migrations
                 {
                     b.HasOne("Gym_App.Domain.Entities.Schedule", "Schedule")
                         .WithMany("Workouts")
-                        .HasForeignKey("ScheduleID")
+                        .HasForeignKey("ScheduleID");
+
+                    b.HasOne("Gym_App.Domain.Entities.User", "User")
+                        .WithMany("Workouts")
+                        .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Gym_App.Domain.Entities.Users.User", null)
-                        .WithMany("Workouts")
-                        .HasForeignKey("UserID");
-
                     b.Navigation("Schedule");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("NotificationUser", b =>
@@ -733,41 +685,26 @@ namespace Gym_App.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Gym_App.Domain.Entities.Users.User", null)
+                    b.HasOne("Gym_App.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Gym_App.Domain.Entities.Sessions.CoachTraineeSession", b =>
+            modelBuilder.Entity("SessionUser", b =>
                 {
-                    b.HasOne("Gym_App.Domain.Entities.Users.Coach", "Coach")
-                        .WithMany("CoachTraineeSessions")
-                        .HasForeignKey("CoachUserID");
+                    b.HasOne("Gym_App.Domain.Entities.Session", null)
+                        .WithMany()
+                        .HasForeignKey("SessionsSessionID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasOne("Gym_App.Domain.Entities.Users.Trainee", "Trainee")
-                        .WithMany("CoachTraineeSessions")
-                        .HasForeignKey("TraineeUserID");
-
-                    b.Navigation("Coach");
-
-                    b.Navigation("Trainee");
-                });
-
-            modelBuilder.Entity("Gym_App.Domain.Entities.Sessions.DoctorTraineeSession", b =>
-                {
-                    b.HasOne("Gym_App.Domain.Entities.Users.Doctor", "Doctor")
-                        .WithMany("DoctorTraineeSessions")
-                        .HasForeignKey("DoctorUserID");
-
-                    b.HasOne("Gym_App.Domain.Entities.Users.Trainee", "Trainee")
-                        .WithMany("DoctorTraineeSessions")
-                        .HasForeignKey("TraineeUserID");
-
-                    b.Navigation("Doctor");
-
-                    b.Navigation("Trainee");
+                    b.HasOne("Gym_App.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UsersUserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Schedule", b =>
@@ -775,12 +712,12 @@ namespace Gym_App.Migrations
                     b.Navigation("Workouts");
                 });
 
-            modelBuilder.Entity("Gym_App.Domain.Entities.Sessions.Session", b =>
+            modelBuilder.Entity("Gym_App.Domain.Entities.Session", b =>
                 {
                     b.Navigation("Messages");
                 });
 
-            modelBuilder.Entity("Gym_App.Domain.Entities.Users.User", b =>
+            modelBuilder.Entity("Gym_App.Domain.Entities.User", b =>
                 {
                     b.Navigation("Feedbacks");
 
@@ -799,21 +736,9 @@ namespace Gym_App.Migrations
                     b.Navigation("Workouts");
                 });
 
-            modelBuilder.Entity("Gym_App.Domain.Entities.Users.Coach", b =>
+            modelBuilder.Entity("Gym_App.Domain.Entities.Workout", b =>
                 {
-                    b.Navigation("CoachTraineeSessions");
-                });
-
-            modelBuilder.Entity("Gym_App.Domain.Entities.Users.Doctor", b =>
-                {
-                    b.Navigation("DoctorTraineeSessions");
-                });
-
-            modelBuilder.Entity("Gym_App.Domain.Entities.Users.Trainee", b =>
-                {
-                    b.Navigation("CoachTraineeSessions");
-
-                    b.Navigation("DoctorTraineeSessions");
+                    b.Navigation("Feedback");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,5 +1,4 @@
-﻿using Gym_App.Domain.Entities.Users;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain.Entities
@@ -19,9 +18,15 @@ namespace Gym_App.Domain.Entities
         [Required]
         [Column(TypeName = "varchar(2000)")]
         public string FeedbackText { get; set; }
+        public int? CaloriesBurned { get; set; }
+        public int? DurationMinutes { get; set; }
+
 
         //Relationships
         [Required]
         public User User { get; set; }
+        [Required]
+        public Workout Workout { get; set; }
+        public Guid WorkoutID { get; set; }
     }
 }

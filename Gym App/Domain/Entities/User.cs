@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Gym_App.Domain.Entities.Users
+namespace Gym_App.Domain.Entities
 {
     public class User
     {
@@ -33,6 +33,15 @@ namespace Gym_App.Domain.Entities.Users
         public string? ProfilePictureUrl { get; set; }
         [Column(TypeName = "varchar(50)")]
         public string? subscriptionPlan { get; set; }
+        public int? HeightCm { get; set; }
+        public int? WeightKg { get; set; }
+        [Column(TypeName = "varchar(100)")]
+        public string? Specialty { get; set; }
+        public int? ExperienceYears { get; set; }
+        [Column(TypeName = "varchar(500)")]
+        public string? Certifications { get; set; }
+        [Column(TypeName = "varchar(8)")]
+        public string UserType { get; set; } = "User"; // Discriminator column
 
         //Relationships
         public ICollection<PastInjuries>? PastInjuries  { get; set; } = new List<PastInjuries>();
@@ -45,6 +54,7 @@ namespace Gym_App.Domain.Entities.Users
         public ICollection<Schedule>? Schedules { get; set; } = new List<Schedule>();
         public ICollection<Workout>? Workouts { get; set; } = new List<Workout>();
         public ICollection<RefreshTokens>? RefreshTokens { get; set; } = new List<RefreshTokens>();
+        public ICollection<Session>? Sessions { get; set; } = new List<Session>();
 
     }
 }

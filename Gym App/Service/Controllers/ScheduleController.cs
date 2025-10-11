@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
+    [ApiController]
+    [Route("[controller]")]
     public class ScheduleController : Controller
     {
         private readonly IScheduleService _scheduleService;

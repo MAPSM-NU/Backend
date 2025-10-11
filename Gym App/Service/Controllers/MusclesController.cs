@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
+    [ApiController]
+    [Route("[controller]")]
     public class MusclesController : Controller
     {
         private readonly IMuscleService _muscleService;

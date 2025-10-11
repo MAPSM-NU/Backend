@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
+    [ApiController]
+    [Route("[controller]")]
     public class WorkoutController : Controller
     {
         private readonly IWorkoutService _workoutService;

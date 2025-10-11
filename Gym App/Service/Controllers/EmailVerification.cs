@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
+    [ApiController]
+    [Route("[controller]")]
     public class EmailVerification : Controller
     {
         private readonly DbBase _db;

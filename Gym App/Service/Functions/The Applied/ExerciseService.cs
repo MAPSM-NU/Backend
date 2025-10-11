@@ -109,48 +109,54 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return await Task.FromResult(1);
         }
-        public Task<Exercise?> GetExerciseByName(string name)
+        public Task<ExerciseDTO?> GetExerciseByName(string name)
         {
             var Exercise = (from e in _db.Exercises.Include(e => e.Muscles)
                             where e.Name == name
-                            select e).FirstOrDefault();
+                            select new ExerciseDTO
+                            {
+                                ExerciseID = e.ExerciseID,
+                                Name = e.Name,
+                                Description = e.Description,
+                                Difficulty = e.Difficulty,
+                                VideoUrl = e.VideoUrl,
+                                Category = e.Category,
+                                Grip = e.Grip,
+                            }).FirstOrDefault();
             if (Exercise == null) return Task.FromResult(Exercise);
             return Task.FromResult(Exercise);
         }
-        public Task<IQueryable<Exercise>>? GetExercisesByMuscle(ExerciseListDTO muscles)//Not Working for some reason
+        public async Task<List<ExerciseDTO>>? GetExercisesByMuscle(ExerciseListDTO muscles)
         {
-            //List<Muscles> Muscles = new List<Muscles>();
-            //IQueryable<Exercise> ExercisesList = _db.Exercises.Include(e => e.Muscles);
-            //foreach (var muscle in muscles.Muscles)
-            //{
-            //    var mus = (from m in _db.Muscles
-            //               where m.Name.ToLower() == muscle.ToLower()
-            //               select m).FirstOrDefault();
-            //    if (mus != null)Muscles.Add(mus);
-            //    else return null;
-            //}
-            //foreach(var muscle in Muscles)
-            //{
-            //    var Exercises = (from E in ExercisesList
-            //                    where E.Muscles.Any(M => M.MusclesID == muscle.MusclesID)
-            //                    select E);
-            //    if (Exercises != null) ExercisesList = Exercises;
-            //    else return null;
-            //}
-            
-            //return Task.FromResult(ExercisesList);
-            IQueryable<Exercise> ExercisesList = _db.Exercises.Include(e => e.Muscles);
-            foreach (var muscle in muscles.Muscles)
-            {
-                ExercisesList = ExercisesList.Where(e => e.Muscles.Any(m => m.Name.ToLower() == muscle.ToLower()));
-            }
-            return Task.FromResult(ExercisesList);
+            var muscleNames = muscles.Muscles;
+            var query = await (from e in _db.Exercises
+                where muscleNames.All(name => e.Muscles.Any(m => m.Name == name))
+                select new ExerciseDTO
+                {
+                    ExerciseID = e.ExerciseID,
+                    Name = e.Name,
+                    Description = e.Description,
+                    Difficulty = e.Difficulty,
+                    VideoUrl = e.VideoUrl,
+                    Category = e.Category,
+                    Grip = e.Grip,
+                }).ToListAsync();
+            return await Task.FromResult(query);
         }
-        public Task<IQueryable<Exercise>> GetAllExercises()
+        public async Task<List<ExerciseDTO>> GetAllExercises()
         {
-            var exercises = from e in _db.Exercises
-                            select e;
-            return Task.FromResult(exercises);
+            var exercises = await (from e in _db.Exercises
+                            select  new ExerciseDTO
+                            {
+                                ExerciseID = e.ExerciseID,
+                                Name = e.Name,
+                                Description = e.Description,
+                                Difficulty = e.Difficulty,
+                                VideoUrl = e.VideoUrl,
+                                Category = e.Category,
+                                Grip = e.Grip,
+                            }).ToListAsync();
+            return await Task.FromResult(exercises);
         }
     }
 }

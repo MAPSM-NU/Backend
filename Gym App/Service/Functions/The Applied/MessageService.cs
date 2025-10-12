@@ -60,7 +60,7 @@ namespace Gym_App.Service.Functions.The_Applied
         }
         public async Task<List<MessageDTO>> GetSessionMessages(Guid sessionID)
         {
-            var messages = await (from m in _db.Messages.Include(m => m.Session)
+            var messages = await (from m in _db.Messages
                            where m.Session.SessionID == sessionID
                            select new MessageDTO
                            {
@@ -75,8 +75,8 @@ namespace Gym_App.Service.Functions.The_Applied
         }
         public async Task<List<MessageDTO>> GetMessages()
         {
-            var messages = await (from m in _db.Messages.Include(m => m.Sender).Include(m => m.Session)
-                           select new MessageDTO
+            var messages = await (from m in _db.Messages
+                                  select new MessageDTO
                            {
                                SenderID = m.Sender.UserID,
                                SessionID = m.Session.SessionID,

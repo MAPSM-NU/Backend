@@ -17,7 +17,7 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> CreateNotification([FromBody] NotificationDTO notification)
         {
             var result = await _notificationService.CreateNotification(notification);
-            if (result == 0) return BadRequest(new { message = "Notification could not be created." });
+            if (result == 0) return BadRequest(new { message = "Given user was not found." });
             return Ok(new { message = "Notification created successfully." });
         }
         [HttpDelete("Delete a Notification")]

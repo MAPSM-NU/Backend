@@ -8,7 +8,7 @@ namespace Gym_App.Service.Functions.Interfaces
         public Task<int> AddMessage(MessageDTO sessionMessages);
         public Task<int> DeleteMessages(MessageDTO sessionMessages);
         public Task<int> UpdateMessage(MessageDTO message);
-        public Task<IQueryable<Message>> GetSessionMessages(Guid sessionID);
-        public Task<IQueryable<MessageDTO>> GetMessages();
+        public Task<List<MessageDTO>> GetSessionMessages(Guid sessionID);
+        public Task<List<MessageDTO>> GetMessages();
     }
 }

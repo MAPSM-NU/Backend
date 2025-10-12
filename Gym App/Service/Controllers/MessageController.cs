@@ -16,14 +16,15 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> AddMessage([FromBody] MessageDTO message)
         {
             var result = await _messageService.AddMessage(message);
-            if (result == 0) return BadRequest(new { message = "Failed to add message" });
-            return Ok(new { message = "Message Added Successfully" });
+            if (result == 2) return Ok(new { Message = "Message succesfully created" });
+            if (result == 1) return BadRequest(new { Message = "Session not found" });
+            else return BadRequest(new {Message = "User not found"});
         }
         [HttpDelete("DeleteMessage")]
         public async Task<IActionResult> DeleteMessage([FromBody] MessageDTO message)
         {
             var result = await _messageService.DeleteMessages(message);
-            if (result == 0) return BadRequest(new { message = "Failed to delete message" });
+            if (result == 0) return BadRequest(new { message = "Couldn't find the message" });
             return Ok(new { message = "Message Deleted Successfully" });
         }
         [HttpPut("UpdateMessage")]

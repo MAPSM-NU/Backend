@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
+    [Route("[controller]")]
     public class ExerciseController : Controller
     {
         private readonly IExerciseService _exerciseService;
@@ -13,7 +14,7 @@ namespace Gym_App.Service.Controllers
         }
 
         [HttpPost]
-        [Route("/Add Exercise")]
+        [Route("Add Exercise")]
         public async Task<IActionResult> AddExercise([FromBody] ExerciseDTO exercise)
         {
             var result = await _exerciseService.CreateExercise(exercise);
@@ -25,7 +26,7 @@ namespace Gym_App.Service.Controllers
         }
 
         [HttpDelete]
-        [Route("/Delete Exercise")]
+        [Route("Delete Exercise")]
         public async Task<IActionResult> DeleteExercise([FromBody] Guid exerciseId)
         {
             var result = await _exerciseService.DeleteExercise(exerciseId);
@@ -35,7 +36,7 @@ namespace Gym_App.Service.Controllers
         }
 
         [HttpPost]
-        [Route("/Modify Exercise")]
+        [Route("Modify Exercise")]
         public async Task<IActionResult> ModifyExercise([FromBody] ExerciseDTO exercise)
         {
             var result = await _exerciseService.UpdateExercise(exercise);
@@ -45,7 +46,7 @@ namespace Gym_App.Service.Controllers
         }
 
         [HttpPost]
-        [Route("/Add Muscles to Exercise")]
+        [Route("Add Muscles to Exercise")]
         public async Task<IActionResult> AddMusclesToExercise([FromBody] ExerciseMusclesDTO Muscles)
         {
             var result = await _exerciseService.AddMusclesToExercise(Muscles);
@@ -58,7 +59,7 @@ namespace Gym_App.Service.Controllers
         }
 
         [HttpDelete]
-        [Route("/Remove Muscles from Exercise")]
+        [Route("Remove Muscles from Exercise")]
         public async Task<IActionResult> RemoveMusclesFromExercise([FromBody] ExerciseMusclesDTO Muscles)//fe 8alta hena
         {
             var result = await _exerciseService.RemoveMusclesFromExercise(Muscles);
@@ -86,7 +87,7 @@ namespace Gym_App.Service.Controllers
             return Ok(result);
         }
         [HttpGet]
-        [Route("/Get All Exercises")]
+        [Route("Get All Exercises")]
         public async Task<IActionResult> GetAllExercises()
         {
             var result = await _exerciseService.GetAllExercises();

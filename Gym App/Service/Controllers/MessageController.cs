@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
-    [ApiController]
     [Route("[controller]")]
     public class MessageController : Controller
     {

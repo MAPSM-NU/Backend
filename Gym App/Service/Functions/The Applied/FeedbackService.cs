@@ -13,16 +13,16 @@ namespace Gym_App.Service.Functions.The_Applied
         {
             _db = db;
         }
-        public async Task<int> CreateFeedback(FeedbackDTO feedbackDTO)
+        public async Task<int> CreateFeedback(FeedbackDTO feedbackDTO)//0 = Null DTO, 1 = User or Workout not found, 2 = Success
         {
             if (feedbackDTO == null) return await Task.FromResult(0);
-            var user = (from u in _db.Users
+            var user = await (from u in _db.Users
                        where u.UserID == feedbackDTO.UserID
-                       select u).FirstOrDefault();
-            var workout = (from w in _db.Workouts
+                       select u).FirstOrDefaultAsync();
+            var workout = await (from w in _db.Workouts
                            where w.WorkoutID == feedbackDTO.WorkoutID
-                           select w).FirstOrDefault(); ;
-            if (user == null || workout == null) return await Task.FromResult(0);
+                           select w).FirstOrDefaultAsync(); ;
+            if (user == null || workout == null) return await Task.FromResult(1);
             var feedback = new Feedback
             {
                 FeedbackID = Guid.NewGuid(),
@@ -35,50 +35,61 @@ namespace Gym_App.Service.Functions.The_Applied
                 User = user,
                 Workout = workout
             };
-            _db.Feedbacks.Add(feedback);
+            await _db.Feedbacks.AddAsync(feedback);
             await  _db.SaveChangesAsync();
-            return await Task.FromResult(1);
+            return await Task.FromResult(2);
         }
         public async Task<int> UpdateFeedback(FeedbackDTO feedbackDTO)//We really need to set a way to manage updates or modifications on the data
-        {
+        {                                                             //0 = Null DTO, 1 = Feedback not found, 2 = Success
             if (feedbackDTO == null) return await Task.FromResult(0);
-            var feedback = _db.Feedbacks.FirstOrDefault(f => f.FeedbackID == feedbackDTO.FeedbackID);
-            if (feedback == null) return await Task.FromResult(0);
-            var user = _db.Users.Find(feedbackDTO.UserID);
-            var workout = _db.Workouts.Find(feedbackDTO.WorkoutID);
-            if (user == null || workout == null) return await Task.FromResult(0);
+            var feedback = await _db.Feedbacks.FirstOrDefaultAsync(f => f.FeedbackID == feedbackDTO.FeedbackID);
+            if (feedback == null) return await Task.FromResult(1);
+            //This part is for if we want to change the user and workout asisgned to the feedback which is think wouldn't happen much if never so I am gonna leave it like this
+            //var user = await _db.Users.FirstOrDefaultAsync(u=>u.UserID == feedbackDTO.UserID);
+            //var workout = await _db.Workouts.FirstOrDefaultAsync(w=>w.WorkoutID==feedbackDTO.WorkoutID);
+            //if (user == null || workout == null) return await Task.FromResult(1);
             //feedback.Date = feedbackDTO.Date; //why would you update the date? left for later
+            //feedback.User = user;
+            //feedback.Workout = workout;
             if (!string.IsNullOrWhiteSpace(feedback.Title)) feedback.Title = feedbackDTO.Title;
             if (!string.IsNullOrWhiteSpace(feedback.Type)) feedback.Type = feedbackDTO.Type;
             if (!string.IsNullOrWhiteSpace(feedback.FeedbackText)) feedback.FeedbackText = feedbackDTO.FeedbackText;
             if (feedbackDTO.CaloriesBurned > 0) feedback.CaloriesBurned = feedbackDTO.CaloriesBurned;
             if (feedbackDTO.DurationMinutes > 0) feedback.DurationMinutes = feedbackDTO.DurationMinutes;
-            feedback.User = user;
-            feedback.Workout = workout;
             _db.Feedbacks.Update(feedback);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(1);
+            return await Task.FromResult(2);
         }
         public async Task<int> DeleteFeedback(Guid feedbackId)
         {
-            var feedback = _db.Feedbacks.FirstOrDefault(f => f.FeedbackID == feedbackId);
+            var feedback = await _db.Feedbacks.FirstOrDefaultAsync(f => f.FeedbackID == feedbackId);
             if (feedback == null) return await Task.FromResult(0);
             _db.Feedbacks.Remove(feedback);
             await _db.SaveChangesAsync();
             return await Task.FromResult(1);
         }
-        public async Task<Feedback>? GetFeedbackByID(Guid feedbackId) //Might change it since it returns the DTO not the actual enitity(For Testing purposes)
+        public async Task<FeedbackDTO>? GetFeedbackByID(Guid feedbackID) //Might change it since it returns the DTO not the actual enitity(For Testing purposes)
         {
-            var feedback = _db.Feedbacks.FirstOrDefault(f => f.FeedbackID == feedbackId);
+            var feedback = await (from f in _db.Feedbacks
+                                  where f.FeedbackID == feedbackID
+                                  select new FeedbackDTO
+                                  {
+                                      FeedbackID = f.FeedbackID,
+                                      Date = f.Date,
+                                      CaloriesBurned = f.CaloriesBurned ?? 0,
+                                      DurationMinutes = f.CaloriesBurned?? 0,
+                                      Title = f.Title,
+                                      UserID = f.User.UserID
+                                  }).FirstOrDefaultAsync();
             if (feedback == null) return await Task.FromResult(feedback);
             return await Task.FromResult(feedback);
         }
-        public async Task<IEnumerable<FeedbackDTO>> GetAllFeedbacks() //Might change it since it returns the DTO not the actual enitity(For Testing purposes)
+        public async Task<List<FeedbackDTO>> GetAllFeedbacks() //Might change it since it returns the DTO not the actual enitity(For Testing purposes)
         {                                                             //Dont FORGET to include entities bru
-            var feedbacks = from f in _db.Feedbacks.Include(f => f.User).Include(f => f.Workout)
-                            select f;
+            var feedbacks = (from f in _db.Feedbacks.Include(f => f.User).Include(f => f.Workout)
+                            select f);
             if (feedbacks == null || feedbacks.IsNullOrEmpty()) return await Task.FromResult(new List<FeedbackDTO>());
-            var feedbackDTOs = feedbacks.Select(f => new FeedbackDTO //DTO returning can work. I know this is the same as returning the entity but just checking how things work
+            var feedbackDTOs = await feedbacks.Select(f => new FeedbackDTO //DTO returning can work. I know this is the same as returning the entity but just checking how things work
             {
                 FeedbackID = f.FeedbackID,
                 Date = f.Date,
@@ -89,7 +100,7 @@ namespace Gym_App.Service.Functions.The_Applied
                 DurationMinutes = f.DurationMinutes ?? 0,
                 UserID = f.User.UserID,
                 WorkoutID = f.Workout.WorkoutID
-            }).ToList();
+            }).ToListAsync();
             return await Task.FromResult(feedbackDTOs);
         }
     }

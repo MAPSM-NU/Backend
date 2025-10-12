@@ -24,21 +24,21 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> DeleteNotification([FromBody]Guid NotificationID)
         {
             var result = await _notificationService.DeleteNotification(NotificationID);
-            if (result == 0) return NotFound(new { message = "Notification not found." });
+            if (result == 0) return BadRequest(new { message = "Notification not found." });
             return Ok(new { message = "Notification deleted successfully." });
         }
         [HttpDelete("Delete All Users Notifications")]//Note to self. Dont put unnecassary space in the route. Will result in error
         public async Task<IActionResult> DeleteAllNotifications([FromBody] Guid UserID)
         {
             var result = await _notificationService.DeleteAllNotifications(UserID);
-            if (result == 0) return NotFound(new { message = "User not found." });
+            if (result == 0) return BadRequest(new { message = "User not found." });
             return Ok(new{message = "All notifications deleted successfully."});
         }
         [HttpPost("Get a Users Notifications")]
         public async Task<IActionResult> GetNotifications([FromBody]Guid UserID)
         {
             var notifications = await _notificationService.GetNotifications(UserID);
-            if (notifications == null) return NotFound(new { message = "User not found or no notifications." });
+            if (notifications == null) return BadRequest(new { message = "User not found or no notifications." });
             return Ok(notifications);
         }
         [HttpGet("Get All Notifications")]

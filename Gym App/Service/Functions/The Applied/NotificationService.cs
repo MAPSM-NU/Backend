@@ -22,7 +22,7 @@ namespace Gym_App.Service.Functions.The_Applied
             var UserID = await (from u in _db.Users
                          where u.UserID == notification.UserID
                          select u).FirstOrDefaultAsync();
-            if (UserID == null) return await Task.FromResult(0);
+            if (UserID == null) return 0;
             Notification newNotification = new Notification
             {
                 NotificationID = Guid.NewGuid(),
@@ -33,7 +33,7 @@ namespace Gym_App.Service.Functions.The_Applied
             UserID.Notifications?.Add(newNotification);
             _db.Notifications.Add(newNotification);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(1);
+            return 1;
 
         }
         public async Task<int> DeleteNotification(Guid NotificationID)
@@ -41,10 +41,10 @@ namespace Gym_App.Service.Functions.The_Applied
             var Notification =  await (from n in _db.Notifications
                                 where n.NotificationID == NotificationID
                                 select n).FirstOrDefaultAsync();
-            if (Notification == null) return await Task.FromResult(0);
+            if (Notification == null) return 0;
             _db.Notifications.Remove(Notification);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(1);
+            return 1;
         }
         public async Task<int> DeleteAllNotifications(Guid UserID)//This leaves the notification with no user!
         {
@@ -52,30 +52,29 @@ namespace Gym_App.Service.Functions.The_Applied
                 .Include(u => u.Notifications)//Include is ,sadly😔, important here
                 .FirstOrDefaultAsync(u => u.UserID == UserID);
 
-            if (user == null) return await Task.FromResult(0);
+            if (user == null) return 0;
 
             user.Notifications?.Clear();
             _db.Users.Update(user);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(1);
+            return 1;
         }
 
         public async Task<List<NotificationDTO>> GetNotifications(Guid UserID)
         {
-             var notifications = await (from n in _db.Notifications
-                                        from u in n.User
-                                        where u.UserID == UserID
-                                        select new NotificationDTO
-                                        {
-                                            NotificationID = n.NotificationID,
-                                            UserID = u.UserID,
-                                            Date = n.Date,
-                                            Title = n.Title,
-                                            Content = n.Content
-                                        }
-                                    ).ToListAsync();
+            var notifications = await (from n in _db.Notifications
+                                       where n.User.UserID == UserID
+                                       select new NotificationDTO
+                                       {
+                                           NotificationID = n.NotificationID,
+                                           UserID = UserID,
+                                           Date = n.Date,
+                                           Title = n.Title,
+                                           Content = n.Content
+                                       }
+                                   ).ToListAsync();
             if (notifications == null) return null;
-            return await Task.FromResult(notifications);
+            return notifications;
         }
         public async Task<List<NotificationDTO>> GetAllNotifications()
         {
@@ -83,11 +82,12 @@ namespace Gym_App.Service.Functions.The_Applied
                                 select new NotificationDTO
                                 {
                                     NotificationID = n.NotificationID,
+                                    UserID = n.User.UserID,
                                     Date = n.Date,
                                     Title = n.Title,
                                     Content = n.Content
                                 }).ToListAsync();
-            return await Task.FromResult(Notifications);
+            return Notifications;
         }
         public Task<int> MarkAllAsRead(Guid UserID)
         {

@@ -22,11 +22,11 @@ namespace Gym_App.Service.Functions.The_Applied
                                                               //5 == Succesful signup
         {
             //Signing up the user
-            if (u.Name == null || u.Email == null || u.Password == null) return await Task.FromResult(new ResponseToken { Status = 0 });
-            if (!isNameValid(u.Name)) return await Task.FromResult(new ResponseToken { Status = 1 });
-            if (EmailExists(u.Email)) return await Task.FromResult(new ResponseToken { Status = 2 });
-            if (!IsEmailValid(u.Email)) return await Task.FromResult(new ResponseToken { Status = 3 });
-            if (!IsPasswordValid(u.Password).Result) return await Task.FromResult(new ResponseToken { Status = 4 });
+            if (u.Name == null || u.Email == null || u.Password == null) return new ResponseToken { Status = 0 };
+            if (!(await isNameValid(u.Name))) return new ResponseToken { Status = 1 };
+            if ((await EmailExists(u.Email))) return new ResponseToken { Status = 2 };
+            if (!IsEmailValid(u.Email)) return new ResponseToken { Status = 3 };
+            if (!IsPasswordValid(u.Password).Result) return new ResponseToken { Status = 4 };
             if (u.UserType == null) u.UserType = "Trainee";
 
             User user;
@@ -68,15 +68,15 @@ namespace Gym_App.Service.Functions.The_Applied
             }
             else
             {
-                return await Task.FromResult(new ResponseToken { Status = 7 });
+                return new ResponseToken { Status = 7 };
             }
 
             //Making the Tokens and saving them to the database
             u.UserID = user.UserID;
             var Token = await _tokenHandler.CreateAccessToken(u);
             var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
-            _db.Users.Add(user);
-            _db.RefreshTokens.Add(new RefreshTokens
+            await _db.Users.AddAsync(user);
+            await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
                 UserID = user.UserID,
                 RefreshToken = RefreshToken,
@@ -93,12 +93,12 @@ namespace Gym_App.Service.Functions.The_Applied
 
         public async Task<ResponseToken> LoginUser(UserDTO u) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
         {   //Checking if the user exists
-            var _user = (from user in _db.Users
+            var _user = await(from user in _db.Users
                          where user.Email.ToLower() == u.Email.ToLower()
-                         select user).FirstOrDefault();
-            if (_user is null) return await Task.FromResult(new ResponseToken { Status = 0 });
+                         select user).FirstOrDefaultAsync();
+            if (_user is null) return new ResponseToken { Status = 0 };
             var result = new PasswordHasher<User>().VerifyHashedPassword(_user, _user.Password, u.Password);
-            if (result == PasswordVerificationResult.Failed) return await Task.FromResult(new ResponseToken { Status = 1 });
+            if (result == PasswordVerificationResult.Failed) return new ResponseToken { Status = 1 };
             else //Successful login and returning new Tokens
             {
                 var RefreshToken = await _tokenHandler.RefreshingToken(_user.UserID);
@@ -111,13 +111,13 @@ namespace Gym_App.Service.Functions.The_Applied
         }
         public async Task<int> UpdateUser(UserUpdateDTO User)
         {
-            var user = (from u in _db.Users
+            var user = await(from u in _db.Users
                         where u.UserID == User.UserID
-                        select u).FirstOrDefault();
-            if (user is null) return await Task.FromResult(0);
+                        select u).FirstOrDefaultAsync();
+            if (user is null) return 0;
             if (User.Name != null)
             {
-                if (!isNameValid(User.Name)) return await Task.FromResult(2);
+                if (!(await isNameValid(User.Name))) return 1;
                 user.Name = User.Name;
             }
             if (User.Bio != null) user.Bio = User.Bio;
@@ -131,56 +131,84 @@ namespace Gym_App.Service.Functions.The_Applied
             if (User.WeightKg != null) user.WeightKg = User.WeightKg;
             _db.Users.Update(user);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(1);
+            return 2;
         }
         public async Task<int> ChangeUserType(UserTypeDTO User)
         {
-            var user = (from u in _db.Users
+            if(User.UserType == null) return 0;
+            string keywords = "coach, c, doctor, d, trainee, t";
+            if (!keywords.Contains(User.UserType.ToLower()))return 1;
+            var user = await(from u in _db.Users
                         where u.UserID == User.UserID
-                        select u).FirstOrDefault();
-            if (user is null) return await Task.FromResult(0);
-            if ((user.UserType.ToLower() == "coach" || user.UserType.ToLower() == "c" || user.UserType.ToLower() == "doctor" || user.UserType.ToLower() == "d") && User.UserType.ToLower() == "trainee")
-            {
-                user.UserType = "Trainee";
-                user.Specialty = null;
-                user.ExperienceYears = null;
-                user.Certifications = null;
-            }
+                        select u).FirstOrDefaultAsync();
+            if (user is null) return 2;
+            var usertype = user.UserType.ToLower();
+            var incomingUsertype = User.UserType.ToLower();
+            if(incomingUsertype == "t")incomingUsertype = "trainee";
+            if(incomingUsertype == "c")incomingUsertype = "coach";
+            if(incomingUsertype == "d")incomingUsertype = "doctor";
+            if (usertype == incomingUsertype) return 3;//same user type
             else
             {
-                var usertype = ((User.UserType.ToLower() == "coach"|| User.UserType.ToLower() == "c") ? "Coach" : "Doctor");//needs change
-                user.UserType = usertype ;
-                user.Specialty = User.Specialty;
-                user.ExperienceYears = User.ExperienceYears;
-                user.Certifications = User.Certifications;
-                
+                user.UserType = incomingUsertype;
+                if (incomingUsertype == "coach" || incomingUsertype == "doctor")// could maybe make the trainne doctor and coach be t,d,c to make the comparisons less computational
+                {
+                    user.Specialty = User.Specialty;
+                    user.ExperienceYears = User.ExperienceYears;
+                    user.Certifications = User.Certifications;
+                }
+                else
+                {
+                    user.Specialty = null;
+                    user.ExperienceYears = null;
+                    user.Certifications = null;
+                }
             }
             _db.Users.Update(user);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(1);
+            return 4;
         }
-        public async Task<IQueryable<User>> GetAllUsers()
+        public async Task<UserDTO?> GetUserByID(Guid userID)
         {
-            var users = from u in _db.Users.Include(us => us.Workouts)
-                                           .Include(us => us.Schedules)
-                        select u;
+            var user = await(from u in _db.Users
+                        where u.UserID == userID
+                        select new UserDTO
+                        {
+                            UserID = userID,
+                            Name = u.Name,
+                            Email = u.Email,
+                            UserType = u.UserType
+                        }).FirstOrDefaultAsync();
+            if (user is null) return null;
+            return user;
+        }
+        public async Task<List<UserDTO>?> GetAllUsers()
+        {
+            var users = await (from u in _db.Users
+                               select new UserDTO
+                               {
+                                   UserID = u.UserID,
+                                   Name = u.Name,
+                                   Email = u.Email,
+                                   UserType = u.UserType
+                               }).ToListAsync();
             return await Task.FromResult(users);
         }
         // Helper Functions
-        public bool isNameValid(string name)//checks if the name is already taken
+        public async Task<bool> isNameValid(string name)//checks if the name is already taken
         {
-            var n = (from u in _db.Users
+            var n = await(from u in _db.Users
                      where u.Name.ToLower() == name.ToLower()
-                     select u).FirstOrDefault();
+                     select u).FirstOrDefaultAsync();
 
             if (n is null) return true;
             else return false;
         }
 
 
-        public bool EmailExists(string email)
+        public async Task<bool> EmailExists(string email)
         {
-            return _db.Users.Any(u => u.Email.ToLower() == email.ToLower());
+            return await _db.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower());
         }
         public bool IsEmailValid(string email)
         {
@@ -210,14 +238,14 @@ namespace Gym_App.Service.Functions.The_Applied
 
         public async Task<bool> DeleteUser(Guid userID)
         {
-            var u = (from usr in _db.Users
+            var u = await(from usr in _db.Users
                      where usr.UserID == userID
-                     select usr).FirstOrDefault();
-            if (u is null) return await Task.FromResult(false);
+                     select usr).FirstOrDefaultAsync();
+            if (u is null) return false;
             _db.Users.Attach(u);
             _db.Users.Remove(u);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(true);
+            return true;
         }
     }
 }

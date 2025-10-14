@@ -11,7 +11,9 @@ namespace Gym_App.Service.Functions.Interfaces
         public Task<int> AddExercisesToWorkout(WorkoutExerciseDTO workoutExercise);
         public Task<int> SetExercisesOfWorkout(WorkoutExerciseDTO workoutExercise);
         public Task<int> DeleteExercisesFromWorkout(WorkoutExerciseDTO workoutExercise);
-        public Task<Workout> GetWorkoutByName(string name);
-        public Task<IQueryable<Workout>> GetAllWorkouts();
+        public Task<WorkoutDTO?> GetWorkoutByName(string name);
+        public Task<WorkoutDTO?> GetWorkoutByID(Guid ID);
+        public Task<List<ExerciseDTO>?> GetExercisesOfWorkout(Guid WorkoutID);
+        public Task<List<WorkoutDTO>?> GetAllWorkouts();
     }
 }

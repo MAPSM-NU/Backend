@@ -49,47 +49,43 @@ namespace Gym_App.Service.Functions.The_Applied
         }
 
         public async Task<int> AddMessages(SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == no new messages added || 3 == success
-        {                                                                     //Probably could be optimized more
+        {
             if (sessionMessages == null) return 0;
-            bool AddedAny = false;
-            var Session = await(from s in _db.Sessions.Include(s => s.Messages)
-                          where s.SessionID == sessionMessages.SessionID
-                          select s).FirstOrDefaultAsync();
+            var Session = await (from s in _db.Sessions.Include(s => s.Messages)
+                                 where s.SessionID == sessionMessages.SessionID
+                                 select s).FirstOrDefaultAsync();
             if (Session == null) return 1;
-            foreach (var messageID in sessionMessages.Messages ?? [])
+            var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
+            var messagesIDsToAdd = sessionMessages.Messages?.Where(id => !existingMessagesIDs.Contains(id)).ToList();
+            if (messagesIDsToAdd == null || messagesIDsToAdd.Count == 0) return 2;
+            var messagesToAdd = await(from m in _db.Messages
+                                 where messagesIDsToAdd.Contains(m.MessageID)
+                                 select m).ToListAsync();
+            foreach (var messageID in messagesToAdd)
             {
-                var message = await (from m in _db.Messages
-                                     where m.MessageID == messageID
-                                     select m).FirstOrDefaultAsync();
-                if (message != null && !Session.Messages.Any(m => m.MessageID == messageID))
-                {
-                    Session.Messages.Add(message);
-                    AddedAny = true;
-                }
+                Session.Messages.Add(messageID);
             }
-            if (!AddedAny) return 2;
             _db.Sessions.Update(Session);
             await _db.SaveChangesAsync();
             return 3;
         }
         public async Task<int> DeleteMessages(SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == no messages deleted || 3 == success
-        {                                                                        //Probably could be optimized more
-            if (sessionMessages == null) return 0;
-            bool DeletedAny = false;
+        { 
+            if(sessionMessages == null) return 0;
             var Session = await (from s in _db.Sessions.Include(s => s.Messages)
                                  where s.SessionID == sessionMessages.SessionID
                                  select s).FirstOrDefaultAsync();
             if (Session == null) return 1;
-            foreach (var messageID in sessionMessages.Messages ?? [])
+            var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
+            var messagesIDsToRemove = sessionMessages.Messages?.Where(id => existingMessagesIDs.Contains(id)).ToList();
+            if (messagesIDsToRemove == null || messagesIDsToRemove.Count == 0) return 2;
+            var messagesToRemove = await (from m in _db.Messages
+                                          where messagesIDsToRemove.Contains(m.MessageID)
+                                          select m).ToListAsync();
+            foreach (var message in messagesToRemove)
             {
-                var message = _db.Messages.Find(messageID);
-                if (message != null && Session.Messages.Any(m => m.MessageID == messageID))
-                {
-                    Session.Messages.Remove(message);
-                    DeletedAny = true;
-                }
+                Session.Messages.Remove(message);
             }
-            if (!DeletedAny) return 2;
             _db.Sessions.Update(Session);
             await _db.SaveChangesAsync();
             return 3;

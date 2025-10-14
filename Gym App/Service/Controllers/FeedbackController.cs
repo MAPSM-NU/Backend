@@ -35,8 +35,8 @@ namespace Gym_App.Service.Controllers
             if (result == 0) return BadRequest("Couldn't find the Feedback");
             return Ok("Feedback deleted successfully.");
         }
-        [HttpPost("GetFeedbackByID")]
-        public async Task<IActionResult> GetFeedbackByID([FromBody]Guid feedbackId)
+        [HttpGet("GetFeedbackByID")]
+        public async Task<IActionResult> GetFeedbackByID([FromQuery]Guid feedbackId)
         {
             var feedback = await _feedbackService.GetFeedbackByID(feedbackId);
             if (feedback == null) return NotFound("Feedback not found.");

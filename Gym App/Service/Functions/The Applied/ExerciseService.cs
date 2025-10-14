@@ -1,4 +1,5 @@
-﻿using Gym_App.Domain.DTOs;
+﻿
+using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -13,14 +14,14 @@ namespace Gym_App.Service.Functions.The_Applied
         {
             _db = db;
         }
-        public async Task<int> CreateExercise(ExerciseDTO exercise)//0 = null exercise or name, 1 = exercise already exists, 2 = success
+        public async Task<int> CreateExercise(ExerciseDTO exercise)//0 == null exercise or name || 1 == exercise already exists || 2 = success
         {
-            if (exercise == null || string.IsNullOrWhiteSpace(exercise.Name)) return await Task.FromResult(0);
+            if (exercise == null || string.IsNullOrWhiteSpace(exercise.Name)) return 0;
 
             var isExerciseExists = await (from E in _db.Exercises
                                    where E.Name.ToLower() == exercise.Name.ToLower()
                                    select E).FirstOrDefaultAsync();
-            if(isExerciseExists != null) return await Task.FromResult(1);
+            if(isExerciseExists != null) return 1;
             var newExercise = new Exercise
             {
                 ExerciseID = Guid.NewGuid(),
@@ -42,10 +43,10 @@ namespace Gym_App.Service.Functions.The_Applied
             var isExerciseExists = await (from E in _db.Exercises
                                     where E.ExerciseID == ExerciseID
                                     select E).FirstOrDefaultAsync();
-            if (isExerciseExists == null) return await Task.FromResult(0);
+            if (isExerciseExists == null) return 0;
             _db.Exercises.Remove(isExerciseExists);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(1);
+            return 1;
         }
 
         public async Task<int> UpdateExercise(ExerciseDTO exercise)
@@ -53,7 +54,7 @@ namespace Gym_App.Service.Functions.The_Applied
             var toBeUpdated = await (from E in _db.Exercises
                                where E.ExerciseID == exercise.ExerciseID
                                select E).FirstOrDefaultAsync();
-            if (toBeUpdated == null) return await Task.FromResult(0);
+            if (toBeUpdated == null) return 0;
             if(!string.IsNullOrEmpty(exercise.Category)) toBeUpdated.Category = exercise.Category;
             if(!string.IsNullOrEmpty(exercise.Difficulty)) toBeUpdated.Difficulty = exercise.Difficulty;
             if(!string.IsNullOrEmpty(exercise.Name)) toBeUpdated.Name = exercise.Name;
@@ -61,55 +62,55 @@ namespace Gym_App.Service.Functions.The_Applied
             if (!string.IsNullOrEmpty(exercise.VideoUrl)) toBeUpdated.VideoUrl = exercise.VideoUrl;
             _db.Exercises.Update(toBeUpdated);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(1);
+            return 1;
         }
-        public async Task<int> AddMusclesToExercise(ExerciseMusclesDTO exerciseMuscles)//0 = exercise not found, 1 = no muscles added, 2 = muscles added
+        public async Task<int> AddMusclesToExercise(ExerciseMusclesDTO exerciseMuscles)//0 == Faulty DTO || 1 == exercise not found || 2 == no new muscles added || 3 == muscles to add not found || 4 == success
         {
-            bool AnyAdded = false;
-            var exercise = await (from e in _db.Exercises.Include(m => m.Muscles)//really important. If you dont add the include the db will give you the Exercise without its muscles
-                            where e.ExerciseID == exerciseMuscles.ExerciseID               //so when you try to access the muscles, the list will always be empty.
+            if(exerciseMuscles == null || exerciseMuscles.Muscles == null || exerciseMuscles.Muscles.Count == 0) return 0;
+            var exercise = await(from e in _db.Exercises.Include(m =>m.Muscles)
+                            where e.ExerciseID == exerciseMuscles.ExerciseID       
                             select e).FirstOrDefaultAsync();
-            if (exercise == null) return await Task.FromResult(0);
-            foreach (var muscleId in exerciseMuscles.Muscles)
+            if (exercise == null) return 1;
+            var existingMuscleIDs = new HashSet<Guid>(exercise.Muscles.Select(m => m.MusclesID));
+            var musclesIDsToAdd = exerciseMuscles.Muscles?.Where(id => !existingMuscleIDs.Contains(id)).ToList();
+            if (musclesIDsToAdd == null || musclesIDsToAdd.Count == 0) return 2;
+            var musclesToAdd = await (from m in _db.Muscles
+                               where musclesIDsToAdd.Contains(m.MusclesID)
+                               select m).ToListAsync();
+            if (musclesToAdd.Count == 0) return 3;
+            foreach (var muscle in musclesToAdd)
             {
-                var muscle = (from m in _db.Muscles
-                              where m.MusclesID == muscleId
-                              select m).FirstOrDefault();
-                if (muscle != null && !exercise.Muscles.Any(m => m.MusclesID == muscleId))
-                {
-                    exercise.Muscles.Add(muscle);
-                    AnyAdded = true;
-                }
+                exercise.Muscles.Add(muscle);
             }
-            if(!AnyAdded) return await Task.FromResult(1);
             _db.Exercises.Update(exercise);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(2);
+            return 4;
         }
-        public async Task<int> RemoveMusclesFromExercise(ExerciseMusclesDTO exerciseMuscles)//0 = exercise not found, 1 = no muscles removed, 2 = muscles removed
+        public async Task<int> RemoveMusclesFromExercise(ExerciseMusclesDTO exerciseMuscles)//0 == Faulty DTO || 1 == exercise not found || 2 == no muscles to remove || 3 == muscles to remove not found || 4 == success
         {
-            bool DeletedAny = false;
-            var exercise = await (from e in _db.Exercises.Include(m =>m.Muscles)//really important. If you dont add the include the db will give you the Exercise without its muscles
-                            where e.ExerciseID == exerciseMuscles.ExerciseID             //so when you try to access the muscles, the list will always be empty.       
+            if(exerciseMuscles == null || exerciseMuscles.Muscles == null || exerciseMuscles.Muscles.Count == 0) return 0;
+            var exercise = await(from e in _db.Exercises.Include(m =>m.Muscles)
+                            where e.ExerciseID == exerciseMuscles.ExerciseID       
                             select e).FirstOrDefaultAsync();
-            if (exercise == null) return await Task.FromResult(0);
-            foreach (var muscleId in exerciseMuscles.Muscles)
+            if (exercise == null) return 1;
+            var existingMuscleIDs = new HashSet<Guid>(exercise.Muscles.Select(m => m.MusclesID));
+            var musclesIDsToRemove = exerciseMuscles.Muscles?.Where(id => existingMuscleIDs.Contains(id)).ToList();
+            if (musclesIDsToRemove == null || musclesIDsToRemove.Count == 0) return 2;
+            var musclesToRemove = await (from m in _db.Muscles
+                               where musclesIDsToRemove.Contains(m.MusclesID)
+                               select m).ToListAsync();
+            if (musclesToRemove.Count == 0) return 3;
+            foreach (var muscle in musclesToRemove)
             {
-                var muscle = exercise.Muscles.FirstOrDefault(m => m.MusclesID == muscleId);
-                if (muscle != null)
-                {
-                    exercise.Muscles.Remove(muscle);
-                    DeletedAny = true;
-                }
+                exercise.Muscles.Remove(muscle);
             }
-            if (!DeletedAny) return await Task.FromResult(1);
             _db.Exercises.Update(exercise);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(2);
+            return 4;
         }
         public async Task<ExerciseDTO?> GetExerciseByName(string name)
         {
-            var Exercise = await (from e in _db.Exercises.Include(e => e.Muscles)
+            var Exercise = await (from e in _db.Exercises
                             where e.Name == name
                             select new ExerciseDTO
                             {
@@ -123,6 +124,38 @@ namespace Gym_App.Service.Functions.The_Applied
                             }).FirstOrDefaultAsync();
             if (Exercise == null) return Exercise;
             return Exercise;
+        }
+        public async Task<ExerciseDTO?> GetExerciseByID(Guid id)
+        {
+            var Exercise = await (from e in _db.Exercises
+                            where e.ExerciseID == id
+                            select new ExerciseDTO
+                            {
+                                ExerciseID = e.ExerciseID,
+                                Name = e.Name,
+                                Description = e.Description,
+                                Difficulty = e.Difficulty,
+                                VideoUrl = e.VideoUrl,
+                                Category = e.Category,
+                                Grip = e.Grip,
+                            }).FirstOrDefaultAsync();
+            if (Exercise == null) return Exercise;
+            return Exercise;
+        }
+        public async Task<List<MuscleDTO>?> GetExerciseMuscles(Guid exerciseID)
+        {
+            var exercise = await (from e in _db.Exercises.Include(e=>e.Muscles)
+                                 where e.ExerciseID == exerciseID
+                                 select e).FirstOrDefaultAsync();
+            if (exercise == null) return null;
+            var muscleDTOs = (from m in exercise.Muscles
+                              select new MuscleDTO
+                              {
+                                MusclesID = m.MusclesID,
+                                Name = m.Name,
+                                Description = m.Description
+                              }).ToList();
+            return muscleDTOs;
         }
         public async Task<List<ExerciseDTO>>? GetExercisesByMuscle(ExerciseListDTO muscles)
         {

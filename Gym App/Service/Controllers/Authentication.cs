@@ -23,8 +23,7 @@ namespace Gym_App.Service.Controllers
             _emailSender = emailSender;
             _tokenHandler = tokenHandler;
         }
-        [HttpPost]
-        [Route("SignUp")]
+        [HttpPost("SignUp")]
         public async Task<IActionResult> NewUser([FromBody] UserDTO user)
         {
             var result = await _user.SignUpUser(user);
@@ -36,8 +35,7 @@ namespace Gym_App.Service.Controllers
             else if (result.Status == 0) return BadRequest("Missing Credentials");
             else return BadRequest("Failed to Add User");
         }
-        [HttpPost]
-        [Route("SignIn")]
+        [HttpPost("SignIn")]
         public async Task<IActionResult> LoginUser([FromBody] UserDTO user)
         {
             var result = await _user.LoginUser(user);
@@ -46,16 +44,14 @@ namespace Gym_App.Service.Controllers
             else if (result.Status == 2) return Ok(result);
             else return BadRequest("Failed to Login");
         }
-        [HttpPost]
-        [Route("LoginbyToken")]
+        [HttpPost("LoginbyToken")]
         public async Task<IActionResult> LoginByToken([FromBody] string Refreshtoken)
         {
             var result = await _tokenHandler.ValidateAccessToken(Refreshtoken);
             if (result == null) return BadRequest("Invalid Token");
             else return Ok(result);
         }
-        [HttpGet]
-        [Route("GetTokens")]
+        [HttpGet("GetTokens")]
         public async Task<IActionResult> GetTokens()
         {
             var result = await _tokenHandler.GetAllRefreshTokens();

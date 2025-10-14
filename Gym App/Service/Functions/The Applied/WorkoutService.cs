@@ -123,8 +123,8 @@ namespace Gym_App.Service.Functions.The_Applied
             var exerciseIDsToRemove = workoutExercise.ExercisesID?.Where(id => existingExerciseIDs.Contains(id)).ToList();
             if (exerciseIDsToRemove == null || !exerciseIDsToRemove.Any()) return 2;
             var ExercisesToRemove = await _db.Exercises
-                                    .Where(e => exerciseIDsToRemove.Contains(e.ExerciseID))//I honestly think this is a better way than contains but the fuckward co pilot thinks not.
-                                    .ToListAsync();                                      //If any problem occurs maybe that fuckward is right.
+                                    .Where(e => exerciseIDsToRemove.Contains(e.ExerciseID))
+                                    .ToListAsync();                                      
             foreach (var exercise in ExercisesToRemove)
                 {
                 isWorkoutExist.Exercises.Remove(exercise);

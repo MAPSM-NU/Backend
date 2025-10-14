@@ -53,86 +53,72 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 1;
         }
-        public async Task<int> AddWorkoutsToSchedule(ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == no new workouts added || 3 == success
+        public async Task<int> AddWorkoutsToSchedule(ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == Workouts already in schedule || 3 == wrong IDs || 4 == success
         {
             if(scheduleWorkout == null) return 0;
-            bool AddedAny = false;
-            var schedule = await (from s in _db.Schedules.Include(s => s.Workouts)
+            var schedule = await(from s in _db.Schedules.Include(s => s.Workouts)
                             where s.ScheduleID == scheduleWorkout.ScheduleID
                             select s).FirstOrDefaultAsync();
             if (schedule == null) return 1;
-            foreach (var workoutID in scheduleWorkout.WorkoutsID)
+            var workoutIDsToAdd = new HashSet<Guid>(schedule.Workouts.Select(i=>i.WorkoutID));
+            var workoutIDs = scheduleWorkout.WorkoutsID?.Where(id => !workoutIDsToAdd.Contains(id)).ToList();
+            if (workoutIDs == null || workoutIDs.Count == 0) return 2;
+            var workoutsToAdd = await(from w in _db.Workouts
+                               where workoutIDs.Contains(w.WorkoutID)
+                               select w).ToListAsync();
+            if(workoutsToAdd.Count == 0) return 3;
+            foreach (var workout in workoutsToAdd)
             {
-                var workout = await (from w in _db.Workouts
-                               where w.WorkoutID == workoutID
-                               select w).FirstOrDefaultAsync();
-                if (workout != null && !schedule.Workouts.Contains(workout))
-                {
-                    schedule.Workouts.Add(workout);
-                    AddedAny = true;
-                }
+                schedule.Workouts.Add(workout);
             }
-            var returnVal = 3;
-            if (!AddedAny) returnVal = 2;
             _db.Schedules.Update(schedule);
             await _db.SaveChangesAsync();
-            return returnVal;
+            return 4;
         }
         
-        public async Task<int> SetWorkoutsOfSchedule(ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == no changes made || 3 == only removals made || 4 == success
+        public async Task<int> SetWorkoutsOfSchedule(ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == Wrong IDs || 3 == success
         {
             if(scheduleWorkout == null) return 0;
-            bool AddedAny = false;
-            bool RemovedAny = false;
             var schedule = await (from s in _db.Schedules.Include(s => s.Workouts)
                             where s.ScheduleID == scheduleWorkout.ScheduleID
                             select s).FirstOrDefaultAsync();
             if (schedule == null) return 1;
-            if (schedule.Workouts != null) RemovedAny = true;
-            schedule.Workouts.Clear();
-            foreach (var workoutID in scheduleWorkout.WorkoutsID)
+            schedule.Workouts?.Clear();
+            var workoutsIDs = scheduleWorkout.WorkoutsID.ToList();
+            var workoutsToAdd = await(from w in _db.Workouts
+                               where workoutsIDs.Contains(w.WorkoutID)
+                               select w).ToListAsync();
+            if (workoutsToAdd.Count == 0) return 2;
+            foreach(var workout in workoutsToAdd)
             {
-                var workout = await(from w in _db.Workouts
-                               where w.WorkoutID == workoutID
-                               select w).FirstOrDefaultAsync();
-                if (workout != null && !schedule.Workouts.Contains(workout))
-                {
-                    schedule.Workouts.Add(workout);
-                    AddedAny = true;
-                }
+                schedule.Workouts.Add(workout);
             }
-            var returnVal = 4;
-            if(!RemovedAny && !AddedAny) returnVal=2;
-            else if( RemovedAny && !AddedAny) returnVal=3;
             _db.Schedules.Update(schedule);
             await _db.SaveChangesAsync();
-            return returnVal;
+            return 3;
         }
 
-        public async Task<int> DeleteWorkoutsFromSchedule(ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == no workouts removed || 3 == success
+        public async Task<int> DeleteWorkoutsFromSchedule(ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == no workouts in said schedule || 3 == wrong IDs || 4 = success
         {
             if(scheduleWorkout == null) return 0;
-            bool RemovedAny = false;
             var schedule = await (from s in _db.Schedules.Include(s => s.Workouts)
                             where s.ScheduleID == scheduleWorkout.ScheduleID
                             select s).FirstOrDefaultAsync();
             if (schedule == null) return 1;
-            foreach (var workoutID in scheduleWorkout.WorkoutsID)
+            var existingWorkoutsIDs = new HashSet<Guid>(schedule.Workouts.Select(w => w.WorkoutID));
+            var workoutIDsToRemove = scheduleWorkout.WorkoutsID?.Where(id => existingWorkoutsIDs.Contains(id)).ToList();
+            if (workoutIDsToRemove == null || workoutIDsToRemove.Count == 0) return 2;
+            var workoutsToRemove = await (from w in _db.Workouts
+                                          where workoutIDsToRemove.Contains(w.WorkoutID)
+                                          select w).ToListAsync();
+            if (workoutsToRemove.Count == 0) return 3;
+            foreach (var workout in workoutsToRemove)
             {
-                var workout = await(from w in _db.Workouts
-                               where w.WorkoutID == workoutID
-                               select w).FirstOrDefaultAsync();
-                if (workout != null && schedule.Workouts.Contains(workout))
-                {
-                    schedule.Workouts.Remove(workout);
-                    RemovedAny = true;
-                }
+                schedule.Workouts.Remove(workout);
             }
-            var returnVal = 3;
-            if(!RemovedAny) returnVal = 2;
             _db.Schedules.Update(schedule);
             await _db.SaveChangesAsync();
-            return returnVal;
+            return 4;
         }
 
         public async Task<ScheduleDTO?> GetScheduleById(Guid scheduleID)//AHHHHHHHHHHHHHHHHH

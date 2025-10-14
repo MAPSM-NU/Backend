@@ -12,7 +12,7 @@ namespace Gym_App.Service.Controllers
         {
             _muscleService = muscleService;
         }
-        [HttpPost("Add Muscle")]
+        [HttpPost("AddMuscle")]
         public async Task<IActionResult> AddMuscle([FromBody] MuscleDTO muscle)
         {
             var result = await _muscleService.CreateMuscle(muscle);
@@ -21,7 +21,7 @@ namespace Gym_App.Service.Controllers
             return BadRequest(new { Message = "Faulty DTO given" });
         }
         
-        [HttpPut("Update Muscle")]
+        [HttpPut("UpdateMuscle")]
         public async Task<IActionResult> UpdateMuscle([FromBody] MuscleDTO muscle)
         {
             var result = await _muscleService.UpdateMuscle(muscle);
@@ -29,7 +29,7 @@ namespace Gym_App.Service.Controllers
 
             return BadRequest(new { Message = "Couldn't find the given muscle" });
         }
-        [HttpDelete("Delete Muscle")]
+        [HttpDelete("DeleteMuscle")]
         public async Task<IActionResult> DeleteMuscle([FromBody] Guid muscleId)
         {
             var result = await _muscleService.DeleteMuscle(muscleId);
@@ -37,7 +37,7 @@ namespace Gym_App.Service.Controllers
 
             return BadRequest(new { Message = "Couldn't find the given muscle" });
         }
-        [HttpGet("Get All Muscles")]
+        [HttpGet("GetAllMuscles")]
         public async Task<IActionResult> GetAllMuscles()
         {
             var result = await _muscleService.GetAllMuscles();

@@ -34,8 +34,8 @@ namespace Gym_App.Service.Controllers
             if (result == 0) return BadRequest(new { message = "Failed to update message" });
             return Ok(new { message = "Message Updated Successfully" });
         }
-        [HttpPost("GetSessionMessages")]
-        public async Task<IActionResult> GetSessionMessages([FromBody] Guid sessionID)
+        [HttpGet("GetSessionMessages")]
+        public async Task<IActionResult> GetSessionMessages([FromQuery] Guid sessionID)
         {
             var messages = await _messageService.GetSessionMessages(sessionID);
             if (messages == null) return NotFound(new { message = "No messages found for this session" });

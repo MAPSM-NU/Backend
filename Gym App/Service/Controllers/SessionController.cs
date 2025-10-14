@@ -49,15 +49,15 @@ namespace Gym_App.Service.Controllers
             else return BadRequest(new { Message = "Faulty DTO given" });
 
         }
-        [HttpPost("GetSessionMessages")]
-        public async Task<IActionResult> GetSessionMessages([FromBody] Guid sessionID)
+        [HttpGet("GetSessionMessages")]
+        public async Task<IActionResult> GetSessionMessages([FromQuery] Guid sessionID)
         {
             var messages = await _sessionService.GetSessionMessages(sessionID);
             if (messages == null) return NotFound(new { message = "No messages found for this session" });
             return Ok(messages);
         }
-        [HttpPost("GetUsersOfSession")]
-        public async Task<IActionResult> GetUsersOfSession([FromBody] Guid sessionID)
+        [HttpGet("GetUsersOfSession")]
+        public async Task<IActionResult> GetUsersOfSession([FromQuery] Guid sessionID)
         {
             var users = await _sessionService.GetUsersOfSession(sessionID);
             if (users == null) return NotFound(new { message = "No users found for this session" });

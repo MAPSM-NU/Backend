@@ -13,52 +13,75 @@ namespace Gym_App.Service.Controllers
         {
             _workoutService = workoutService;
         }
-        [HttpPost("Create Workout")]//That is one way of adding it. I like Route but I may diverge into this
+        [HttpPost("CreateWorkout")]//That is one way of adding it. I like Route but I may diverge into this
         public async Task<IActionResult> CreateWorkout([FromBody] WorkoutDTO workout)
         {
             var result = await _workoutService.CreateWorkout(workout);
-            if (result == 0) return BadRequest(new { message = "Workout creation failed." });
-            return Ok(new { message = "Workout created successfully." });
+            if(result == 2) return Ok(new { message = "Workout created successfully." });
+            else if(result == 1) return BadRequest(new { message = "Given user does not exist." });
+            else return BadRequest(new { message = "Faulty DTO given." });
         }
-        [HttpPut("Modify Workout")]
+        [HttpPut("ModifyWorkout")]
         public async Task<IActionResult> UpdateWorkout([FromBody] WorkoutDTO workout)
         {
             var result = await _workoutService.UpdateWorkout(workout);
-            if(result==0) return BadRequest(new { message = "Workout update failed." });
-            return Ok(new { message = "Workout updated successfully." });
+            if(result == 2) return Ok(new { message = "Workout updated successfully." });
+            else if(result == 1) return BadRequest(new { message = "Given workout does not exist." });
+            else return BadRequest(new { message = "Faulty DTO given." });
         }
-        [HttpDelete("Delete Workout")]
+        [HttpDelete("DeleteWorkout")]
         public async Task<IActionResult> DeleteWorkout([FromBody] WorkoutDTO workout)
         {
             var result = await _workoutService.DeleteWorkout(workout);
-            if(result==0) return BadRequest(new { message = "Workout deletion failed." });
-            return Ok(new { message = "Workout deleted successfully." });
+            if(result == 2) return Ok(new { message = "Workout deleted successfully." });
+            else if(result == 1) return BadRequest(new { message = "Given workout does not exist." });
+            else return BadRequest(new { message = "Faulty DTO given." });
         }
-        [HttpPost("Add Exercises to Workout")]
+        [HttpPost("AddExercisestoWorkout")]
         public async Task<IActionResult> AddExercisesToWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
         {
             var result = await _workoutService.AddExercisesToWorkout(workoutExercise);
-            if(result==0) return BadRequest(new { message = "Adding exercises to workout failed." });
-            return Ok(new { message = "Exercises added to workout successfully." });
+            if(result == 3)return Ok(new { message = "Exercises added to workout successfully." });
+            else if(result == 2) return BadRequest(new { message = "Either given exercises don't exist or no new exercises to add." });
+            else if(result == 1) return BadRequest(new { message = "Given workout does not exist." });
+            else return BadRequest(new { message = "Faulty DTO given." });
         }
-        [HttpPost("Set Exercises of Workout")]
+        [HttpPost("SetExercisesofWorkout")]
         public async Task<IActionResult> SetExercisesOfWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
         {
             var result = await _workoutService.SetExercisesOfWorkout(workoutExercise);
-            if(result==0) return BadRequest(new { message = "Setting exercises of workout failed." });
-            return Ok(new { message = "Exercises set to workout successfully." });
+            if(result == 3) return Ok(new { message = "Exercises set for workout successfully." });
+            else if(result == 2) return BadRequest(new { message = "Either given exercises don't exist or no new exercises to set." });
+            else if(result == 1) return BadRequest(new { message = "Given workout does not exist." });
+            else return BadRequest(new { message = "Faulty DTO given." });
         }
-        [HttpDelete("Delete Exercises from Workout")]
+        [HttpDelete("DeleteExercisesfromWorkout")]
         public async Task<IActionResult> DeleteExercisesFromWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
         {
             var result = await _workoutService.DeleteExercisesFromWorkout(workoutExercise);
-            if(result==0) return BadRequest(new { message = "Deleting exercises from workout failed." });
-            return Ok(new { message = "Exercises deleted from workout successfully." });
+            if(result == 3) return Ok(new { message = "Exercises removed from workout successfully." });
+            else if(result == 2) return BadRequest(new { message = "Either given exercises don't exist or no exercises to remove." });
+            else if(result == 1) return BadRequest(new { message = "Given workout does not exist." });
+            else return BadRequest(new { message = "Faulty DTO given." });
         }
-        [HttpPost("Get Workout by Name")]
+        [HttpPost("GetWorkoutbyName")]
         public async Task<IActionResult> GetWorkoutByName([FromBody] string name)
         {
             var result = await _workoutService.GetWorkoutByName(name);
+            if(result==null) return BadRequest(new { message = "Workout not found." });
+            return Ok(result);
+        }
+        [HttpGet("GetWorkoutbyID")]
+        public async Task<IActionResult> GetWorkoutByID([FromQuery] Guid ID)
+        {
+            var result = await _workoutService.GetWorkoutByID(ID);
+            if(result==null) return BadRequest(new { message = "Workout not found." });
+            return Ok(result);
+        }
+        [HttpGet("GetExercisesofWorkout")]
+        public async Task<IActionResult> GetExercisesOfWorkout([FromQuery] Guid workoutID)
+        {
+            var result = await _workoutService.GetExercisesOfWorkout(workoutID);
             if(result==null) return BadRequest(new { message = "Workout not found." });
             return Ok(result);
         }

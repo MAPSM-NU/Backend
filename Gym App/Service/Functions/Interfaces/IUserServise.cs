@@ -9,7 +9,8 @@ namespace Gym_App.Service.Functions.Interfaces
         public Task<ResponseToken> LoginUser(UserDTO user);
         public Task<int> UpdateUser(UserUpdateDTO user);
         public Task<int> ChangeUserType(UserTypeDTO user);
-        public Task<IQueryable<User>> GetAllUsers();
+        public Task<UserDTO?> GetUserByID(Guid userID);
+        public Task<List<UserDTO>?> GetAllUsers();
         public Task<bool> DeleteUser(Guid userID);
         //public Task<string> ModifyUser(Trainee user);
         //still under construction

@@ -9,8 +9,8 @@ namespace Gym_App.Service.Functions.Interfaces
         Task<int> DeleteSession(Guid sessionID);
         Task<int> AddMessages(SessionMessagesDTO sessionMessages);
         Task<int> DeleteMessages(SessionMessagesDTO sessionMessages);
-        Task<IQueryable<MessageDTO?>>? GetSessionMessages(Guid sessionID);
-        Task<ICollection<User>>? GetUsersOfSession(Guid sessionID);
-        Task<IQueryable<Session>>? GetAllSessions();
+        Task<List<MessageDTO?>> GetSessionMessages(Guid sessionID);
+        Task<List<UserDTO>?> GetUsersOfSession(Guid sessionID);
+        Task<List<SessionDTO>>? GetAllSessions();
     }
 }

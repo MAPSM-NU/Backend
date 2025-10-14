@@ -16,6 +16,6 @@ namespace Gym_App.Domain.Entities
         public string? Content { get; set; }
         
         //Relationships
-        public ICollection<User>? User { get; set; } = new List<User>();
+        public User User { get; set; }
     }
 }

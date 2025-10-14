@@ -13,16 +13,16 @@ namespace Gym_App.Service.Functions.The_Applied
         {
             _db = db;
         }
-        public async Task<int> AddMessage(MessageDTO message)
+        public async Task<int> AddMessage(MessageDTO message)//0 == user not found || 1 == Session not found || 2 == succesxful
         {
-            var user = (from u in _db.Users
+            var user = await (from u in _db.Users
                         where u.UserID == message.SenderID
-                        select u).FirstOrDefault();
+                        select u).FirstOrDefaultAsync();
             if (user == null) return 0;
-            var session = (from s in _db.Sessions
+            var session = await (from s in _db.Sessions
                            where s.SessionID == message.SessionID
-                           select s).FirstOrDefault();
-            if (session == null) return 0;
+                           select s).FirstOrDefaultAsync();
+            if (session == null) return 1;
             var newMessage = new Message
             {
                 MessageID = Guid.NewGuid(),
@@ -33,38 +33,35 @@ namespace Gym_App.Service.Functions.The_Applied
                 IsRead = message.IsRead
             };
             await _db.Messages.AddAsync(newMessage);
-            return await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
+            return 2;
         }
         
         public async Task<int> DeleteMessages(MessageDTO message)
         {
-           var Message = (from u in _db.Messages
+           var Message = await (from u in _db.Messages
                           where u.MessageID == message.MessageID
-                          select u).FirstOrDefault();
+                          select u).FirstOrDefaultAsync();
                 if (message == null) return 0;
                 _db.Messages.Remove(Message);
-                return await _db.SaveChangesAsync();
+                await _db.SaveChangesAsync();
+                return 1;
         }
         public async Task<int> UpdateMessage(MessageDTO message)
         {
-            var Message = (from u in _db.Messages
+            var Message = await (from u in _db.Messages
                            where u.MessageID == message.MessageID
-                           select u).FirstOrDefault();
+                           select u).FirstOrDefaultAsync();
             if (Message == null) return 0;
             Message.Content = message.Content;
             Message.IsRead = message.IsRead;
-            return await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
+            return 1;
         }
-        public async Task<IQueryable<Message>> GetSessionMessages(Guid sessionID)
+        public async Task<List<MessageDTO>> GetSessionMessages(Guid sessionID)
         {
-            var messages = from m in _db.Messages.Include(m => m.Session)
+            var messages = await (from m in _db.Messages
                            where m.Session.SessionID == sessionID
-                           select m;
-            return await Task.FromResult(messages);
-        }
-        public async Task<IQueryable<MessageDTO>> GetMessages()
-        {
-            var messages = from m in _db.Messages.Include(m => m.Sender).Include(m => m.Session)
                            select new MessageDTO
                            {
                                SenderID = m.Sender.UserID,
@@ -73,7 +70,21 @@ namespace Gym_App.Service.Functions.The_Applied
                                Content = m.Content,
                                IsRead = m.IsRead,
                                Timestamp = m.Timestamp
-                           };
+                           }).ToListAsync();
+            return await Task.FromResult(messages);
+        }
+        public async Task<List<MessageDTO>> GetMessages()
+        {
+            var messages = await (from m in _db.Messages
+                                  select new MessageDTO
+                           {
+                               SenderID = m.Sender.UserID,
+                               SessionID = m.Session.SessionID,
+                               MessageID = m.MessageID,
+                               Content = m.Content,
+                               IsRead = m.IsRead,
+                               Timestamp = m.Timestamp
+                           }).ToListAsync();
             return await Task.FromResult(messages);
         }
     }

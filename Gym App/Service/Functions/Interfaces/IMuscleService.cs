@@ -8,6 +8,6 @@ namespace Gym_App.Service.Functions.Interfaces
         public Task<int> CreateMuscle(MuscleDTO muscle);
         public Task<int> UpdateMuscle(MuscleDTO muscle);
         public Task<int> DeleteMuscle(Guid muscleID);
-        public Task<IQueryable<Domain.Entities.Muscles>> GetAllMuscles();
+        public Task<List<MuscleDTO>> GetAllMuscles();
     }
 }

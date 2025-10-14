@@ -6,9 +6,9 @@ namespace Gym_App.Service.Functions.Interfaces
     public interface IFeedbackService
     {
         Task<int> CreateFeedback(FeedbackDTO feedbackDTO);
-        Task<Feedback> GetFeedbackByID(Guid feedbackId);
-        Task<IEnumerable<FeedbackDTO>> GetAllFeedbacks();
         Task<int> UpdateFeedback(FeedbackDTO feedbackDTO);
         Task<int> DeleteFeedback(Guid feedbackId);
+        Task<FeedbackDTO> GetFeedbackByID(Guid feedbackId);
+        Task<List<FeedbackDTO>> GetAllFeedbacks();
     }
 }

@@ -14,8 +14,7 @@ namespace Gym_App.Service.Controllers
             _db = db;
             _emailSender = emailSender;
         }
-        [HttpPost]
-        [Route("/Email Verification")]
+        [HttpPost("EmailVerification")]
         public async Task<IActionResult> VerifyEmail([FromBody] string email)
         {
             //var user = await _db.Users.FindAsync(email);

@@ -17,6 +17,7 @@ namespace Gym_App.Service.Functions.The_Applied
 
         public async Task<int> CreateSession(SessionDTO session)
         {
+            if (session == null) return 0;
             var Session = new Session
             {
                 SessionID = new Guid(),
@@ -25,79 +26,113 @@ namespace Gym_App.Service.Functions.The_Applied
             };
             foreach (var ID in session.UserIDs) 
             {
-                var user = _db.Users.FirstOrDefault(u => u.UserID == ID);
-                if (user==null) return await Task.FromResult(0);
+                var user = await _db.Users.FirstOrDefaultAsync(u => u.UserID == ID);
+                if (user==null) return 1;
                 else
                 {
                     Session.Users.Add(user);
                 }
             } 
             _db.Sessions.Add(Session);
-            return await _db.SaveChangesAsync(); // Gonna try this here. The return is how many rows were affected
+            await _db.SaveChangesAsync();
+            return 2;
         }
         public async Task<int> DeleteSession(Guid sessionID)
         {
-            var session = _db.Sessions.Find(sessionID);
-            if (session == null) return await Task.FromResult(0);
+            var session = await (from s in _db.Sessions
+                                 where s.SessionID == sessionID
+                                 select s).FirstOrDefaultAsync();
+            if (session == null) return 0;
             _db.Sessions.Remove(session);
-            return await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
+            return 1;
         }
 
-        public async Task<int> AddMessages(SessionMessagesDTO sessionMessages)
+        public async Task<int> AddMessages(SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == no new messages added || 3 == success
         {
-            var Session = (from s in _db.Sessions.Include(s => s.Messages)
-                          select s).FirstOrDefault();
-            if (Session == null) return await Task.FromResult(0);
-            foreach (var messageID in sessionMessages.Messages ?? [])
+            if (sessionMessages == null) return 0;
+            var Session = await (from s in _db.Sessions.Include(s => s.Messages)
+                                 where s.SessionID == sessionMessages.SessionID
+                                 select s).FirstOrDefaultAsync();
+            if (Session == null) return 1;
+            var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
+            var messagesIDsToAdd = sessionMessages.Messages?.Where(id => !existingMessagesIDs.Contains(id)).ToList();
+            if (messagesIDsToAdd == null || messagesIDsToAdd.Count == 0) return 2;
+            var messagesToAdd = await(from m in _db.Messages
+                                 where messagesIDsToAdd.Contains(m.MessageID)
+                                 select m).ToListAsync();
+            foreach (var messageID in messagesToAdd)
             {
-                var message = _db.Messages.Find(messageID);
-                if (message != null && !Session.Messages.Any(m => m.MessageID == messageID))
-                {
-                    Session.Messages.Add(message);
-                }
+                Session.Messages.Add(messageID);
             }
-            return await _db.SaveChangesAsync();
+            _db.Sessions.Update(Session);
+            await _db.SaveChangesAsync();
+            return 3;
         }
-        public async Task<int> DeleteMessages(SessionMessagesDTO sessionMessages)
-        {
-            var Session = (from s in _db.Sessions.Include(s => s.Messages)
-                           select s).FirstOrDefault();
-            if (Session == null) return await Task.FromResult(0);
-            foreach (var messageID in sessionMessages.Messages ?? [])
+        public async Task<int> DeleteMessages(SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == no messages deleted || 3 == success
+        { 
+            if(sessionMessages == null) return 0;
+            var Session = await (from s in _db.Sessions.Include(s => s.Messages)
+                                 where s.SessionID == sessionMessages.SessionID
+                                 select s).FirstOrDefaultAsync();
+            if (Session == null) return 1;
+            var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
+            var messagesIDsToRemove = sessionMessages.Messages?.Where(id => existingMessagesIDs.Contains(id)).ToList();
+            if (messagesIDsToRemove == null || messagesIDsToRemove.Count == 0) return 2;
+            var messagesToRemove = await (from m in _db.Messages
+                                          where messagesIDsToRemove.Contains(m.MessageID)
+                                          select m).ToListAsync();
+            foreach (var message in messagesToRemove)
             {
-                var message = _db.Messages.Find(messageID);
-                if (message != null && Session.Messages.Any(m => m.MessageID == messageID))
-                {
-                    Session.Messages.Remove(message);
-                }
+                Session.Messages.Remove(message);
             }
-            return await _db.SaveChangesAsync();
+            _db.Sessions.Update(Session);
+            await _db.SaveChangesAsync();
+            return 3;
         }
-        public async Task<IQueryable<MessageDTO>>? GetSessionMessages(Guid sessionID)
+        public async Task<List<MessageDTO>?> GetSessionMessages(Guid sessionID)
         {
-            var Session = (from s in _db.Sessions.Include(s => s.Messages)
-                           select s).FirstOrDefault();
-            if (Session == null) return null;
-            var messages = Session.Messages.Select(m => new MessageDTO
-            {
-                MessageID = m.MessageID,
-                Content = m.Content,
-                Timestamp = m.Timestamp,
-                SenderID = m.Sender.UserID
-            }).AsQueryable();
-            return await Task.FromResult(messages);
+            var sessionMessages = await (from s in _db.Sessions
+                                  from m in _db.Messages
+                                  where s.SessionID == sessionID && s.Messages.Contains(m)
+                                  select new MessageDTO
+                                    {
+                                        SenderID = m.Sender.UserID,
+                                        SessionID = s.SessionID,
+                                        MessageID = m.MessageID,
+                                        Content = m.Content,
+                                        Timestamp = m.Timestamp,
+                                        IsRead = m.IsRead
+                                    }).ToListAsync();
+            return sessionMessages;
         }
 
-        public async Task<ICollection<User>>? GetUsersOfSession(Guid sessionID)//The sessions tree in itself needs a big change man fr
+        public async Task<List<UserDTO>?> GetUsersOfSession(Guid sessionID)//The sessions tree in itself needs a big change man fr
         {
-            var Session = _db.Sessions.Include(s=>s.Users).FirstOrDefault(s => s.SessionID == sessionID);
-            if(Session == null) return null;
-            return await Task.FromResult(Session.Users);
+            var sessionUsers = await (from s in _db.Sessions
+                                      from u in s.Users
+                                      where s.SessionID == sessionID
+                                      select new UserDTO
+                                      {
+                                          UserID = u.UserID,
+                                          Name = u.Name,
+                                          Email = u.Email,
+                                          Password = u.Password,
+                                          UserType = u.UserType
+                                      }).ToListAsync();
+            if (sessionUsers == null) return null;
+            return sessionUsers;
         }
-        public async Task<IQueryable<Session>>? GetAllSessions()
+        public async Task<List<SessionDTO>>? GetAllSessions()
         {
-            var sessions = _db.Sessions.Include(s=>s.Users).AsQueryable();
-            return await Task.FromResult(sessions);
+            var sessions = await (from s in _db.Sessions
+                                  select new SessionDTO
+                                  {
+                                      SessionID = s.SessionID,
+                                      StartTime = s.StartTime,
+                                      UserIDs = s.Users.Select(u => u.UserID).ToList(),
+                                  }).ToListAsync();
+            return sessions;
         }
     }
 }

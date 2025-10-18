@@ -54,8 +54,6 @@ builder.Services.AddSwaggerGen(c => {
     });
 });
 
-
-
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IUserServise, UserService>();
 builder.Services.AddScoped<ITokenHandler, Gym_App.Service.Functions.The_Applied.TokenHandler>();
@@ -63,6 +61,13 @@ builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();
 builder.Services.AddScoped<IExerciseService, ExerciseService>();
 builder.Services.AddScoped<IMuscleService, MuscleService>();
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IScheduleService,ScheduleService>();
+builder.Services.AddScoped<ISessionService, SessionService>();
+
+
 builder.Services.AddDbContext<DbBase>(options =>
 {
     options.UseSqlServer("Data Source=DESKTOP-OR6CO4J\\SQLEXPRESS;Initial Catalog=Gym App;Integrated Security=True;Trust Server Certificate=True");

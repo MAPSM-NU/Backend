@@ -50,12 +50,5 @@ namespace Gym_App.Service.Controllers
             var users = await _user.GetAllUsers();
             return Ok(users);
         }
-        [HttpDelete("/Delete User")]
-        public async Task<IActionResult> DeleteUser([FromBody] Guid UserID)
-        {
-            var result = await _user.DeleteUser(UserID);
-            if (result) return Ok("User Deleted Successfully");
-            return BadRequest("Failed to Delete User");
-        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
 using Gym_App.Service.Functions.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -18,14 +19,15 @@ namespace Gym_App.Service.Functions.The_Applied
             _db = db;
             _config = config;
         }
-        public Task<string> CreateAccessToken(UserDTO u) // For creating access Tokens
+        public async Task<string> CreateAccessToken(UserDTO u) // For creating access Tokens
         {
-            
+            var userPolicy = await _db.Users.FirstOrDefaultAsync(u=>u.UserID == u.UserID);
             var claims = new List<Claim>
             {
-                new Claim("name", u.Name),
-                new Claim("email", u.Email),
-                new Claim("userId",u.UserID.ToString())
+                new Claim(JwtRegisteredClaimNames.Name, u.Name),
+                new Claim(JwtRegisteredClaimNames.Email, u.Email),
+                new Claim(JwtRegisteredClaimNames.Sub,u.UserID.ToString()),
+                new Claim("Policy",userPolicy.Policy.ToString())
                 //new Claim(ClaimTypes.Role,u.Role)
             };
             var key = new SymmetricSecurityKey(
@@ -37,10 +39,10 @@ namespace Gym_App.Service.Functions.The_Applied
                 issuer: _config.GetValue<string>("JwtSettings:Issuer"),
                 audience: _config.GetValue<string>("JwtSettings:Audience"),
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(2),//EXPIRATION DATE
+                expires: DateTime.UtcNow.AddHours(1),//EXPIRATION DATE
                 signingCredentials: creds
                 );
-            return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(TokenDescriptor));
+            return (new JwtSecurityTokenHandler().WriteToken(TokenDescriptor));
         }
         public Task<string> CreateRefreshToken(Guid UserID)//For creating new RefreshTokens
         {

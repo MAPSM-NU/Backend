@@ -55,7 +55,7 @@ namespace Gym_App.Domain.Entities
         public ICollection<Workout>? Workouts { get; set; } = new List<Workout>();
         public ICollection<RefreshTokens>? RefreshTokens { get; set; } = new List<RefreshTokens>();
         public ICollection<Session>? Sessions { get; set; } = new List<Session>();
-        public ICollection<Policy> Policy { get; set; } = new List<Policy>();
+        public ICollection<Role> Policy { get; set; } = new List<Role>();
 
     }
 }

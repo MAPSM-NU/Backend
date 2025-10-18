@@ -89,6 +89,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
 
         };
     });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("NormalUsage",
+        policy => policy.RequireRole("User"));
+});
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ElevatedPower",
+        policy => policy.RequireRole("Admin"));
+});
 //builder.Services.AddControllersWithViews().AddJsonOptions(x =>
 //   x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);//yezabat error beta3 recurrsion taba3 el json
 builder.Services.ConfigureHttpJsonOptions(x=>

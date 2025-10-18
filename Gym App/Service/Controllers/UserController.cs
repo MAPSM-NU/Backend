@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
-    [Authorize]
+    [Authorize(Policy ="NormalUsage")]
     [ApiController]
     [Route("[controller]")]
     public class UserController : Controller
@@ -32,14 +32,14 @@ namespace Gym_App.Service.Controllers
 
         }
         [HttpDelete("DeleteUser")]
-        public async Task<IActionResult> DeleteUser([FromBody] Guid UserID)
+        public async Task<IActionResult> DeleteUser([FromQuery] Guid UserID)
         {
             var result = await _user.DeleteUser(UserID);
             if (result) return Ok(new { Message = "User Deleted Successfully" });
             return BadRequest(new { Message = "Failed to Delete User"});
         }
-        [HttpPost("GetUserByID")]
-        public async Task<IActionResult> GetUserByID([FromBody] Guid UserID)
+        [HttpGet("GetUserByID")]
+        public async Task<IActionResult> GetUserByID([FromQuery] Guid UserID)
         {
             var result = await _user.GetUserByID(UserID);
             if (result == null) return BadRequest(new { message = "User not found" });

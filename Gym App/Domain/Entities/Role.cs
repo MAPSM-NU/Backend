@@ -3,20 +3,20 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain.Entities
 {
-    public class Policy
+    public class Role
     {
         [Key]
-        public int PolicyID { get; set; }
+        public int RoleID { get; set; }
         [Column(TypeName ="varchar(20)")]
-        public string PolicyName { get; set; } = string.Empty;
+        public string RoleName { get; set; } = string.Empty;
 
         //Relationships
         public ICollection<User> Users { get; set; }
 
     }
-    public enum PolicyType
+    public enum RoleType
     {
         Admin = 1,
-        UserOnly = 2
+        User = 2
     }
 }

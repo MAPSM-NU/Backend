@@ -28,7 +28,7 @@ namespace Gym_App.Service.Functions.The_Applied
             if (!IsEmailValid(u.Email)) return new ResponseToken { Status = 3 };
             if (!IsPasswordValid(u.Password).Result) return new ResponseToken { Status = 4 };
             if (u.UserType == null) u.UserType = "Trainee";
-
+            
             User user;
             if (u.UserType == "Trainer" || u.UserType.ToLower() == "t")
             {
@@ -39,7 +39,7 @@ namespace Gym_App.Service.Functions.The_Applied
                     Email = u.Email,
                     Password = new PasswordHasher<User>().HashPassword(null, u.Password),
                     CreatedAt = DateTime.Now,
-                    UserType = "Trainee"
+                    UserType = "Trainee",
                 };
             }
             else if(u.UserType.ToLower() == "coach" || u.UserType.ToLower() == "c")
@@ -53,6 +53,7 @@ namespace Gym_App.Service.Functions.The_Applied
                     CreatedAt = DateTime.Now,
                     UserType = "Coach"
                 };
+                
             }
             else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d")
             {
@@ -70,12 +71,15 @@ namespace Gym_App.Service.Functions.The_Applied
             {
                 return new ResponseToken { Status = 7 };
             }
-
+            var Role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
+            user.Role.Add(Role);
+            Role.Users.Add(user);
             //Making the Tokens and saving them to the database
             u.UserID = user.UserID;
             var Token = await _tokenHandler.CreateAccessToken(u);
             var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
             await _db.Users.AddAsync(user);
+            await _db.Roles.AddAsync(Role);
             await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
                 UserID = user.UserID,

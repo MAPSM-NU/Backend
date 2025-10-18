@@ -1,9 +1,11 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Service.Functions.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
+    [Authorize(Policy = "ElevatedPower")]
     [Route("[controller]")]
     public class MusclesController : Controller
     {

@@ -14,9 +14,4 @@ namespace Gym_App.Domain.Entities
         public ICollection<User> Users { get; set; }
 
     }
-    public enum RoleType
-    {
-        Admin = 1,
-        User = 2
-    }
 }

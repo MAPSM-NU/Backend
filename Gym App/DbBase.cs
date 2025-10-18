@@ -20,6 +20,7 @@ namespace Gym_App
         public DbSet<LiveFeedback> LiveFeedbacks { get; set; }
         public DbSet<Challenges> Challenges { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<Role> Roles { get; set; }
 
         public DbSet<RefreshTokens> RefreshTokens { get; set; }
 

@@ -21,13 +21,19 @@ namespace Gym_App.Service.Functions.The_Applied
         }
         public async Task<string> CreateAccessToken(UserDTO u) // For creating access Tokens
         {
-            var userPolicy = await _db.Users.FirstOrDefaultAsync(u=>u.UserID == u.UserID);
-            var claims = new List<Claim>
+            var Role = await (from user in _db.Users
+                              where user.UserID == u.UserID
+                              select user.Role).ToListAsync(); //All this needs a big ass change fr
+            if (Role == null) return "No Role Specified";
+            string role;
+            if (Role.Count > 1) role = "Admin";
+            else role = "User";
+                var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Name, u.Name),
                 new Claim(JwtRegisteredClaimNames.Email, u.Email),
                 new Claim(JwtRegisteredClaimNames.Sub,u.UserID.ToString()),
-                new Claim("Policy",userPolicy.Policy.ToString())
+                new Claim(ClaimTypes.Role,role)
                 //new Claim(ClaimTypes.Role,u.Role)
             };
             var key = new SymmetricSecurityKey(
@@ -73,12 +79,12 @@ namespace Gym_App.Service.Functions.The_Applied
 
         public async Task<ResponseToken>? ValidateAccessToken(string Refreshtoken) // for logging in with Tokens
         {
-            var result = _db.RefreshTokens.FirstOrDefault(t => t.RefreshToken == Refreshtoken);
+            var result = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.RefreshToken == Refreshtoken);
             if (result == null || result.Expires < DateTime.UtcNow)
             {
                 return null;
             }
-            var user = (from u in _db.Users
+            var user = await (from u in _db.Users
                         where u.UserID == result.UserID
                         select new UserDTO
                         {
@@ -86,8 +92,8 @@ namespace Gym_App.Service.Functions.The_Applied
                             Name = u.Name,
                             Email = u.Email,
                             Password = u.Password
-                        }).FirstOrDefault();
-            var Token = CreateAccessToken(user).Result;
+                        }).FirstOrDefaultAsync();
+            var Token = await CreateAccessToken(user);
             result.Expires = DateTime.UtcNow.AddDays(4);
             result.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             var Response = new ResponseToken

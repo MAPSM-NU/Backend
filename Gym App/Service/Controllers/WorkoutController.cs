@@ -85,7 +85,7 @@ namespace Gym_App.Service.Controllers
             if(result==null) return BadRequest(new { message = "Workout not found." });
             return Ok(result);
         }
-        [HttpGet("Get All Workouts")]
+        [HttpGet("GetAllWorkouts")]
         public async Task<IActionResult> GetAllWorkouts()
         {
             var result = await _workoutService.GetAllWorkouts();

@@ -40,9 +40,8 @@ namespace Gym_App
             modelBuilder.Entity<Schedule>();
             modelBuilder.Entity<Notification>();
             modelBuilder.Entity<Message>();
-
+            modelBuilder.Entity<Policy>(); 
             modelBuilder.Entity<Feedback>();
-
             modelBuilder.Entity<LiveFeedback>();
             modelBuilder.Entity<Challenges>();
             modelBuilder.Entity<Transaction>();

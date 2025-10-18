@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
     public class UserController : Controller
@@ -14,7 +15,7 @@ namespace Gym_App.Service.Controllers
         {
             _user = user;
         }
-        [HttpPut("/Update User")]
+        [HttpPut("UpdateUser")]
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateDTO user)
         {
             var result = await _user.UpdateUser(user);
@@ -22,7 +23,7 @@ namespace Gym_App.Service.Controllers
             else if (result == 2) return BadRequest(new { message = "Name is not valid" });
             return Ok(new { message = "User Updated Successfully" });
         }
-        [HttpPut("/Change User Type")]
+        [HttpPut("ChangeUserType")]
         public async Task<IActionResult> ChangeUserType([FromBody] UserTypeDTO user)
         {
             var result = await _user.ChangeUserType(user);

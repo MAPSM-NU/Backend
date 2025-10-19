@@ -1,5 +1,6 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 
 namespace Gym_App.Service.Functions.Interfaces
 {
@@ -14,6 +15,7 @@ namespace Gym_App.Service.Functions.Interfaces
         public Task<ExerciseDTO?> GetExerciseByID(Guid id);
         public Task<List<MuscleDTO>?> GetExerciseMuscles(Guid exerciseID);
         public Task<List<ExerciseDTO>>? GetExercisesByMuscle(ExerciseListDTO muscles);
-        public Task<List<ExerciseDTO>> GetAllExercises();
+        public Task<PagedList<ExerciseDTO>?> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
+        public Task<PagedList<ExerciseDTO>?> GetAllExercises(int page,int pageSize = 5);
     }
 }

@@ -1,9 +1,13 @@
 ﻿
+using DocumentFormat.OpenXml.Wordprocessing;
 using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Functions.Interfaces;
+using MailKit.Search;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
@@ -174,20 +178,54 @@ namespace Gym_App.Service.Functions.The_Applied
                 }).ToListAsync();
             return await Task.FromResult(query);
         }
-        public async Task<List<ExerciseDTO>> GetAllExercises()
+        public async Task<PagedList<ExerciseDTO>?> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
         {
-            var exercises = await (from e in _db.Exercises
-                            select  new ExerciseDTO
-                            {
-                                ExerciseID = e.ExerciseID,
-                                Name = e.Name,
-                                Description = e.Description,
-                                Difficulty = e.Difficulty,
-                                VideoUrl = e.VideoUrl,
-                                Category = e.Category,
-                                Grip = e.Grip,
-                            }).ToListAsync();
-            return await Task.FromResult(exercises);
+            IQueryable<Exercise> ExerciseQuery = _db.Exercises;
+
+            if(!string.IsNullOrEmpty(searchTerm))ExerciseQuery = ExerciseQuery.Where(e => e.Name.Contains(searchTerm) || e.Difficulty.Contains(searchTerm));
+
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                Expression<Func<Exercise, Object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
+                {
+                    "name" => Exercise => Exercise.Name,
+                    "difficulty" => Exercise => Exercise.Difficulty,
+                    _ => Exercise => Exercise.ExerciseID
+                };
+                if (!string.IsNullOrEmpty(OrderBy)) ExerciseQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
+                else ExerciseQuery.OrderByDescending(keySelector);
+            }
+            var exercisesResponse = (ExerciseQuery
+                                        .Select(e => new ExerciseDTO
+                                        {
+                                            ExerciseID = e.ExerciseID,
+                                            Name = e.Name,
+                                            Description = e.Description,
+                                            Difficulty = e.Difficulty,
+                                            VideoUrl = e.VideoUrl,
+                                            Category = e.Category,
+                                            Grip = e.Grip,
+                                        }));
+        var exercises = await PagedList<ExerciseDTO>.CreateAsync(exercisesResponse, page, pageSize);
+            return exercises;
+        }
+        public async Task<PagedList<ExerciseDTO>?> GetAllExercises(int page, int pageSize = 5)
+        {
+            IQueryable<Exercise> ExerciseQuery = _db.Exercises;
+
+            var exercisesResponse = (ExerciseQuery
+                                        .Select(e=> new ExerciseDTO
+                                       {
+                                           ExerciseID = e.ExerciseID,
+                                           Name = e.Name,
+                                           Description = e.Description,
+                                           Difficulty = e.Difficulty,
+                                           VideoUrl = e.VideoUrl,
+                                           Category = e.Category,
+                                           Grip = e.Grip,
+                                       }));
+            var exercises = await PagedList<ExerciseDTO>.CreateAsync(exercisesResponse, page, pageSize);
+            return exercises;
         }
     }
 }

@@ -92,10 +92,16 @@ namespace Gym_App.Service.Controllers
             if(result == null) return BadRequest(new { Message = "Either you entered the muscles wrong or no Exercise was found." });
             return Ok(result);
         }
-        [HttpGet("GetAllExercises")]
-        public async Task<IActionResult> GetAllExercises()
+        [HttpGet("GetExercisesByFilter")]
+        public async Task<IActionResult> GetAllExercisesByFilter([FromQuery] string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {
-            var result = await _exerciseService.GetAllExercises();
+            var result = await _exerciseService.GetExercisesByFilter(page, sortColumn, OrderBy, SearchTerm, pageSize);
+            return Ok(result);
+        }
+        [HttpGet("GetAllExercises")]
+        public async Task<IActionResult> GetAllExercises([FromQuery] int page, int pageSize)
+        {
+            var result = await _exerciseService.GetAllExercises(page,pageSize);
             return Ok(result);
         }
     }

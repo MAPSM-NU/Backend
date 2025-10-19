@@ -1,6 +1,7 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
 using Gym_App.Service.Functions.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -18,14 +19,21 @@ namespace Gym_App.Service.Functions.The_Applied
             _db = db;
             _config = config;
         }
-        public Task<string> CreateAccessToken(UserDTO u) // For creating access Tokens
+        public async Task<string> CreateAccessToken(UserDTO u) // For creating access Tokens
         {
-            
-            var claims = new List<Claim>
+            var Role = await (from user in _db.Users
+                              where user.UserID == u.UserID
+                              select user.Role).ToListAsync(); //All this needs a big ass change fr
+            if (Role == null) return "No Role Specified";
+            string role;
+            if (Role.Count > 1) role = "Admin";
+            else role = "User";
+                var claims = new List<Claim>
             {
-                new Claim("name", u.Name),
-                new Claim("email", u.Email),
-                new Claim("userId",u.UserID.ToString())
+                new Claim(JwtRegisteredClaimNames.Name, u.Name),
+                new Claim(JwtRegisteredClaimNames.Email, u.Email),
+                new Claim(JwtRegisteredClaimNames.Sub,u.UserID.ToString()),
+                new Claim(ClaimTypes.Role,role)
                 //new Claim(ClaimTypes.Role,u.Role)
             };
             var key = new SymmetricSecurityKey(
@@ -37,10 +45,10 @@ namespace Gym_App.Service.Functions.The_Applied
                 issuer: _config.GetValue<string>("JwtSettings:Issuer"),
                 audience: _config.GetValue<string>("JwtSettings:Audience"),
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(2),//EXPIRATION DATE
+                expires: DateTime.UtcNow.AddHours(1),//EXPIRATION DATE
                 signingCredentials: creds
                 );
-            return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(TokenDescriptor));
+            return (new JwtSecurityTokenHandler().WriteToken(TokenDescriptor));
         }
         public Task<string> CreateRefreshToken(Guid UserID)//For creating new RefreshTokens
         {
@@ -71,12 +79,12 @@ namespace Gym_App.Service.Functions.The_Applied
 
         public async Task<ResponseToken>? ValidateAccessToken(string Refreshtoken) // for logging in with Tokens
         {
-            var result = _db.RefreshTokens.FirstOrDefault(t => t.RefreshToken == Refreshtoken);
+            var result = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.RefreshToken == Refreshtoken);
             if (result == null || result.Expires < DateTime.UtcNow)
             {
                 return null;
             }
-            var user = (from u in _db.Users
+            var user = await (from u in _db.Users
                         where u.UserID == result.UserID
                         select new UserDTO
                         {
@@ -84,8 +92,8 @@ namespace Gym_App.Service.Functions.The_Applied
                             Name = u.Name,
                             Email = u.Email,
                             Password = u.Password
-                        }).FirstOrDefault();
-            var Token = CreateAccessToken(user).Result;
+                        }).FirstOrDefaultAsync();
+            var Token = await CreateAccessToken(user);
             result.Expires = DateTime.UtcNow.AddDays(4);
             result.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             var Response = new ResponseToken

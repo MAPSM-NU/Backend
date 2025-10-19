@@ -20,6 +20,7 @@ namespace Gym_App
         public DbSet<LiveFeedback> LiveFeedbacks { get; set; }
         public DbSet<Challenges> Challenges { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<Role> Roles { get; set; }
 
         public DbSet<RefreshTokens> RefreshTokens { get; set; }
 
@@ -40,9 +41,8 @@ namespace Gym_App
             modelBuilder.Entity<Schedule>();
             modelBuilder.Entity<Notification>();
             modelBuilder.Entity<Message>();
-
+            modelBuilder.Entity<Role>(); 
             modelBuilder.Entity<Feedback>();
-
             modelBuilder.Entity<LiveFeedback>();
             modelBuilder.Entity<Challenges>();
             modelBuilder.Entity<Transaction>();

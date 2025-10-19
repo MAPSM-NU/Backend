@@ -4,6 +4,7 @@ using Gym_App;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym_App.Migrations
 {
     [DbContext(typeof(DbBase))]
-    partial class DbBaseModelSnapshot : ModelSnapshot
+    [Migration("20251018183050_changningPolicyToRole")]
+    partial class changningPolicyToRole
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -331,7 +334,7 @@ namespace Gym_App.Migrations
 
                     b.HasKey("RoleID");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Role");
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Schedule", b =>
@@ -519,13 +522,13 @@ namespace Gym_App.Migrations
 
             modelBuilder.Entity("RoleUser", b =>
                 {
-                    b.Property<int>("RoleID")
+                    b.Property<int>("PolicyRoleID")
                         .HasColumnType("int");
 
                     b.Property<Guid>("UsersUserID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("RoleID", "UsersUserID");
+                    b.HasKey("PolicyRoleID", "UsersUserID");
 
                     b.HasIndex("UsersUserID");
 
@@ -711,7 +714,7 @@ namespace Gym_App.Migrations
                 {
                     b.HasOne("Gym_App.Domain.Entities.Role", null)
                         .WithMany()
-                        .HasForeignKey("RoleID")
+                        .HasForeignKey("PolicyRoleID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

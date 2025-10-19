@@ -4,6 +4,7 @@ using Gym_App;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym_App.Migrations
 {
     [DbContext(typeof(DbBase))]
-    partial class DbBaseModelSnapshot : ModelSnapshot
+    [Migration("20251018175534_AddingPolicies")]
+    partial class AddingPolicies
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -294,6 +297,23 @@ namespace Gym_App.Migrations
                     b.ToTable("PastInjuries");
                 });
 
+            modelBuilder.Entity("Gym_App.Domain.Entities.Policy", b =>
+                {
+                    b.Property<int>("PolicyID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PolicyID"));
+
+                    b.Property<string>("PolicyName")
+                        .IsRequired()
+                        .HasColumnType("varchar(20)");
+
+                    b.HasKey("PolicyID");
+
+                    b.ToTable("Policy");
+                });
+
             modelBuilder.Entity("Gym_App.Domain.Entities.RefreshTokens", b =>
                 {
                     b.Property<Guid>("RefreshTokenID")
@@ -315,23 +335,6 @@ namespace Gym_App.Migrations
                     b.HasIndex("UserID");
 
                     b.ToTable("RefreshTokens");
-                });
-
-            modelBuilder.Entity("Gym_App.Domain.Entities.Role", b =>
-                {
-                    b.Property<int>("RoleID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoleID"));
-
-                    b.Property<string>("RoleName")
-                        .IsRequired()
-                        .HasColumnType("varchar(20)");
-
-                    b.HasKey("RoleID");
-
-                    b.ToTable("Roles");
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Entities.Schedule", b =>
@@ -517,19 +520,19 @@ namespace Gym_App.Migrations
                     b.ToTable("Workouts");
                 });
 
-            modelBuilder.Entity("RoleUser", b =>
+            modelBuilder.Entity("PolicyUser", b =>
                 {
-                    b.Property<int>("RoleID")
+                    b.Property<int>("PolicyID")
                         .HasColumnType("int");
 
                     b.Property<Guid>("UsersUserID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("RoleID", "UsersUserID");
+                    b.HasKey("PolicyID", "UsersUserID");
 
                     b.HasIndex("UsersUserID");
 
-                    b.ToTable("RoleUser");
+                    b.ToTable("PolicyUser");
                 });
 
             modelBuilder.Entity("SessionUser", b =>
@@ -707,11 +710,11 @@ namespace Gym_App.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("RoleUser", b =>
+            modelBuilder.Entity("PolicyUser", b =>
                 {
-                    b.HasOne("Gym_App.Domain.Entities.Role", null)
+                    b.HasOne("Gym_App.Domain.Entities.Policy", null)
                         .WithMany()
-                        .HasForeignKey("RoleID")
+                        .HasForeignKey("PolicyID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

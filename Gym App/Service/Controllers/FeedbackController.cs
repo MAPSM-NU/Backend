@@ -42,10 +42,16 @@ namespace Gym_App.Service.Controllers
             if (feedback == null) return NotFound("Feedback not found.");
             return Ok(feedback);
         }
-        [HttpGet("GetAllFeedbacks")]
-        public async Task<IActionResult> GetAllFeedbacks()
+        [HttpGet("GetFeedbacksByFilter")]
+        public async Task<IActionResult> GetFeedbacksByFilter([FromQuery] string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {
-            var feedbacks = await _feedbackService.GetAllFeedbacks();
+            var feedbacks = await _feedbackService.GetFeedbackByFilter(page, sortColumn, OrderBy, SearchTerm, pageSize);
+            return Ok(feedbacks);
+        }
+        [HttpGet("GetAllFeedbacks")]
+        public async Task<IActionResult> GetAllFeedbacks([FromQuery] int page,int pageSize)
+        {
+            var feedbacks = await _feedbackService.GetAllFeedbacks(page,pageSize);
             return Ok(feedbacks);
         }
     }

@@ -87,8 +87,10 @@ namespace Gym_App.Service.Functions.The_Applied
             if (feedback == null) return await Task.FromResult(feedback);
             return feedback;
         }
-        public async Task<PagedList<FeedbackDTO>?> GetFeedbackByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
+        public async Task<PagedList<FeedbackDTO>?> GetFeedbackByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
+            if (page == 0) page = 1;
+            if(pageSize == 0)pageSize = 10;
             IQueryable<Feedback> feedbackQuery = _db.Feedbacks;
 
             if (!string.IsNullOrEmpty(searchTerm)) feedbackQuery = feedbackQuery.Where(f => f.Title.Contains(searchTerm));
@@ -118,8 +120,10 @@ namespace Gym_App.Service.Functions.The_Applied
             var feedbacks = await PagedList<FeedbackDTO>.CreateAsync(feedbackResponse, page, pageSize);
             return feedbacks;
         }
-        public async Task<PagedList<FeedbackDTO>?> GetAllFeedbacks(int page,int pageSize = 5) //Might change it since it returns the DTO not the actual enitity(For Testing purposes)
-        {                                                             //Dont FORGET to include entities bru
+        public async Task<PagedList<FeedbackDTO>?> GetAllFeedbacks(int page,int pageSize) //Might change it since it returns the DTO not the actual enitity(For Testing purposes)
+        {                                                                                   //Dont FORGET to include entities bru
+            if (page == 0) page = 1;
+            if(pageSize == 0) pageSize = 10;
             var feedbacks = (from f in _db.Feedbacks.Include(f => f.User).Include(f => f.Workout)
                             select f);
             if (feedbacks == null || feedbacks.IsNullOrEmpty()) return null;

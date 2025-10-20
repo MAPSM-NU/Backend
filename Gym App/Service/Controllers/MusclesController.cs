@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
-    [Authorize(Policy = "ElevatedPower")]
+    //[Authorize(Policy = "ElevatedPower")]
     [Route("[controller]")]
     public class MusclesController : Controller
     {
@@ -40,9 +40,9 @@ namespace Gym_App.Service.Controllers
             return BadRequest(new { Message = "Couldn't find the given muscle" });
         }
         [HttpGet("GetAllMuscles")]
-        public async Task<IActionResult> GetAllMuscles()
+        public async Task<IActionResult> GetAllMuscles(int page, int pageSize)
         {
-            var result = await _muscleService.GetAllMuscles();
+            var result = await _muscleService.GetAllMuscles(page, pageSize);
             return Ok(result);
         }
     }

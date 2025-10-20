@@ -188,7 +188,7 @@ namespace Gym_App.Service.Functions.The_Applied
             if (user is null) return null;
             return user;
         }
-        public async Task<PagedList<UserDTO>> GetUsersByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
+        public async Task<PagedList<UserDTO>?> GetUsersByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
         {
             IQueryable<User> userQuery = _db.Users;
             if (!string.IsNullOrEmpty(searchTerm)) userQuery = userQuery.Where(u => u.Name.Contains(searchTerm) || u.Email.Contains(searchTerm) || u.Specialty.Contains(searchTerm));

@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
-    [Authorize(Policy ="NormalUsage")]
-    [ApiController]
     [Route("[controller]")]
     public class UserController : Controller
     {

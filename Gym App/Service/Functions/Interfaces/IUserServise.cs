@@ -7,14 +7,14 @@ namespace Gym_App.Service.Functions.Interfaces
 {
     public interface IUserServise
     {
-        public Task<ResponseToken> SignUpUser(UserDTO user);
-        public Task<ResponseToken> LoginUser(UserDTO user);
-        public Task<int> UpdateUser(UserUpdateDTO user);
-        public Task<int> ChangeUserType(UserTypeDTO user);
-        public Task<UserDTO?> GetUserByID(Guid userID);
-        public Task<PagedList<UserDTO>> GetUsersByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
-        public Task<PagedList<UserDTO>?> GetAllUsers(int page, int pageSize);
-        public Task<bool> DeleteUser(Guid userID);
+        Task<ResponseToken> SignUpUser(UserDTO user);
+        Task<ResponseToken> LoginUser(UserDTO user);
+        Task<int> UpdateUser(UserUpdateDTO user);
+        Task<int> ChangeUserType(UserTypeDTO user);
+        Task<UserDTO?> GetUserByID(Guid userID);
+        Task<PagedList<UserDTO>?> GetUsersByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
+        Task<PagedList<UserDTO>?> GetAllUsers(int page, int pageSize);
+        Task<bool> DeleteUser(Guid userID);
         //public Task<string> ModifyUser(Trainee user);
         //still under construction
 

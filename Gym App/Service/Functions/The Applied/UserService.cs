@@ -1,10 +1,12 @@
 ﻿using DocumentFormat.OpenXml.Office2016.Excel;
 using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 
 namespace Gym_App.Service.Functions.The_Applied
@@ -186,17 +188,50 @@ namespace Gym_App.Service.Functions.The_Applied
             if (user is null) return null;
             return user;
         }
-        public async Task<List<UserDTO>?> GetAllUsers()
+        public async Task<PagedList<UserDTO>> GetUsersByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
         {
-            var users = await (from u in _db.Users
+            IQueryable<User> userQuery = _db.Users;
+            if (!string.IsNullOrEmpty(searchTerm)) userQuery = userQuery.Where(u => u.Name.Contains(searchTerm) || u.Email.Contains(searchTerm) || u.Specialty.Contains(searchTerm));
+            
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                Expression<Func<User, Object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
+                {
+                    "name" or "n" => User => User.Name,
+                    "email" or "e" => User => User.Email,
+                    "country" or "co" => User => User.Country,
+                    "state" or "s" => User => User.State,
+                    "city" or "ci" => User => User.City,
+                    "height" or "h" => User => User.HeightCm,
+                    "weight" or "w" => User => User.WeightKg,
+                    _ => User => User.UserID,
+                };
+                if(!string.IsNullOrEmpty(OrderBy))userQuery = userQuery.OrderBy(keySelector);
+                else userQuery = userQuery.OrderBy(keySelector);
+            }
+            var userResponse = userQuery
+                                .Select(u => new UserDTO
+                                {
+                                    UserID = u.UserID,
+                                    Name = u.Name,
+                                    Email = u.Email,
+                                    UserType = u.UserType
+                                });
+            var users = await PagedList<UserDTO>.CreateAsync(userResponse, page, pageSize);
+            return users;
+        }
+        public async Task<PagedList<UserDTO>?> GetAllUsers(int page, int pageSize)
+        {
+            var usersQuery = (from u in _db.Users
                                select new UserDTO
                                {
                                    UserID = u.UserID,
                                    Name = u.Name,
                                    Email = u.Email,
                                    UserType = u.UserType
-                               }).ToListAsync();
-            return await Task.FromResult(users);
+                               });
+            var users = await PagedList<UserDTO>.CreateAsync(usersQuery,page,pageSize);
+            return users;
         }
         // Helper Functions
         public async Task<bool> isNameValid(string name)//checks if the name is already taken

@@ -1,8 +1,11 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
+using Gym_App.Service.Controllers;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Linq.Expressions;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
@@ -17,11 +20,11 @@ namespace Gym_App.Service.Functions.The_Applied
         {
             if (feedbackDTO == null) return await Task.FromResult(0);
             var user = await (from u in _db.Users
-                       where u.UserID == feedbackDTO.UserID
-                       select u).FirstOrDefaultAsync();
+                              where u.UserID == feedbackDTO.UserID
+                              select u).FirstOrDefaultAsync();
             var workout = await (from w in _db.Workouts
-                           where w.WorkoutID == feedbackDTO.WorkoutID
-                           select w).FirstOrDefaultAsync(); ;
+                                 where w.WorkoutID == feedbackDTO.WorkoutID
+                                 select w).FirstOrDefaultAsync(); ;
             if (user == null || workout == null) return await Task.FromResult(1);
             var feedback = new Feedback
             {
@@ -36,7 +39,7 @@ namespace Gym_App.Service.Functions.The_Applied
                 Workout = workout
             };
             await _db.Feedbacks.AddAsync(feedback);
-            await  _db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
             return await Task.FromResult(2);
         }
         public async Task<int> UpdateFeedback(FeedbackDTO feedbackDTO)//We really need to set a way to manage updates or modifications on the data
@@ -77,19 +80,50 @@ namespace Gym_App.Service.Functions.The_Applied
                                       FeedbackID = f.FeedbackID,
                                       Date = f.Date,
                                       CaloriesBurned = f.CaloriesBurned ?? 0,
-                                      DurationMinutes = f.CaloriesBurned?? 0,
+                                      DurationMinutes = f.CaloriesBurned ?? 0,
                                       Title = f.Title,
                                       UserID = f.User.UserID
                                   }).FirstOrDefaultAsync();
             if (feedback == null) return await Task.FromResult(feedback);
-            return await Task.FromResult(feedback);
+            return feedback;
         }
-        public async Task<List<FeedbackDTO>> GetAllFeedbacks() //Might change it since it returns the DTO not the actual enitity(For Testing purposes)
+        public async Task<PagedList<FeedbackDTO>?> GetFeedbackByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
+        {
+            IQueryable<Feedback> feedbackQuery = _db.Feedbacks;
+
+            if (!string.IsNullOrEmpty(searchTerm)) feedbackQuery = feedbackQuery.Where(f => f.Title.Contains(searchTerm));
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                Expression<Func<Feedback, Object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
+                {
+                    "title" => Feedback => Feedback.Title,
+                    "calories" => Feedback => Feedback.CaloriesBurned,
+                    "duration" => Feedback => Feedback.DurationMinutes,
+                    _ => Feedback => Feedback.FeedbackID
+                };
+            if (!string.IsNullOrEmpty(OrderBy)) feedbackQuery = feedbackQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
+            else feedbackQuery = feedbackQuery.OrderByDescending(keySelector);
+            }
+            var feedbackResponse = feedbackQuery
+                                    .Select(f => new FeedbackDTO
+                                    {
+                                        FeedbackID = f.FeedbackID,
+                                        Date = f.Date,
+                                        Title = f.Title,
+                                        Type = f.Type,
+                                        FeedbackText = f.FeedbackText,
+                                        CaloriesBurned = f.CaloriesBurned ?? 0,//For testing purposes only
+                                        DurationMinutes = f.DurationMinutes ?? 0,
+                                    });
+            var feedbacks = await PagedList<FeedbackDTO>.CreateAsync(feedbackResponse, page, pageSize);
+            return feedbacks;
+        }
+        public async Task<PagedList<FeedbackDTO>?> GetAllFeedbacks(int page,int pageSize = 5) //Might change it since it returns the DTO not the actual enitity(For Testing purposes)
         {                                                             //Dont FORGET to include entities bru
             var feedbacks = (from f in _db.Feedbacks.Include(f => f.User).Include(f => f.Workout)
                             select f);
-            if (feedbacks == null || feedbacks.IsNullOrEmpty()) return await Task.FromResult(new List<FeedbackDTO>());
-            var feedbackDTOs = await feedbacks.Select(f => new FeedbackDTO //DTO returning can work. I know this is the same as returning the entity but just checking how things work
+            if (feedbacks == null || feedbacks.IsNullOrEmpty()) return null;
+            var feedbackQuery =feedbacks.Select(f => new FeedbackDTO //DTO returning can work. I know this is the same as returning the entity but just checking how things work
             {
                 FeedbackID = f.FeedbackID,
                 Date = f.Date,
@@ -100,8 +134,9 @@ namespace Gym_App.Service.Functions.The_Applied
                 DurationMinutes = f.DurationMinutes ?? 0,
                 UserID = f.User.UserID,
                 WorkoutID = f.Workout.WorkoutID
-            }).ToListAsync();
-            return await Task.FromResult(feedbackDTOs);
+            });
+            var Feedbacks = await PagedList<FeedbackDTO>.CreateAsync(feedbackQuery, page, pageSize);
+            return Feedbacks;
         }
     }
 }

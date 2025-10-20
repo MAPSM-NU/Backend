@@ -1,4 +1,5 @@
-﻿using Gym_App.Domain.DTOs;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using Gym_App.Domain.DTOs;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,17 +36,22 @@ namespace Gym_App.Service.Controllers
             return Ok(new { message = "Message Updated Successfully" });
         }
         [HttpGet("GetSessionMessages")]
-        public async Task<IActionResult> GetSessionMessages([FromQuery] Guid sessionID)
+        public async Task<IActionResult> GetSessionMessages([FromQuery] Guid sessionID,int page, int pageSize)
         {
-            var messages = await _messageService.GetSessionMessages(sessionID);
+            var messages = await _messageService.GetSessionMessages(sessionID,page,pageSize);
             if (messages == null) return NotFound(new { message = "No messages found for this session" });
             return Ok(messages);
         }
-        [HttpGet("GetAllMessages")]
-        public async Task<IActionResult> GetAllMessages()
+        [HttpGet("GetMessagesByFilter")]
+        public async Task<IActionResult> GetMessagesByFilter([FromQuery] string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {
-            var messages = await _messageService.GetMessages();
-            if (messages == null) return NotFound(new { message = "No messages found" });
+            var messages = await _messageService.GetMessagesByFilter(page, sortColumn, OrderBy, SearchTerm, pageSize);
+            return Ok(messages);
+        }
+        [HttpGet("GetAllMessages")]
+        public async Task<IActionResult> GetAllMessages([FromQuery]int page, int pageSize)
+        {
+            var messages = await _messageService.GetMessages(page,pageSize);
             return Ok(messages);
         }
     }

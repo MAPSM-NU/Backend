@@ -45,10 +45,16 @@ namespace Gym_App.Service.Controllers
             if (result == null) return BadRequest(new { message = "User not found" });
             return Ok(result);
         }
-        [HttpGet("GetAllUsers")]
-        public async Task<IActionResult> GetAllUsers()
+        [HttpGet("GetUsersByFilter")]
+        public async Task<IActionResult> GetUsersByFilter([FromQuery] string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {
-            var users = await _user.GetAllUsers();
+            var users = await _user.GetUsersByFilter(page, sortColumn, OrderBy, SearchTerm, pageSize);
+            return Ok(users);
+        }
+        [HttpGet("GetAllUsers")]
+        public async Task<IActionResult> GetAllUsers([FromQuery] int page, int pageSize)
+        {
+            var users = await _user.GetAllUsers(page,pageSize);
             return Ok(users);
         }
     }

@@ -14,20 +14,24 @@ namespace Gym_App.Service.Functions.The_Applied
     {
         private readonly DbBase _db;
         private readonly IConfiguration _config;
+        //private readonly ILogger _logger;
         public TokenHandler(DbBase db, IConfiguration config)
         {
             _db = db;
             _config = config;
+            //_logger = logger;
         }
         public async Task<string> CreateAccessToken(UserDTO u) // For creating access Tokens
         {
+            //_logger.LogInformation("Making A new webtoken right now");
             var Role = await (from user in _db.Users
                               where user.UserID == u.UserID
                               select user.Role).ToListAsync(); //All this needs a big ass change fr
             if (Role == null) return "No Role Specified";
             string role;
-            if (Role.Count > 1) role = "Admin";
+            if (Role.Any(R => R.Any(r => r.RoleName == "Admin"))) role = "Admin";
             else role = "User";
+            //_logger.LogInformation($"role = {role}");
                 var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Name, u.Name),
@@ -48,6 +52,7 @@ namespace Gym_App.Service.Functions.The_Applied
                 expires: DateTime.UtcNow.AddHours(1),//EXPIRATION DATE
                 signingCredentials: creds
                 );
+            //_logger.LogInformation("Json Web Token created");
             return (new JwtSecurityTokenHandler().WriteToken(TokenDescriptor));
         }
         public Task<string> CreateRefreshToken(Guid UserID)//For creating new RefreshTokens

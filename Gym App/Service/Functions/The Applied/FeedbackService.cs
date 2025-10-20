@@ -101,8 +101,8 @@ namespace Gym_App.Service.Functions.The_Applied
                     "duration" => Feedback => Feedback.DurationMinutes,
                     _ => Feedback => Feedback.FeedbackID
                 };
-            if (!string.IsNullOrEmpty(OrderBy)) feedbackQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
-            else feedbackQuery.OrderByDescending(keySelector);
+            if (!string.IsNullOrEmpty(OrderBy)) feedbackQuery = feedbackQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
+            else feedbackQuery = feedbackQuery.OrderByDescending(keySelector);
             }
             var feedbackResponse = feedbackQuery
                                     .Select(f => new FeedbackDTO

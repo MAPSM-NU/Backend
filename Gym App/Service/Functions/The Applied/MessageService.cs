@@ -87,8 +87,8 @@ namespace Gym_App.Service.Functions.The_Applied
                     "message" or "content" => Message => Message.Content,
                     _ => Message => Message.MessageID,
                 };
-                if(!string.IsNullOrEmpty(OrderBy))messageQuery.OrderBy(keySelector);
-                else messageQuery.OrderByDescending(keySelector);
+                if(!string.IsNullOrEmpty(OrderBy))messageQuery = messageQuery.OrderBy(keySelector);
+                else messageQuery = messageQuery.OrderByDescending(keySelector);
             }
             var messageResponse = messageQuery
                                     .Select(m => new MessageDTO

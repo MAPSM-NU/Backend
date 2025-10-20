@@ -14,7 +14,7 @@ namespace Gym_App.Service.Controllers
         {
             _user = user;
         }
-        [HttpPut("/Update User")]
+        [HttpPut("UpdateUser")]
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateDTO user)
         {
             var result = await _user.UpdateUser(user);
@@ -22,7 +22,7 @@ namespace Gym_App.Service.Controllers
             else if (result == 2) return BadRequest(new { message = "Name is not valid" });
             return Ok(new { message = "User Updated Successfully" });
         }
-        [HttpPut("/Change User Type")]
+        [HttpPut("ChangeUserType")]
         public async Task<IActionResult> ChangeUserType([FromBody] UserTypeDTO user)
         {
             var result = await _user.ChangeUserType(user);
@@ -31,23 +31,29 @@ namespace Gym_App.Service.Controllers
 
         }
         [HttpDelete("DeleteUser")]
-        public async Task<IActionResult> DeleteUser([FromBody] Guid UserID)
+        public async Task<IActionResult> DeleteUser([FromQuery] Guid UserID)
         {
             var result = await _user.DeleteUser(UserID);
             if (result) return Ok(new { Message = "User Deleted Successfully" });
             return BadRequest(new { Message = "Failed to Delete User"});
         }
-        [HttpPost("GetUserByID")]
-        public async Task<IActionResult> GetUserByID([FromBody] Guid UserID)
+        [HttpGet("GetUserByID")]
+        public async Task<IActionResult> GetUserByID([FromQuery] Guid UserID)
         {
             var result = await _user.GetUserByID(UserID);
             if (result == null) return BadRequest(new { message = "User not found" });
             return Ok(result);
         }
-        [HttpGet("GetAllUsers")]
-        public async Task<IActionResult> GetAllUsers()
+        [HttpGet("GetUsersByFilter")]
+        public async Task<IActionResult> GetUsersByFilter([FromQuery] string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {
-            var users = await _user.GetAllUsers();
+            var users = await _user.GetUsersByFilter(page, sortColumn, OrderBy, SearchTerm, pageSize);
+            return Ok(users);
+        }
+        [HttpGet("GetAllUsers")]
+        public async Task<IActionResult> GetAllUsers([FromQuery] int page, int pageSize)
+        {
+            var users = await _user.GetAllUsers(page,pageSize);
             return Ok(users);
         }
     }

@@ -180,9 +180,9 @@ namespace Gym_App.Service.Functions.The_Applied
         }
         public async Task<PagedList<ExerciseDTO>?> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
         {
-            IQueryable<Exercise> ExerciseQuery = _db.Exercises;
+            IQueryable<Exercise> exerciseQuery = _db.Exercises;
 
-            if(!string.IsNullOrEmpty(searchTerm))ExerciseQuery = ExerciseQuery.Where(e => e.Name.Contains(searchTerm) || e.Difficulty.Contains(searchTerm));
+            if(!string.IsNullOrEmpty(searchTerm))exerciseQuery = exerciseQuery.Where(e => e.Name.Contains(searchTerm) || e.Difficulty.Contains(searchTerm));
 
             if (!string.IsNullOrEmpty(sortColumn))
             {
@@ -192,10 +192,10 @@ namespace Gym_App.Service.Functions.The_Applied
                     "difficulty" => Exercise => Exercise.Difficulty,
                     _ => Exercise => Exercise.ExerciseID
                 };
-                if (!string.IsNullOrEmpty(OrderBy)) ExerciseQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
-                else ExerciseQuery.OrderByDescending(keySelector);
+                if (!string.IsNullOrEmpty(OrderBy))exerciseQuery = exerciseQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
+                else exerciseQuery = exerciseQuery.OrderByDescending(keySelector);
             }
-            var exercisesResponse = (ExerciseQuery
+            var exercisesResponse = (exerciseQuery
                                         .Select(e => new ExerciseDTO
                                         {
                                             ExerciseID = e.ExerciseID,
@@ -211,9 +211,9 @@ namespace Gym_App.Service.Functions.The_Applied
         }
         public async Task<PagedList<ExerciseDTO>?> GetAllExercises(int page, int pageSize = 5)
         {
-            IQueryable<Exercise> ExerciseQuery = _db.Exercises;
+            IQueryable<Exercise> exerciseQuery = _db.Exercises;
 
-            var exercisesResponse = (ExerciseQuery
+            var exercisesResponse = (exerciseQuery
                                         .Select(e=> new ExerciseDTO
                                        {
                                            ExerciseID = e.ExerciseID,

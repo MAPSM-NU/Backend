@@ -1,8 +1,10 @@
 ﻿using DocumentFormat.OpenXml.Bibliography;
 using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
@@ -58,9 +60,9 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 1;
         }
-        public async Task<List<MessageDTO>> GetSessionMessages(Guid sessionID)
+        public async Task<PagedList<MessageDTO>> GetSessionMessages(Guid sessionID,int page, int pageSize)
         {
-            var messages = await (from m in _db.Messages
+            var messagesQuery = (from m in _db.Messages
                            where m.Session.SessionID == sessionID
                            select new MessageDTO
                            {
@@ -70,12 +72,40 @@ namespace Gym_App.Service.Functions.The_Applied
                                Content = m.Content,
                                IsRead = m.IsRead,
                                Timestamp = m.Timestamp
-                           }).ToListAsync();
-            return await Task.FromResult(messages);
+                           });
+            var messages = await PagedList<MessageDTO>.CreateAsync(messagesQuery, page, pageSize);
+            return messages;
         }
-        public async Task<List<MessageDTO>> GetMessages()
+        public async Task<PagedList<MessageDTO>> GetMessagesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            var messages = await (from m in _db.Messages
+            IQueryable<Message> messageQuery = _db.Messages;
+            if (!string.IsNullOrEmpty(searchTerm)) messageQuery = messageQuery.Where(m => m.Content.Contains(searchTerm));//Might add user name belmara bs will wait
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                Expression<Func<Message, Object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
+                {
+                    "message" or "content" => Message => Message.Content,
+                    _ => Message => Message.MessageID,
+                };
+                if(!string.IsNullOrEmpty(OrderBy))messageQuery.OrderBy(keySelector);
+                else messageQuery.OrderByDescending(keySelector);
+            }
+            var messageResponse = messageQuery
+                                    .Select(m => new MessageDTO
+                                    {
+                                        SenderID = m.Sender.UserID,
+                                        SessionID = m.Session.SessionID,
+                                        MessageID = m.MessageID,
+                                        Content = m.Content,
+                                        IsRead = m.IsRead,
+                                        Timestamp = m.Timestamp
+                                    });
+            var messages = await PagedList<MessageDTO>.CreateAsync(messageResponse,page,pageSize);
+            return messages;
+        }
+        public async Task<PagedList<MessageDTO>> GetMessages(int page, int pageSize)
+        {
+            var messagesQuery = (from m in _db.Messages
                                   select new MessageDTO
                            {
                                SenderID = m.Sender.UserID,
@@ -84,8 +114,10 @@ namespace Gym_App.Service.Functions.The_Applied
                                Content = m.Content,
                                IsRead = m.IsRead,
                                Timestamp = m.Timestamp
-                           }).ToListAsync();
-            return await Task.FromResult(messages);
+                           });
+            var messages = await PagedList<MessageDTO>.CreateAsync(messagesQuery, page, pageSize);
+            return messages;
         }
+
     }
 }

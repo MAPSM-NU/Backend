@@ -1,7 +1,9 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
@@ -60,25 +62,55 @@ namespace Gym_App.Service.Functions.The_Applied
             return 1;
         }
 
-        public async Task<List<NotificationDTO>> GetNotifications(Guid UserID)
+        public async Task<PagedList<NotificationDTO>> GetNotifications(Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            var notifications = await (from n in _db.Notifications
-                                       where n.User.UserID == UserID
-                                       select new NotificationDTO
-                                       {
-                                           NotificationID = n.NotificationID,
-                                           UserID = UserID,
-                                           Date = n.Date,
-                                           Title = n.Title,
-                                           Content = n.Content
-                                       }
-                                   ).ToListAsync();
-            if (notifications == null) return null;
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
+            var notificationsQuery = (from n in _db.Notifications
+                                 where n.User.UserID == UserID
+                                 select new NotificationDTO
+                                 {
+                                    NotificationID = n.NotificationID,
+                                    UserID = UserID,
+                                    Date = n.Date,
+                                    Title = n.Title,
+                                    Content = n.Content
+                                 });
+            if (notificationsQuery == null) return null;
+            DateTime validStartDate, validEndDate;
+            if(DateTime.TryParse(startDate,out validStartDate))
+            {
+                notificationsQuery = notificationsQuery.Where(n=>n.Date >  validStartDate);
+            }
+            if (DateTime.TryParse(endDate,out validEndDate))
+            {
+                notificationsQuery = notificationsQuery.Where(n=>n.Date < validEndDate);
+            }
+            if (!string.IsNullOrEmpty(searchTerm)) notificationsQuery = notificationsQuery.Where(n => n.Content.Contains(searchTerm) || n.Title.Contains(searchTerm));
+            if (!string.IsNullOrEmpty(sortColumn))//Either sort by custom given inputs
+            {
+                Expression<Func<NotificationDTO, Object>> keySelector = sortColumn.ToLower() switch
+                {
+                    "content" or "c" => Notification => Notification.Content,
+                    "title" or "t" => Notification => Notification.Title,
+                    _ => Notification => Notification.NotificationID
+                };
+                if (!string.IsNullOrEmpty(OrderBy)) notificationsQuery = notificationsQuery.OrderBy(keySelector);
+                else notificationsQuery = notificationsQuery.OrderByDescending(keySelector);
+            }
+            else//Or you can sort from most recent notifications
+            {
+                notificationsQuery = notificationsQuery.OrderByDescending(n => n.Date);
+            }
+            var notifications = await PagedList<NotificationDTO>.CreateAsync(notificationsQuery, page, pageSize);
             return notifications;
         }
-        public async Task<List<NotificationDTO>> GetAllNotifications()
+
+        public async Task<PagedList<NotificationDTO>> GetAllNotifications(int page, int pageSize)
         {
-            var Notifications = await (from n in _db.Notifications
+            if (page == 0) page = 1;
+            if(pageSize == 0) pageSize = 10;
+            var notificationsQuery =(from n in _db.Notifications
                                 select new NotificationDTO
                                 {
                                     NotificationID = n.NotificationID,
@@ -86,8 +118,10 @@ namespace Gym_App.Service.Functions.The_Applied
                                     Date = n.Date,
                                     Title = n.Title,
                                     Content = n.Content
-                                }).ToListAsync();
-            return Notifications;
+                                });
+            notificationsQuery = notificationsQuery.OrderByDescending(n => n.Date);
+            var notifications = await PagedList<NotificationDTO>.CreateAsync(notificationsQuery,page, pageSize);
+            return notifications;
         }
         public Task<int> MarkAllAsRead(Guid UserID)
         {

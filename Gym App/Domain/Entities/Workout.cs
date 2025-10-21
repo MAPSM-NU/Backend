@@ -20,6 +20,7 @@ namespace Gym_App.Domain.Entities
         [Required]
         [Column(TypeName = "varchar(15)")]
         public string Day { get; set; }
+        public DateTime CreatAt { get; set; }
 
         //Relationships
 

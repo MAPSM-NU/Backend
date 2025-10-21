@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
-    [ApiController]
     [Route("[controller]")]
     public class ScheduleController : Controller
     {
@@ -80,15 +79,15 @@ namespace Gym_App.Service.Controllers
         }
 
         [HttpGet("GetSchedulesOfUser")]
-        public async Task<IActionResult> GetSchedulesByOfUser([FromQuery] Guid userID)
+        public async Task<IActionResult> GetSchedulesByOfUser([FromQuery] Guid userID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
         {
-            var schedules = await _scheduleService.GetSchedulesByOfUser(userID);
+            var schedules = await _scheduleService.GetSchedulesByOfUser(userID,startDate,endDate,page,sortColumn, OrderBy,searchTerm,pageSize);
             return Ok(schedules);
         }
         [HttpGet("GetAllSchedules")]
-        public async Task<IActionResult> GetAllSchedules()
+        public async Task<IActionResult> GetAllSchedules([FromQuery] int page,int pageSize)
         {
-            var schedules = await _scheduleService.GetAllSchedules();
+            var schedules = await _scheduleService.GetAllSchedules(page,pageSize);
             return Ok(schedules);
         }
 

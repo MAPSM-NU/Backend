@@ -1,7 +1,9 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
@@ -23,6 +25,7 @@ namespace Gym_App.Service.Functions.The_Applied
                 ScheduleID = Guid.NewGuid(),
                 Name = schedule.Name,
                 Type = schedule.Type,
+                CreatedAt = DateTime.UtcNow,
                 //Description = schedule.Description, //Could add a description why not
                 User = User
             };
@@ -147,32 +150,63 @@ namespace Gym_App.Service.Functions.The_Applied
             if (schedule == null) return null;
             return schedule;
         }
-        public async Task<List<ScheduleDTO>?> GetSchedulesByOfUser(Guid UserID)
+        public async Task<PagedList<ScheduleDTO>?> GetSchedulesByOfUser(Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            var schedules = await(from s in _db.Schedules
+            if (page == 0) page = 1;
+            if(pageSize == 0) pageSize = 10;
+            var schedulesQuery = (from s in _db.Schedules
                             where s.User.UserID == UserID
-                            select new ScheduleDTO
-                            {
-                                ScheduleID = s.ScheduleID,
-                                Name = s.Name,
-                                Type = s.Type,
-                                UserID = s.User.UserID,
-                            }).ToListAsync();
-            if(schedules == null) return null;
+                            select s);
+            if(schedulesQuery == null) return null;
+            DateTime validStartDate, validEndDate;
+            if (DateTime.TryParse(startDate, out validStartDate))
+            {
+                schedulesQuery = schedulesQuery.Where(s => s.CreatedAt > validStartDate);
+            }
+            if (DateTime.TryParse(endDate, out validEndDate))
+            {
+                schedulesQuery = schedulesQuery.Where(s=>s.CreatedAt < validEndDate);
+            }
+            if(!string.IsNullOrEmpty(searchTerm))schedulesQuery = schedulesQuery.Where(s=>s.Name.Contains(searchTerm));
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                Expression<Func<Schedule, Object>> keySelector = sortColumn.ToLower() switch
+                {
+                    "date" or "d" => Schedule => Schedule.CreatedAt,
+                    "name" or "n" => Schedule => Schedule.Name,
+                    "type" or "t" => Schedule => Schedule.Type,
+                    _ => Schedule => Schedule.ScheduleID
+                };
+                if(!string.IsNullOrEmpty(OrderBy)) schedulesQuery = schedulesQuery.OrderBy(keySelector);
+                else schedulesQuery = schedulesQuery.OrderByDescending(keySelector);
+            }
+            var schedulesResponse = schedulesQuery.Select(s => new ScheduleDTO
+                                    {
+                                        UserID = s.User.UserID,
+                                        ScheduleID = s.ScheduleID,
+                                        Name = s.Name,
+                                        Type = s.Type,
+                                        CreatedAt = s.CreatedAt,
+                                    });
+            var schedules = await PagedList<ScheduleDTO>.CreateAsync(schedulesResponse,page,pageSize);
             return schedules;
         }
 
-        public async Task<List<ScheduleDTO>?> GetAllSchedules()
+        public async Task<PagedList<ScheduleDTO>?> GetAllSchedules(int page,int pageSize)
         {
-            var schedules = await(from s in _db.Schedules
+            if (page == 0)page = 1;
+            if (pageSize == 0)pageSize = 10;
+            var schedulesQuery = (from s in _db.Schedules
                             select new ScheduleDTO
                             {
+                                UserID = s.User.UserID,
                                 ScheduleID = s.ScheduleID,
                                 Name = s.Name,
                                 Type = s.Type,
-                                UserID = s.User.UserID,
-                            }).ToListAsync();
-            if (schedules == null) return null;
+                                CreatedAt = s.CreatedAt
+                            });
+            if (schedulesQuery == null) return null;
+            var schedules = await PagedList<ScheduleDTO>.CreateAsync(schedulesQuery, page, pageSize);
             return schedules;
         }
 

@@ -29,6 +29,7 @@ namespace Gym_App.Service.Functions.The_Applied
                 Date = workout.Date,
                 Difficulty = workout.Difficulty,
                 Day = workout.Day,
+                CreatAt = DateTime.Now,
                 Schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.User.UserID == workout.UserID)
             };
             isUserExist.Workouts?.Add(newWorkout);

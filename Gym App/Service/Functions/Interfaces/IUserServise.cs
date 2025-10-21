@@ -12,7 +12,7 @@ namespace Gym_App.Service.Functions.Interfaces
         Task<int> UpdateUser(UserUpdateDTO user);
         Task<int> ChangeUserType(UserTypeDTO user);
         Task<UserDTO?> GetUserByID(Guid userID);
-        Task<PagedList<UserDTO>?> GetUsersByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
+        Task<PagedList<UserDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
         Task<PagedList<UserDTO>?> GetAllUsers(int page, int pageSize);
         Task<bool> DeleteUser(Guid userID);
         //public Task<string> ModifyUser(Trainee user);

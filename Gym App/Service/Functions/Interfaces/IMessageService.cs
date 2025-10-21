@@ -10,7 +10,7 @@ namespace Gym_App.Service.Functions.Interfaces
         public Task<int> DeleteMessages(MessageDTO sessionMessages);
         public Task<int> UpdateMessage(MessageDTO message);
         public Task<PagedList<MessageDTO>> GetSessionMessages(Guid sessionID,int page,int pageSize);
-        public Task<PagedList<MessageDTO>> GetMessagesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
+        public Task<PagedList<MessageDTO>> GetMessagesByFilter(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
         public Task<PagedList<MessageDTO>> GetMessages(int page, int pageSize);
     }
 }

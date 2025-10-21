@@ -188,9 +188,20 @@ namespace Gym_App.Service.Functions.The_Applied
             if (user is null) return null;
             return user;
         }
-        public async Task<PagedList<UserDTO>?> GetUsersByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
+        public async Task<PagedList<UserDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
             IQueryable<User> userQuery = _db.Users;
+            DateTime validStartDate, validEndDate;
+            if(DateTime.TryParse(startDate,out validStartDate))
+            {
+                userQuery = userQuery.Where(u => u.CreatedAt > validStartDate);
+            }
+            if(DateTime.TryParse(endDate, out validEndDate))
+            {
+                userQuery = userQuery.Where(u=>u.CreatedAt < validEndDate);
+            }
             if (!string.IsNullOrEmpty(searchTerm)) userQuery = userQuery.Where(u => u.Name.Contains(searchTerm) || u.Email.Contains(searchTerm) || u.Specialty.Contains(searchTerm));
             
             if (!string.IsNullOrEmpty(sortColumn))

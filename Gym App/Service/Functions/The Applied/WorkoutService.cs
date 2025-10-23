@@ -1,8 +1,10 @@
 ﻿using DocumentFormat.OpenXml.Wordprocessing;
 using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
@@ -164,34 +166,59 @@ namespace Gym_App.Service.Functions.The_Applied
                           }).FirstOrDefaultAsync();
             return Workout;
         }
-        public async Task<List<ExerciseDTO>?> GetExercisesOfWorkout(Guid WorkoutID)
+        public async Task<PagedList<ExerciseDTO>?> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            var Exercises = await(from w in _db.Workouts
-                                 where w.WorkoutID == WorkoutID
-                                 from e in w.Exercises
-                                 select new ExerciseDTO
-                                 {
-                                     ExerciseID = e.ExerciseID,
-                                     Name = e.Name,
-                                     Description = e.Description,
-                                     Difficulty = e.Difficulty,
-                                     VideoUrl = e.VideoUrl,
-                                 }).ToListAsync();
-            return Exercises;
+            if (page == 0) page = 1;
+            if(pageSize == 0)pageSize = 10;
+            var exercisesQuery = from w in _db.Workouts
+                            from e in w.Exercises
+                            where w.WorkoutID == WorkoutID && w.Exercises.Contains(e)
+                            select e;
+            if(!string.IsNullOrEmpty(searchTerm))exercisesQuery = exercisesQuery.Where(e=>e.Name.Contains(searchTerm) || e.Description.Contains(searchTerm)
+            || e.Difficulty.Contains(searchTerm));
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                Expression<Func<Exercise, Object>> keySelector = searchTerm.ToLower() switch
+                {
+                    "name" or "n" => Exercise => Exercise.Name,
+                    "difficulty" or "dif" => Exercise => Exercise.Difficulty,
+                    "description" or "desc" => Exercise => Exercise.Description,
+                    "category" or "c" => Exercise => Exercise.Category,
+                    _ => Exercise => Exercise.ExerciseID
+                };
+                if (!string.IsNullOrEmpty(OrderBy)) exercisesQuery = exercisesQuery.OrderBy(keySelector);
+                else exercisesQuery = exercisesQuery.OrderByDescending(keySelector);
+            }
+            var exerciseResult = exercisesQuery
+                                .Select(e => new ExerciseDTO
+                                {
+                                    ExerciseID = e.ExerciseID,
+                                    Name = e.Name,
+                                    Description = e.Description,
+                                    Difficulty = e.Difficulty,
+                                    Grip = e.Grip,
+                                    Category = e.Category,
+                                    VideoUrl = e.VideoUrl,
+                                });
+            var exercises = await PagedList<ExerciseDTO>.CreateAsync(exerciseResult, page, pageSize);
+            return exercises;
         }
-        public async Task<List<WorkoutDTO>?> GetAllWorkouts()
+        public async Task<PagedList<WorkoutDTO>?> GetAllWorkouts(int page, int pageSize)
         {
-            var Workouts = await(from w in _db.Workouts
-                                 select new WorkoutDTO
-                                 {
-                                     WorkoutID = w.WorkoutID,
-                                     Name = w.Name,
-                                     Description = w.Description,
-                                     Date = w.Date,
-                                     Difficulty = w.Difficulty,
-                                     Day = w.Day,
-                                 }).ToListAsync();
-            return Workouts;
+            if (page == 0) page = 1;
+            if(pageSize == 0) pageSize = 10;
+            var workoutsQuery = from w in _db.Workouts
+                           select new WorkoutDTO
+                           {
+                               WorkoutID = w.WorkoutID,
+                               Name = w.Name,
+                               Description = w.Description,
+                               Date = w.Date,
+                               Difficulty = w.Difficulty,
+                               Day = w.Day,
+                           };
+            var workouts = await PagedList<WorkoutDTO>.CreateAsync(workoutsQuery, page, pageSize);
+            return workouts;
         }
 
     }

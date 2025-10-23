@@ -1,5 +1,6 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 
 namespace Gym_App.Service.Functions.Interfaces
 {
@@ -13,7 +14,7 @@ namespace Gym_App.Service.Functions.Interfaces
         public Task<int> DeleteExercisesFromWorkout(WorkoutExerciseDTO workoutExercise);
         public Task<WorkoutDTO?> GetWorkoutByName(string name);
         public Task<WorkoutDTO?> GetWorkoutByID(Guid ID);
-        public Task<List<ExerciseDTO>?> GetExercisesOfWorkout(Guid WorkoutID);
-        public Task<List<WorkoutDTO>?> GetAllWorkouts();
+        public Task<PagedList<ExerciseDTO>?> GetExercisesOfWorkout(Guid WorkoutID,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
+        public Task<PagedList<WorkoutDTO>?> GetAllWorkouts(int page,int pageSize);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -109,13 +110,16 @@ namespace Gym_App.Service.Functions.The_Applied
             };
             _db.RefreshTokens.Update(result);
             await _db.SaveChangesAsync();
-            return await Task.FromResult(Response);
+            return Response;
         }
-        public Task<IQueryable<RefreshTokens>> GetAllRefreshTokens()
+        public async Task<PagedList<RefreshTokens>> GetAllRefreshTokens(int page,int pageSize)
         {
-            var tokens = (from t in _db.RefreshTokens
-                          select t).AsQueryable();
-            return Task.FromResult(tokens);
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
+            var tokensQuery = (from t in _db.RefreshTokens
+                          select t);
+            var tokens = await PagedList<RefreshTokens>.CreateAsync(tokensQuery, page, pageSize);
+            return tokens;
         }
     }
 }

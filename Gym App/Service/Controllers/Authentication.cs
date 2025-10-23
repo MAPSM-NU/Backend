@@ -52,9 +52,9 @@ namespace Gym_App.Service.Controllers
             else return Ok(result);
         }
         [HttpGet("GetTokens")]
-        public async Task<IActionResult> GetTokens()
+        public async Task<IActionResult> GetTokens([FromQuery]int page,int pageSize)
         {
-            var result = await _tokenHandler.GetAllRefreshTokens();
+            var result = await _tokenHandler.GetAllRefreshTokens(page,pageSize);
             return Ok(result);
         }
     }

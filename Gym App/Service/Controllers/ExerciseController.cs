@@ -86,9 +86,9 @@ namespace Gym_App.Service.Controllers
             return Ok(result);
         }
         [HttpPost("GetExerciseByMuscle")]
-        public async Task<IActionResult> GetWorkoutsByMuscle([FromBody] ExerciseListDTO muscles)
+        public async Task<IActionResult> GetWorkoutsByMuscle([FromQuery] int page, int pageSize,[FromBody] ExerciseListDTO muscles)
         {
-            var result = await _exerciseService.GetExercisesByMuscle(muscles);
+            var result = await _exerciseService.GetExercisesByMuscle(muscles,page,pageSize);
             if(result == null) return BadRequest(new { Message = "Either you entered the muscles wrong or no Exercise was found." });
             return Ok(result);
         }

@@ -161,10 +161,12 @@ namespace Gym_App.Service.Functions.The_Applied
                               }).ToList();
             return muscleDTOs;
         }
-        public async Task<List<ExerciseDTO>>? GetExercisesByMuscle(ExerciseListDTO muscles)
+        public async Task<PagedList<ExerciseDTO>>? GetExercisesByMuscle(ExerciseListDTO muscles,int page,int pageSize)
         {
+            if (page == 0) page = 1;
+            if(pageSize == 0) pageSize = 10;
             var muscleNames = muscles.Muscles;
-            var query = await (from e in _db.Exercises
+            var exercisequery = (from e in _db.Exercises
                 where muscleNames.All(name => e.Muscles.Any(m => m.Name == name))
                 select new ExerciseDTO
                 {
@@ -175,8 +177,9 @@ namespace Gym_App.Service.Functions.The_Applied
                     VideoUrl = e.VideoUrl,
                     Category = e.Category,
                     Grip = e.Grip,
-                }).ToListAsync();
-            return await Task.FromResult(query);
+                });
+            var exercises = await PagedList<ExerciseDTO>.CreateAsync(exercisequery, page, pageSize);
+            return exercises;
         }
         public async Task<PagedList<ExerciseDTO>?> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
         {

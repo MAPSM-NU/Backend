@@ -7,6 +7,7 @@ namespace Gym_App.Service.Functions.Interfaces
 {
     public interface IUserServise
     {
+        Task<ResponseToken> CreateAdmin(UserDTO user);   
         Task<ResponseToken> SignUpUser(UserDTO user);
         Task<ResponseToken> LoginUser(UserDTO user);
         Task<int> UpdateUser(UserUpdateDTO user);

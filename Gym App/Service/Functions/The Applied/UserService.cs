@@ -20,6 +20,44 @@ namespace Gym_App.Service.Functions.The_Applied
             _db = db;
             _tokenHandler = tokenHandler;
         }
+        public async Task<ResponseToken> CreateAdmin(UserDTO u)
+        {
+            //Creating an admin user
+            if (u.Name == null || u.Email == null || u.Password == null) return new ResponseToken { Status = 0 };
+            if (!(await isNameValid(u.Name))) return new ResponseToken { Status = 1 };
+            if ((await EmailExists(u.Email))) return new ResponseToken { Status = 2 };
+            if (!IsEmailValid(u.Email)) return new ResponseToken { Status = 3 };
+            if (!IsPasswordValid(u.Password).Result) return new ResponseToken { Status = 4 };
+            User user = new User
+            {
+                UserID = Guid.NewGuid(),
+                Name = u.Name,
+                Email = u.Email,
+                Password = new PasswordHasher<User>().HashPassword(null, u.Password),
+                CreatedAt = DateTime.Now,
+                UserType = "Admin"
+            };
+            var Role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
+            user.Role.Add(Role);
+            //Making the Tokens and saving them to the database
+            u.UserID = user.UserID;
+            var Token = await _tokenHandler.CreateAccessToken(u);
+            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
+            await _db.Users.AddAsync(user);
+            await _db.RefreshTokens.AddAsync(new RefreshTokens
+            {
+                UserID = user.UserID,
+                RefreshToken = RefreshToken,
+                Expires = DateTime.Now.AddDays(4)
+            });
+            await _db.SaveChangesAsync();
+            return await Task.FromResult(new ResponseToken
+            {
+                Status = 5,
+                AccessToken = Token,
+                RefreshToken = RefreshToken
+            });
+        }
         public async Task<ResponseToken> SignUpUser(UserDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
                                                               //5 == Succesful signup
         {
@@ -31,57 +69,28 @@ namespace Gym_App.Service.Functions.The_Applied
             if (!IsPasswordValid(u.Password).Result) return new ResponseToken { Status = 4 };
             if (u.UserType == null) u.UserType = "Trainee";
             
-            User user;
-            if (u.UserType == "Trainer" || u.UserType.ToLower() == "t")
+            User user = new User
             {
-                user = new User
-                {
-                    UserID = Guid.NewGuid(),
-                    Name = u.Name,
-                    Email = u.Email,
-                    Password = new PasswordHasher<User>().HashPassword(null, u.Password),
-                    CreatedAt = DateTime.Now,
-                    UserType = "Trainee",
-                };
-            }
-            else if(u.UserType.ToLower() == "coach" || u.UserType.ToLower() == "c")
-            {
-                user = new User
-                {
-                    UserID = Guid.NewGuid(),
-                    Name = u.Name,
-                    Email = u.Email,
-                    Password = new PasswordHasher<User>().HashPassword(null, u.Password),
-                    CreatedAt = DateTime.Now,
-                    UserType = "Coach"
-                };
-                
-            }
-            else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d")
-            {
-                user = new User
-                {
-                    UserID = Guid.NewGuid(),
-                    Name = u.Name,
-                    Email = u.Email,
-                    Password = new PasswordHasher<User>().HashPassword(null, u.Password),
-                    CreatedAt = DateTime.Now,
-                    UserType = "Doctor"
-                };
-            }
+                UserID = Guid.NewGuid(),
+                Name = u.Name,
+                Email = u.Email,
+                Password = new PasswordHasher<User>().HashPassword(null, u.Password),
+                CreatedAt = DateTime.Now,
+            };
+            if (u.UserType == "Trainer" || u.UserType.ToLower() == "t") user.UserType = "Trainee";
+            else if (u.UserType.ToLower() == "coach" || u.UserType.ToLower() == "c") user.UserType = "Coach";
+            else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d") user.UserType = "Doctor";
             else
             {
                 return new ResponseToken { Status = 7 };
             }
             var Role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
             user.Role.Add(Role);
-            Role.Users.Add(user);
             //Making the Tokens and saving them to the database
             u.UserID = user.UserID;
             var Token = await _tokenHandler.CreateAccessToken(u);
             var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
             await _db.Users.AddAsync(user);
-            await _db.Roles.AddAsync(Role);
             await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
                 UserID = user.UserID,

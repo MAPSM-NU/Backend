@@ -1,5 +1,6 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 
 namespace Gym_App.Service.Functions.Interfaces
 {
@@ -11,8 +12,9 @@ namespace Gym_App.Service.Functions.Interfaces
         Task<int> MarkAsRead(Guid NotificationID);// Not implemented yet
         Task<int> MarkAllAsRead(Guid UserID);// Not implemented yet
         Task<int> DeleteAllNotifications(Guid UserID);
-        Task<List<NotificationDTO>> GetNotifications(Guid UserID);
-        Task<List<NotificationDTO>> GetAllNotifications();
+        Task<PagedList<NotificationDTO>> GetNotifications(Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm,int pageSize);
+        //Task<PagedList<NotificationDTO>> GetNotificationsByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
+        Task<PagedList<NotificationDTO>> GetAllNotifications(int page, int pageSize);
 
     }
 }

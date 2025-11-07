@@ -43,9 +43,9 @@ namespace Gym_App.Service.Controllers
             return Ok(messages);
         }
         [HttpGet("GetMessagesByFilter")]
-        public async Task<IActionResult> GetMessagesByFilter([FromQuery] string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        public async Task<IActionResult> GetMessagesByFilter([FromQuery]string startDate,string endDate, string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {
-            var messages = await _messageService.GetMessagesByFilter(page, sortColumn, OrderBy, SearchTerm, pageSize);
+            var messages = await _messageService.GetMessagesByFilter(startDate,endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
             return Ok(messages);
         }
         [HttpGet("GetAllMessages")]

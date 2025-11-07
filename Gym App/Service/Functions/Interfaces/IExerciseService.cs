@@ -14,7 +14,7 @@ namespace Gym_App.Service.Functions.Interfaces
         public Task<ExerciseDTO?> GetExerciseByName(string name);
         public Task<ExerciseDTO?> GetExerciseByID(Guid id);
         public Task<List<MuscleDTO>?> GetExerciseMuscles(Guid exerciseID);
-        public Task<List<ExerciseDTO>>? GetExercisesByMuscle(ExerciseListDTO muscles);
+        public Task<PagedList<ExerciseDTO>>? GetExercisesByMuscle(ExerciseListDTO muscles,int page,int pageSize);
         public Task<PagedList<ExerciseDTO>?> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
         public Task<PagedList<ExerciseDTO>?> GetAllExercises(int page,int pageSize = 5);
     }

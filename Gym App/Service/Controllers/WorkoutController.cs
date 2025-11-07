@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
-    [ApiController]
     [Route("[controller]")]
     public class WorkoutController : Controller
     {
@@ -64,8 +63,8 @@ namespace Gym_App.Service.Controllers
             else if(result == 1) return BadRequest(new { message = "Given workout does not exist." });
             else return BadRequest(new { message = "Faulty DTO given." });
         }
-        [HttpPost("GetWorkoutbyName")]
-        public async Task<IActionResult> GetWorkoutByName([FromBody] string name)
+        [HttpGet("GetWorkoutbyName")]
+        public async Task<IActionResult> GetWorkoutByName([FromQuery] string name)
         {
             var result = await _workoutService.GetWorkoutByName(name);
             if(result==null) return BadRequest(new { message = "Workout not found." });
@@ -79,16 +78,16 @@ namespace Gym_App.Service.Controllers
             return Ok(result);
         }
         [HttpGet("GetExercisesofWorkout")]
-        public async Task<IActionResult> GetExercisesOfWorkout([FromQuery] Guid workoutID)
+        public async Task<IActionResult> GetExercisesOfWorkout([FromQuery] Guid workoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            var result = await _workoutService.GetExercisesOfWorkout(workoutID);
+            var result = await _workoutService.GetExercisesOfWorkout(workoutID,page,sortColumn,OrderBy,searchTerm,pageSize);
             if(result==null) return BadRequest(new { message = "Workout not found." });
             return Ok(result);
         }
         [HttpGet("GetAllWorkouts")]
-        public async Task<IActionResult> GetAllWorkouts()
+        public async Task<IActionResult> GetAllWorkouts(int page,int pageSize)
         {
-            var result = await _workoutService.GetAllWorkouts();
+            var result = await _workoutService.GetAllWorkouts(page,pageSize);
             return Ok(result);
         }
     }

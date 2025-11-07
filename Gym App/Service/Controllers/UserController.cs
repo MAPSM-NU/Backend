@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
-    [Authorize(Policy ="NormalUsage")]
-    [ApiController]
     [Route("[controller]")]
     public class UserController : Controller
     {
@@ -46,9 +44,9 @@ namespace Gym_App.Service.Controllers
             return Ok(result);
         }
         [HttpGet("GetUsersByFilter")]
-        public async Task<IActionResult> GetUsersByFilter([FromQuery] string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        public async Task<IActionResult> GetUsersByFilter([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {
-            var users = await _user.GetUsersByFilter(page, sortColumn, OrderBy, SearchTerm, pageSize);
+            var users = await _user.GetUsersByFilter(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
             return Ok(users);
         }
         [HttpGet("GetAllUsers")]

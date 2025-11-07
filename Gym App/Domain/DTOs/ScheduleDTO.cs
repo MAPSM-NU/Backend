@@ -9,6 +9,7 @@ namespace Gym_App.Domain.DTOs
         public Guid ScheduleID { get; set; }
         public string Name { get; set; }
         public string Type { get; set; }
+        public DateTime CreatedAt { get; set; }
 
     }
 }

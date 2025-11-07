@@ -1,5 +1,6 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 
 namespace Gym_App.Service.Functions.Interfaces
 {
@@ -9,8 +10,8 @@ namespace Gym_App.Service.Functions.Interfaces
         Task<int> DeleteSession(Guid sessionID);
         Task<int> AddMessages(SessionMessagesDTO sessionMessages);
         Task<int> DeleteMessages(SessionMessagesDTO sessionMessages);
-        Task<List<MessageDTO?>> GetSessionMessages(Guid sessionID);
-        Task<List<UserDTO>?> GetUsersOfSession(Guid sessionID);
-        Task<List<SessionDTO>>? GetAllSessions();
+        Task<PagedList<MessageDTO>?> GetSessionMessages(Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
+        Task<PagedList<UserDTO>?> GetUsersOfSession(Guid sessionID,int page,int pageSize);
+        Task<PagedList<SessionDTO>>? GetAllSessions(int page,int pagSize);
     }
 }

@@ -43,9 +43,9 @@ namespace Gym_App.Service.Controllers
             return Ok(feedback);
         }
         [HttpGet("GetFeedbacksByFilter")]
-        public async Task<IActionResult> GetFeedbacksByFilter([FromQuery] string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
-        {
-            var feedbacks = await _feedbackService.GetFeedbackByFilter(page, sortColumn, OrderBy, SearchTerm, pageSize);
+        public async Task<IActionResult> GetFeedbacksByFilter([FromQuery]string startDate,string endDate,string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        {//startDate and endDate are string so I can parse and check them
+            var feedbacks = await _feedbackService.GetFeedbackByFilter(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
             return Ok(feedbacks);
         }
         [HttpGet("GetAllFeedbacks")]

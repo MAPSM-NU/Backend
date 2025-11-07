@@ -76,9 +76,20 @@ namespace Gym_App.Service.Functions.The_Applied
             var messages = await PagedList<MessageDTO>.CreateAsync(messagesQuery, page, pageSize);
             return messages;
         }
-        public async Task<PagedList<MessageDTO>> GetMessagesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<PagedList<MessageDTO>> GetMessagesByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
+            if(page == 0) page = 1;
+            if(pageSize == 0)pageSize = 10;
             IQueryable<Message> messageQuery = _db.Messages;
+            DateTime validStartDate, validEndDate;
+            if(DateTime.TryParse(startDate, out validStartDate))
+            {
+                messageQuery = messageQuery.Where(m => m.Timestamp > validStartDate);
+            }
+            if (DateTime.TryParse(endDate, out validEndDate))
+            {
+                messageQuery = messageQuery.Where(m=>m.Timestamp < validEndDate);
+            }
             if (!string.IsNullOrEmpty(searchTerm)) messageQuery = messageQuery.Where(m => m.Content.Contains(searchTerm));//Might add user name belmara bs will wait
             if (!string.IsNullOrEmpty(sortColumn))
             {

@@ -70,7 +70,7 @@ builder.Services.AddScoped<ISessionService, SessionService>();
 
 builder.Services.AddDbContext<DbBase>(options =>
 {
-    options.UseSqlServer("Data Source=DESKTOP-OR6CO4J\\SQLEXPRESS;Initial Catalog=Gym App;Integrated Security=True;Trust Server Certificate=True");
+    options.UseSqlServer("Data Source=localhost;Database=master;Initial Catalog=GymApp;Integrated Security=True;Trust Server Certificate=True");//depends on your server!!!
 });
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
     AddJwtBearer(options =>

@@ -13,6 +13,7 @@ namespace Gym_App.Domain.Entities
         [Required]
         [Column(TypeName = "varchar(50)")]
         public string Type { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         //Relationships
         public ICollection<Workout>? Workouts { get; set; } = new List<Workout>();

@@ -1,10 +1,10 @@
 ﻿using Gym_App.Domain.DTOs;
 using Gym_App.Service.Functions.Interfaces;
+using MailKit.Search;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
-    [ApiController]
     [Route("[controller]")]
     public class SessionController : Controller
     {
@@ -50,23 +50,23 @@ namespace Gym_App.Service.Controllers
 
         }
         [HttpGet("GetSessionMessages")]
-        public async Task<IActionResult> GetSessionMessages([FromQuery] Guid sessionID)
+        public async Task<IActionResult> GetSessionMessages([FromQuery] Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            var messages = await _sessionService.GetSessionMessages(sessionID);
+            var messages = await _sessionService.GetSessionMessages(sessionID,startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
             if (messages == null) return NotFound(new { message = "No messages found for this session" });
             return Ok(messages);
         }
         [HttpGet("GetUsersOfSession")]
-        public async Task<IActionResult> GetUsersOfSession([FromQuery] Guid sessionID)
+        public async Task<IActionResult> GetUsersOfSession([FromQuery] Guid sessionID,int page,int pageSize)
         {
-            var users = await _sessionService.GetUsersOfSession(sessionID);
+            var users = await _sessionService.GetUsersOfSession(sessionID,page,pageSize);
             if (users == null) return NotFound(new { message = "No users found for this session" });
             return Ok(users);
         }
         [HttpGet("GetAllSessions")]
-        public async Task<IActionResult> GetAllSessions()
+        public async Task<IActionResult> GetAllSessions([FromQuery] int page,int pageSize)
         {
-            var sessions = await _sessionService.GetAllSessions();
+            var sessions = await _sessionService.GetAllSessions(page,pageSize);
             if (sessions == null) return NotFound(new { message = "No sessions found" });
             return Ok(sessions);
         }

@@ -1,8 +1,11 @@
 ﻿using DocumentFormat.OpenXml.Drawing;
+using DocumentFormat.OpenXml.VariantTypes;
 using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
+using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Functions.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
@@ -90,48 +93,83 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 3;
         }
-        public async Task<List<MessageDTO>?> GetSessionMessages(Guid sessionID)
+        public async Task<PagedList<MessageDTO>?> GetSessionMessages(Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            var sessionMessages = await (from s in _db.Sessions
-                                  from m in _db.Messages
-                                  where s.SessionID == sessionID && s.Messages.Contains(m)
-                                  select new MessageDTO
-                                    {
-                                        SenderID = m.Sender.UserID,
-                                        SessionID = s.SessionID,
-                                        MessageID = m.MessageID,
-                                        Content = m.Content,
-                                        Timestamp = m.Timestamp,
-                                        IsRead = m.IsRead
-                                    }).ToListAsync();
-            return sessionMessages;
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
+            var messageQuery = from s in _db.Sessions
+                               from m in _db.Messages
+                               where s.SessionID == sessionID && s.Messages.Contains(m)
+                               select m;
+            DateTime validStartDate, validEndDate;
+            if(DateTime.TryParse(startDate,out validStartDate))
+            {
+                messageQuery = messageQuery.Where(m=>m.Timestamp > validStartDate);
+            }
+            if(DateTime.TryParse(endDate,out validEndDate))
+            {
+                messageQuery = messageQuery.Where(m=>m.Timestamp < validEndDate);
+            }
+            if (!string.IsNullOrEmpty(sortColumn))//order by custom column 
+            {
+                Expression<Func<Message, Object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
+                {
+                    "message" or "content" => Message => Message.Content,
+                    "time" or "t" or "timestamp" => Message => Message.Timestamp,
+                    _ => Message => Message.MessageID,
+                };
+                if (!string.IsNullOrEmpty(OrderBy)) messageQuery = messageQuery.OrderBy(keySelector);
+                else messageQuery = messageQuery.OrderByDescending(keySelector);
+            }
+            else
+            {
+                messageQuery = messageQuery.OrderByDescending(m => m.Timestamp);// or just order by recent messages
+            }
+                var messageResponse = messageQuery
+                                        .Select(m => new MessageDTO
+                                        {
+                                            SenderID = m.Sender.UserID,
+                                            SessionID = m.Session.SessionID,
+                                            MessageID = m.MessageID,
+                                            Content = m.Content,
+                                            IsRead = m.IsRead,
+                                            Timestamp = m.Timestamp
+                                        });
+            var messages = await PagedList<MessageDTO>.CreateAsync(messageResponse, page, pageSize);
+            return messages;
         }
 
-        public async Task<List<UserDTO>?> GetUsersOfSession(Guid sessionID)//The sessions tree in itself needs a big change man fr
+        public async Task<PagedList<UserDTO>?> GetUsersOfSession(Guid sessionID, int page, int pageSize)//The sessions tree in itself needs a big change man fr
         {
-            var sessionUsers = await (from s in _db.Sessions
-                                      from u in s.Users
-                                      where s.SessionID == sessionID
-                                      select new UserDTO
-                                      {
-                                          UserID = u.UserID,
-                                          Name = u.Name,
-                                          Email = u.Email,
-                                          Password = u.Password,
-                                          UserType = u.UserType
-                                      }).ToListAsync();
-            if (sessionUsers == null) return null;
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
+            var sessionQuery = from s in _db.Sessions
+                               from u in s.Users
+                               where s.SessionID == sessionID
+                               select new UserDTO
+                               {
+                                   UserID = u.UserID,
+                                   Name = u.Name,
+                                   Email = u.Email,
+                                   Password = u.Password,
+                                   UserType = u.UserType
+                               };
+            if (sessionQuery == null) return null;
+            var sessionUsers = await PagedList<UserDTO>.CreateAsync(sessionQuery,page,pageSize);
             return sessionUsers;
         }
-        public async Task<List<SessionDTO>>? GetAllSessions()
+        public async Task<PagedList<SessionDTO>>? GetAllSessions(int page,int pageSize)
         {
-            var sessions = await (from s in _db.Sessions
-                                  select new SessionDTO
-                                  {
-                                      SessionID = s.SessionID,
-                                      StartTime = s.StartTime,
-                                      UserIDs = s.Users.Select(u => u.UserID).ToList(),
-                                  }).ToListAsync();
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
+            var sessionsQuery = from s in _db.Sessions
+                               select new SessionDTO
+                               {
+                                   SessionID = s.SessionID,
+                                   StartTime = s.StartTime,
+                                   UserIDs = s.Users.Select(u => u.UserID).ToList(),
+                               };
+            var sessions = await PagedList<SessionDTO>.CreateAsync(sessionsQuery, page, pageSize);
             return sessions;
         }
     }

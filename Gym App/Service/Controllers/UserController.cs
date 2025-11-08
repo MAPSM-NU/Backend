@@ -9,18 +9,24 @@ namespace Gym_App.Service.Controllers
     public class UserController : Controller
     {
         private readonly IUserServise _user;
-        public UserController(IUserServise user)
+        private readonly IAuthorizationService _authenticationService;
+        public UserController(IUserServise user,IAuthorizationService authorizationService)
         {
             _user = user;
+            _authenticationService = authorizationService;
         }
         [HttpPut("UpdateUser")]
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateDTO user)
         {
+            if(user == null)return BadRequest(new { message = "Invalid Data" });
+            var authResult = await _authenticationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            if(!authResult.Succeeded) return Forbid();
             var result = await _user.UpdateUser(user);
             if (result == 0) return BadRequest(new { message = "User not found" });
             else if (result == 2) return BadRequest(new { message = "Name is not valid" });
             return Ok(new { message = "User Updated Successfully" });
         }
+        [Authorize(Policy ="ElevatedPower")]
         [HttpPut("ChangeUserType")]
         public async Task<IActionResult> ChangeUserType([FromBody] UserTypeDTO user)
         {
@@ -32,6 +38,8 @@ namespace Gym_App.Service.Controllers
         [HttpDelete("DeleteUser")]
         public async Task<IActionResult> DeleteUser([FromQuery] Guid UserID)
         {
+            var authResult = await _authenticationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
+            if(!authResult.Succeeded) return Forbid();
             var result = await _user.DeleteUser(UserID);
             if (result) return Ok(new { Message = "User Deleted Successfully" });
             return BadRequest(new { Message = "Failed to Delete User"});

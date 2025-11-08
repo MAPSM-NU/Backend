@@ -220,6 +220,12 @@ namespace Gym_App.Service.Functions.The_Applied
             var workouts = await PagedList<WorkoutDTO>.CreateAsync(workoutsQuery, page, pageSize);
             return workouts;
         }
-
+        public async Task<Guid> GetWorkoutUserID(Guid workoutID)
+        {
+            Guid UserID = await(from w in _db.Workouts
+                               where w.WorkoutID == workoutID
+                               select w.User.UserID).FirstOrDefaultAsync();
+            return UserID; 
+        }
     }
 }

@@ -210,7 +210,13 @@ namespace Gym_App.Service.Functions.The_Applied
             return schedules;
         }
 
-
+        public async Task<Guid> GetScheduleUserID(Guid scheduleID) 
+        {
+            var userID = await(from s in _db.Schedules
+                          where s.ScheduleID == scheduleID
+                          select s.User.UserID).FirstOrDefaultAsync();
+            return userID;
+        }
 
     }
 }

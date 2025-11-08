@@ -68,7 +68,7 @@ namespace Gym_App.Service.Functions.The_Applied
             return 2;
         }
         public async Task<int> AddExercisesToWorkout(WorkoutExerciseDTO workoutExercise)//0 == faulty DTO || 1 == Workout not found || 2 == No new exercises to add || 3 == success
-        {
+        {//there is a problem here
             if(workoutExercise == null || workoutExercise.WorkoutID == Guid.Empty) return 0;
             var workout = await _db.Workouts
                 .Include(w => w.Exercises)
@@ -95,7 +95,7 @@ namespace Gym_App.Service.Functions.The_Applied
             return 3;
         }
         public async Task<int> SetExercisesOfWorkout(WorkoutExerciseDTO workoutExercise)//0 == faulty DTO || 1 == Workout not found || 2 == No new exercises to add || 3 == success
-        {
+        {//there is a problem here
             if (workoutExercise == null || workoutExercise.WorkoutID == Guid.Empty) return 0;
             var isWorkoutExist = await(from w in _db.Workouts.Include(w => w.Exercises)
                                   where w.WorkoutID == workoutExercise.WorkoutID

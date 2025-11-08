@@ -16,5 +16,6 @@ namespace Gym_App.Service.Functions.Interfaces
         public Task<ScheduleWorkoutDTO?> GetScheduleWorkouts(Guid scheduleID);
         public Task<PagedList<ScheduleDTO>?> GetSchedulesByOfUser(Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm,int pageSize);
         public Task<PagedList<ScheduleDTO>?> GetAllSchedules(int page,int pageSize);
+        public Task<Guid> GetScheduleUserID(Guid scheduleID);
     }
 }

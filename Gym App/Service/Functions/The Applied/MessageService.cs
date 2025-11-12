@@ -39,15 +39,15 @@ namespace Gym_App.Service.Functions.The_Applied
             return 2;
         }
         
-        public async Task<int> DeleteMessages(MessageDTO message)
+        public async Task<int> DeleteMessage(Guid messageID)
         {
            var Message = await (from u in _db.Messages
-                          where u.MessageID == message.MessageID
+                          where u.MessageID == messageID
                           select u).FirstOrDefaultAsync();
-                if (message == null) return 0;
-                _db.Messages.Remove(Message);
-                await _db.SaveChangesAsync();
-                return 1;
+            if(Message == null) return 0;
+            _db.Messages.Remove(Message);
+            await _db.SaveChangesAsync();
+            return 1;
         }
         public async Task<int> UpdateMessage(MessageDTO message)
         {
@@ -59,6 +59,13 @@ namespace Gym_App.Service.Functions.The_Applied
             Message.IsRead = message.IsRead;
             await _db.SaveChangesAsync();
             return 1;
+        }
+        public async Task<Guid> GetMessageUserID(Guid messageID)
+        {
+            var userID = await (from m in _db.Messages
+                                where m.MessageID == messageID
+                                select m.Sender.UserID).FirstOrDefaultAsync();
+            return userID;
         }
         public async Task<PagedList<MessageDTO>> GetSessionMessages(Guid sessionID,int page, int pageSize)
         {

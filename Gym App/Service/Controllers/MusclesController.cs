@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
-    //[Authorize(Policy = "ElevatedPower")]
+    [Authorize(Policy = "ElevatedPower")]
     [Route("[controller]")]
     public class MusclesController : Controller
     {

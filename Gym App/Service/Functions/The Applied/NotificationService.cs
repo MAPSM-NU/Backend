@@ -61,7 +61,13 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 1;
         }
-
+        public async Task<Guid> GetNotificationUserID(Guid NotificationID)
+        {
+            var userID = await (from n in _db.Notifications
+                          where n.NotificationID == NotificationID
+                          select n.User.UserID).FirstOrDefaultAsync();
+            return userID;
+        }
         public async Task<PagedList<NotificationDTO>> GetNotifications(Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             if (page == 0) page = 1;

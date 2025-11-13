@@ -116,10 +116,18 @@ namespace Gym_App.Service.Functions.The_Applied
             if (result == PasswordVerificationResult.Failed) return new ResponseToken { Status = 1 };
             else //Successful login and returning new Tokens
             {
+                var AccessToken = await _tokenHandler.CreateAccessToken(new UserDTO
+                {
+                    UserID = _user.UserID,
+                    Name = _user.Name,
+                    Email = _user.Email,
+                    UserType = _user.UserType
+                });
                 var RefreshToken = await _tokenHandler.RefreshingToken(_user.UserID);
-                return await Task.FromResult(new ResponseToken
+                return (new ResponseToken
                 {
                     Status = 2,
+                    AccessToken = AccessToken,
                     RefreshToken = RefreshToken
                 });
             }
@@ -242,6 +250,8 @@ namespace Gym_App.Service.Functions.The_Applied
         }
         public async Task<PagedList<UserDTO>?> GetAllUsers(int page, int pageSize)
         {
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
             var usersQuery = (from u in _db.Users
                                select new UserDTO
                                {

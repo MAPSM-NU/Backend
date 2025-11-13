@@ -71,6 +71,13 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 1;
         }
+        public async Task<Guid> GetFeedbackUserID(Guid feedbackID)
+        {
+            var userID = await (from f in _db.Feedbacks
+                                  where f.FeedbackID == feedbackID
+                                  select f.User.UserID).FirstOrDefaultAsync();
+            return userID;
+        }
         public async Task<FeedbackDTO>? GetFeedbackByID(Guid feedbackID) //Might change it since it returns the DTO not the actual enitity(For Testing purposes)
         {
             var feedback = await (from f in _db.Feedbacks

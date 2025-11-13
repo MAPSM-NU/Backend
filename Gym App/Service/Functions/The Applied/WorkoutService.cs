@@ -17,8 +17,8 @@ namespace Gym_App.Service.Functions.The_Applied
         }
 
         public async Task<int> CreateWorkout(WorkoutDTO workout)//0 == faulty DTO ||1 == User not found || 2 == success
-        {
-            if(workout == null || string.IsNullOrEmpty(workout.Name) || workout.UserID == Guid.Empty) return 0;
+        {//Important detail: day attribute can't be more than 15 chars
+            if (workout == null || string.IsNullOrEmpty(workout.Name) || workout.UserID == Guid.Empty) return 0;
             var isUserExist = await (from user in _db.Users.Include(u => u.Workouts)
                                where user.UserID == workout.UserID
                                select user).FirstOrDefaultAsync();

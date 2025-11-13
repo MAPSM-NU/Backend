@@ -1,6 +1,4 @@
-﻿using DocumentFormat.OpenXml.Drawing;
-using DocumentFormat.OpenXml.VariantTypes;
-using Gym_App.Domain.DTOs;
+﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Functions.Interfaces;

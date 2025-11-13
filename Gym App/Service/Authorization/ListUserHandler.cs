@@ -1,32 +1,29 @@
-﻿using Gym_App.Service.Authentication;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 
 namespace Gym_App.Service.Authorization
 {
-    public class SameUserHandler : AuthorizationHandler<SameUserRequirement, Guid>
+    public class ListUserHandler : AuthorizationHandler<ListUserRequirement,List<Guid>>
     {
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SameUserRequirement requirement, Guid resource)
+        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ListUserRequirement requirement, List<Guid> resources)
         {
-            if (context.User?.Identity?.IsAuthenticated != true)
+            if(context.User?.Identity?.IsAuthenticated != true)
                 return Task.CompletedTask;
-
-            // Admin bypass
-            if (requirement.AllowAdmins && context.User.IsInRole("Admin"))
+            
+            if(requirement.AllowAdmins && context.User.IsInRole("Admin"))
             {
                 context.Succeed(requirement);
                 return Task.CompletedTask;
             }
-
-            // Try common claim names for user id
             var claim = context.User.FindFirst(ClaimTypes.NameIdentifier)
                         ?? context.User.FindFirst(JwtRegisteredClaimNames.Sub)
                         ?? context.User.FindFirst("sub")
                         ?? context.User.FindFirst("userId")
                         ?? context.User.FindFirst("id");
 
-            if (claim != null && Guid.TryParse(claim.Value, out var tokenUserID) && tokenUserID == resource)
+            if (claim != null && Guid.TryParse(claim.Value, out var tokenUserID) && resources.Contains(tokenUserID))
                 context.Succeed(requirement);
 
             return Task.CompletedTask;

@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml.Bibliography;
-using Gym_App.Domain.DTOs;
+﻿using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Functions.Interfaces;
@@ -67,20 +66,60 @@ namespace Gym_App.Service.Functions.The_Applied
                                 select m.Sender.UserID).FirstOrDefaultAsync();
             return userID;
         }
-        public async Task<PagedList<MessageDTO>> GetSessionMessages(Guid sessionID,int page, int pageSize)
+        public async Task<List<Guid>> GetSessionUsersIDs(Guid sessionID)
         {
-            var messagesQuery = (from m in _db.Messages
-                           where m.Session.SessionID == sessionID
-                           select new MessageDTO
-                           {
-                               SenderID = m.Sender.UserID,
-                               SessionID = m.Session.SessionID,
-                               MessageID = m.MessageID,
-                               Content = m.Content,
-                               IsRead = m.IsRead,
-                               Timestamp = m.Timestamp
-                           });
-            var messages = await PagedList<MessageDTO>.CreateAsync(messagesQuery, page, pageSize);
+            var Users = await (from s in _db.Sessions
+                                 where s.SessionID == sessionID
+                                 select s.Users).FirstOrDefaultAsync();
+
+            var UserIDs = (from u in Users
+                           select u.UserID).ToList();
+
+            return UserIDs;
+        }
+        public async Task<PagedList<MessageDTO>?> GetSessionMessages(Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        {
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
+            var messageQuery = from s in _db.Sessions
+                               from m in _db.Messages
+                               where s.SessionID == sessionID && s.Messages.Contains(m)
+                               select m;
+            DateTime validStartDate, validEndDate;
+            if (DateTime.TryParse(startDate, out validStartDate))
+            {
+                messageQuery = messageQuery.Where(m => m.Timestamp > validStartDate);
+            }
+            if (DateTime.TryParse(endDate, out validEndDate))
+            {
+                messageQuery = messageQuery.Where(m => m.Timestamp < validEndDate);
+            }
+            if (!string.IsNullOrEmpty(sortColumn))//order by custom column 
+            {
+                Expression<Func<Message, Object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
+                {
+                    "message" or "m" or "c" or "content" => Message => Message.Content,
+                    "time" or "t" or "timestamp" => Message => Message.Timestamp,
+                    _ => Message => Message.MessageID,
+                };
+                if (!string.IsNullOrEmpty(OrderBy)) messageQuery = messageQuery.OrderBy(keySelector);
+                else messageQuery = messageQuery.OrderByDescending(keySelector);
+            }
+            else
+            {
+                messageQuery = messageQuery.OrderByDescending(m => m.Timestamp);// or just order by recent messages
+            }
+            var messageResponse = messageQuery
+                                    .Select(m => new MessageDTO
+                                    {
+                                        SenderID = m.Sender.UserID,
+                                        SessionID = m.Session.SessionID,
+                                        MessageID = m.MessageID,
+                                        Content = m.Content,
+                                        IsRead = m.IsRead,
+                                        Timestamp = m.Timestamp
+                                    });
+            var messages = await PagedList<MessageDTO>.CreateAsync(messageResponse, page, pageSize);
             return messages;
         }
         public async Task<PagedList<MessageDTO>> GetMessagesByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)

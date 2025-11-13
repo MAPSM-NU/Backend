@@ -71,6 +71,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IScheduleService,ScheduleService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 builder.Services.AddSingleton<IAuthorizationHandler, SameUserHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();
 
 
 builder.Services.AddDbContext<DbBase>(options =>
@@ -109,6 +110,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("SameUserPolicy", policy =>
         policy.Requirements.Add(new SameUserRequirement(allowAdmins: true)));
     // keep other policies (NormalUsage, ElevatedPower) as-is
+});
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ListUserPolicy", policy =>
+        policy.Requirements.Add(new ListUserRequirement(allowAdmins: true)));
 });
 //builder.Services.AddControllersWithViews().AddJsonOptions(x =>
 //   x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);//yezabat error beta3 recurrsion taba3 el json

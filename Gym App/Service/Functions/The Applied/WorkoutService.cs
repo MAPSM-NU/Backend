@@ -136,6 +136,13 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 3;
         }
+        public async Task<Guid> GetWorkoutUserID(Guid workoutID)
+        {
+            Guid UserID = await(from w in _db.Workouts
+                               where w.WorkoutID == workoutID
+                               select w.User.UserID).FirstOrDefaultAsync();
+            return UserID; 
+        }
         public async Task<WorkoutDTO?> GetWorkoutByName(string name)
         {
             var Workout = await(from w in _db.Workouts
@@ -219,13 +226,6 @@ namespace Gym_App.Service.Functions.The_Applied
                            };
             var workouts = await PagedList<WorkoutDTO>.CreateAsync(workoutsQuery, page, pageSize);
             return workouts;
-        }
-        public async Task<Guid> GetWorkoutUserID(Guid workoutID)
-        {
-            Guid UserID = await(from w in _db.Workouts
-                               where w.WorkoutID == workoutID
-                               select w.User.UserID).FirstOrDefaultAsync();
-            return UserID; 
         }
     }
 }

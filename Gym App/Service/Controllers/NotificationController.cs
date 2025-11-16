@@ -29,17 +29,20 @@ namespace Gym_App.Service.Controllers
                 Ok(new { message = "Notification created successfully." });
         }
         [HttpDelete("DeleteNotification")]
-        public async Task<IActionResult> DeleteNotification([FromQuery]Guid notificationID)
+        public async Task<IActionResult> DeleteNotification([FromQuery]Guid notificationID)//As in deleting the whole notif. there should be one were we delete the notif from the user's list
         {
             //Authorization
             if (notificationID == Guid.Empty)
                 return BadRequest(new { message = "NotificationID cannot be empty." });
+
             var userID = await _notificationService.GetNotificationUserID(notificationID);
             if(userID == Guid.Empty)
                 return BadRequest(new { message = "Notification not found." });
+
             var authResult = await _authenticationService.AuthorizeAsync(User,userID,"SameUserPolicy");
             if(!authResult.Succeeded)
                 return Forbid();
+
             //Talking to Database
             var result = await _notificationService.DeleteNotification(notificationID);
             if (result == 0)
@@ -50,11 +53,14 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> DeleteAllNotifications([FromQuery] Guid userID)
         {
             //Authorization
+
             if (userID == Guid.Empty)
                 return BadRequest(new { message = "Notification not found." });
+
             var authResult = await _authenticationService.AuthorizeAsync(User, userID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Forbid();
+
             //Talking to Database
             var result = await _notificationService.DeleteAllNotifications(userID);
             if (result == 0) 
@@ -67,9 +73,11 @@ namespace Gym_App.Service.Controllers
             //Authorization
             if (userID == Guid.Empty)
                 return BadRequest(new { message = "Notification not found." });
+
             var authResult = await _authenticationService.AuthorizeAsync(User, userID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Forbid();
+
             //Talking to Database
             var notifications = await _notificationService.GetNotifications(userID,startDate,endDate,page,sortColumn,OrderBy,searchTerm,pageSize);
             if (notifications == null) 

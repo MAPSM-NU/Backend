@@ -18,12 +18,21 @@ namespace Gym_App.Service.Controllers
         [HttpPut("UpdateUser")]
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateDTO user)
         {
+            //Authentication
+            
             if(user == null)return BadRequest(new { message = "Invalid Data" });
+            
             var authResult = await _authenticationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
-            if(!authResult.Succeeded) return Forbid();
+            if(!authResult.Succeeded)
+                return Forbid();
+            
+            //Talking to Database
+            
             var result = await _user.UpdateUser(user);
-            if (result == 0) return BadRequest(new { message = "User not found" });
-            else if (result == 2) return BadRequest(new { message = "Name is not valid" });
+            if (result == 0) 
+                return BadRequest(new { message = "User not found" });
+            else if (result == 2) 
+                return BadRequest(new { message = "Name is not valid" });
             return Ok(new { message = "User Updated Successfully" });
         }
         [Authorize(Policy ="ElevatedPower")]
@@ -31,15 +40,22 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> ChangeUserType([FromBody] UserTypeDTO user)
         {
             var result = await _user.ChangeUserType(user);
-            if (result == 0) return BadRequest(new { message = "Failed to Update User" });
+            if (result == 0) 
+                return BadRequest(new { message = "Failed to Update User" });
             return Ok(new { message = "User Updated Successfully" });
 
         }
         [HttpDelete("DeleteUser")]
         public async Task<IActionResult> DeleteUser([FromQuery] Guid UserID)
         {
+            //Authentication
+
             var authResult = await _authenticationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            if(!authResult.Succeeded) return Forbid();
+            if(!authResult.Succeeded)
+                return Forbid();
+
+            //Talking to Database
+
             var result = await _user.DeleteUser(UserID);
             if (result) return Ok(new { Message = "User Deleted Successfully" });
             return BadRequest(new { Message = "Failed to Delete User"});
@@ -48,7 +64,8 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> GetUserByID([FromQuery] Guid UserID)
         {
             var result = await _user.GetUserByID(UserID);
-            if (result == null) return BadRequest(new { message = "User not found" });
+            if (result == null) 
+                return BadRequest(new { message = "User not found" });
             return Ok(result);
         }
         [HttpGet("GetUsersByFilter")]

@@ -34,7 +34,11 @@ namespace Gym_App.Service.Controllers
 
             if (schedule.ScheduleID == Guid.Empty)
                 return BadRequest(new { message = "" });
+
             var UserID = await _scheduleService.GetScheduleUserID(schedule.ScheduleID);
+            if (UserID == Guid.Empty)
+                return BadRequest(new { message = "Given schedule does not exist" });
+
             var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Forbid();
@@ -54,7 +58,11 @@ namespace Gym_App.Service.Controllers
             
             if (scheduleID == Guid.Empty)
                 return BadRequest(new { message = "" });
+
             var UserID = await _scheduleService.GetScheduleUserID(scheduleID);
+            if (UserID == Guid.Empty)
+                return BadRequest(new { message = "Given schedule does not exist" });
+
             var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Forbid();
@@ -74,7 +82,11 @@ namespace Gym_App.Service.Controllers
             
             if (scheduleWorkout.ScheduleID == Guid.Empty)
                 return BadRequest(new { message = "" });
+
             var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
+            if (UserID == Guid.Empty)
+                return BadRequest(new { message = "Given schedule does not exist" });
+
             var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Forbid();
@@ -100,7 +112,11 @@ namespace Gym_App.Service.Controllers
             
             if (scheduleWorkout.ScheduleID == Guid.Empty)
                 return BadRequest(new { message = "" });
+
             var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
+            if (UserID == Guid.Empty)
+                return BadRequest(new { message = "Given schedule does not exist" });
+
             var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Forbid();
@@ -124,7 +140,11 @@ namespace Gym_App.Service.Controllers
             
             if (scheduleWorkout.ScheduleID == Guid.Empty)
                 return BadRequest(new { message = "" });
+
             var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
+            if (UserID == Guid.Empty)
+                return BadRequest(new { message = "Given schedule does not exist" });
+
             var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Forbid();

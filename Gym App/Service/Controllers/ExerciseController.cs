@@ -59,17 +59,23 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> RemoveMusclesFromExercise([FromBody] ExerciseMusclesDTO Muscles)//fe 8alta hena
         {
             var result = await _exerciseService.RemoveMusclesFromExercise(Muscles);
-            if(result == 4) return Ok(new { Message = "Muscles removed from exercise successfully" });
-            else if(result == 3) return BadRequest(new { Message = "Wrong IDs given for the Muscles" });
-            else if(result == 2) return BadRequest(new { Message = "Given muscles are not in the Exercise" });
-            else if(result == 1) return BadRequest(new { Message = "Given exercise does not exist" });
-            else return BadRequest(new { Message = "Faulty DTO" });
+            if(result == 4)
+                return Ok(new { Message = "Muscles removed from exercise successfully" });
+            else if(result == 3) 
+                return BadRequest(new { Message = "Wrong IDs given for the Muscles" });
+            else if(result == 2) 
+                return BadRequest(new { Message = "Given muscles are not in the Exercise" });
+            else if(result == 1)
+                return BadRequest(new { Message = "Given exercise does not exist" });
+            else 
+                return BadRequest(new { Message = "Faulty DTO" });
         }
         [HttpGet("GetExerciseByName")]
         public async Task<IActionResult> GetExerciseByName([FromQuery] string name)
         {
             var result = await _exerciseService.GetExerciseByName(name);
-            if (result == null) return BadRequest(new { Message = "Exercise not found" });
+            if (result == null) 
+                return BadRequest(new { Message = "Exercise not found" });
             return Ok(result);
         }
         [HttpGet("GetExerciseByID")]
@@ -83,14 +89,16 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> GetExerciseMuscles([FromQuery] Guid exerciseID)
         {
             var result = await _exerciseService.GetExerciseMuscles(exerciseID);
-            if (result == null) return BadRequest(new { Message = "Exercise not found or no muscles found for this exercise" });
+            if (result == null) 
+                return BadRequest(new { Message = "Exercise not found or no muscles found for this exercise" });
             return Ok(result);
         }
         [HttpPost("GetExerciseByMuscle")]
         public async Task<IActionResult> GetWorkoutsByMuscle([FromQuery] int page, int pageSize,[FromBody] ExerciseListDTO muscles)
         {
             var result = await _exerciseService.GetExercisesByMuscle(muscles,page,pageSize);
-            if(result == null) return BadRequest(new { Message = "Either you entered the muscles wrong or no Exercise was found." });
+            if(result == null) 
+                return BadRequest(new { Message = "Either you entered the muscles wrong or no Exercise was found." });
             return Ok(result);
         }
         [HttpGet("GetExercisesByFilter")]

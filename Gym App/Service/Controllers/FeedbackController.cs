@@ -20,11 +20,14 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> CreateFeedback([FromBody] FeedbackDTO feedbackDTO)
         {
             //Authorization
+
             if (feedbackDTO == null)
                 return BadRequest(new { Message = "Faulty DTO was given" });
+
             var authResult = await _authorizationService.AuthorizeAsync(User, feedbackDTO.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Forbid();
+
             //Talking to Database
             var result = await _feedbackService.CreateFeedback(feedbackDTO);
             if(result == 2) 
@@ -37,12 +40,14 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> UpdateFeedback([FromBody] FeedbackDTO feedbackDTO)
         {
             //Authorization
+
             if (feedbackDTO == null)
                 return BadRequest(new { Message = "Faulty DTO was given" });
 
             var authResult = await _authorizationService.AuthorizeAsync(User, feedbackDTO.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Forbid();
+
             //Talking to Database
             var result = await _feedbackService.UpdateFeedback(feedbackDTO);
             if(result == 2) 
@@ -53,25 +58,29 @@ namespace Gym_App.Service.Controllers
                 BadRequest(new { Message = "Faulty DTO was given" });
         }
         [HttpDelete("DeleteFeedback")]
-        public async Task<IActionResult> DeleteFeedback([FromQuery]Guid feedbackId)
+        public async Task<IActionResult> DeleteFeedback([FromQuery]Guid feedbackID)
         {
             //Authorization
-            var userID = await _feedbackService.GetFeedbackUserID(feedbackId);
+
+            var userID = await _feedbackService.GetFeedbackUserID(feedbackID);
             if(userID == Guid.Empty)
                 return NotFound(new { Message = "Feedback not found." });
 
             var authResult = await _authorizationService.AuthorizeAsync(User, userID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Forbid();
+
             //Talking to Database
-            var result = await _feedbackService.DeleteFeedback(feedbackId);
-            if (result == 0) return BadRequest("Couldn't find the Feedback");
+            var result = await _feedbackService.DeleteFeedback(feedbackID);
+            if (result == 0) 
+                return BadRequest("Couldn't find the Feedback");
             return Ok("Feedback deleted successfully.");
         }
         [HttpGet("GetFeedbackByID")]
         public async Task<IActionResult> GetFeedbackByID([FromQuery]Guid feedbackId)
         {
             //Talking to Database
+
             var feedback = await _feedbackService.GetFeedbackByID(feedbackId);
             if (feedback == null) 
                 return NotFound("Feedback not found.");

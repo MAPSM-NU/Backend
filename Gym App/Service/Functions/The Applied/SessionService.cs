@@ -17,11 +17,11 @@ namespace Gym_App.Service.Functions.The_Applied
 
 
         public async Task<int> CreateSession(SessionDTO session)
-        {
+        {//need to check if given users already have past session together?
             if (session == null) return 0;
             var Session = new Session
             {
-                SessionID = new Guid(),
+                SessionID = Guid.NewGuid(),
                 StartTime = DateTime.Now,
                 SessionType = " "//for now leave like this
             };
@@ -51,17 +51,35 @@ namespace Gym_App.Service.Functions.The_Applied
 
         public async Task<int> AddMessages(SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == no new messages added || 3 == success
         {
-            if (sessionMessages == null) return 0;
+            if (sessionMessages == null || sessionMessages.Messages == null || sessionMessages.SessionID == Guid.Empty) 
+                return 0;
             var Session = await (from s in _db.Sessions.Include(s => s.Messages)
                                  where s.SessionID == sessionMessages.SessionID
                                  select s).FirstOrDefaultAsync();
-            if (Session == null) return 1;
-            var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
-            var messagesIDsToAdd = sessionMessages.Messages?.Where(id => !existingMessagesIDs.Contains(id)).ToList();
-            if (messagesIDsToAdd == null || messagesIDsToAdd.Count == 0) return 2;
-            var messagesToAdd = await(from m in _db.Messages
-                                 where messagesIDsToAdd.Contains(m.MessageID)
-                                 select m).ToListAsync();
+            if (Session == null) 
+                return 1;
+            List<Message> messagesToAdd;
+            if (Session.Messages == null)
+            {
+                messagesToAdd = await (from m in _db.Messages
+                                    where sessionMessages.Messages.Contains(m.MessageID)
+                                    select m).ToListAsync();
+                Session.Messages = new List<Message>();
+                return 3;
+            }
+            else
+            {
+                var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
+                var messagesIDsToAdd = sessionMessages.Messages?.Where(id => !existingMessagesIDs.Contains(id)).ToList();
+                if (messagesIDsToAdd == null || messagesIDsToAdd.Count == 0) return 2;
+                messagesToAdd = await (from m in _db.Messages
+                                where messagesIDsToAdd.Contains(m.MessageID)
+                                select m).ToListAsync();
+            }
+
+            if(messagesToAdd == null || messagesToAdd.Count == 0) 
+                return 2;
+
             foreach (var messageID in messagesToAdd)
             {
                 Session.Messages.Add(messageID);
@@ -70,26 +88,54 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 3;
         }
-        public async Task<int> DeleteMessages(SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == no messages deleted || 3 == success
+        public async Task<int> DeleteMessages(SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == session has no messages || 3 == no messages to delete || 4 == success
         { 
-            if(sessionMessages == null) return 0;
+            if(sessionMessages == null || sessionMessages.Messages == null) 
+                return 0;
+
             var Session = await (from s in _db.Sessions.Include(s => s.Messages)
                                  where s.SessionID == sessionMessages.SessionID
                                  select s).FirstOrDefaultAsync();
-            if (Session == null) return 1;
-            var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
-            var messagesIDsToRemove = sessionMessages.Messages?.Where(id => existingMessagesIDs.Contains(id)).ToList();
-            if (messagesIDsToRemove == null || messagesIDsToRemove.Count == 0) return 2;
-            var messagesToRemove = await (from m in _db.Messages
-                                          where messagesIDsToRemove.Contains(m.MessageID)
-                                          select m).ToListAsync();
+            if (Session == null) 
+                return 1;
+
+            List<Message> messagesToRemove;
+
+            if (Session.Messages == null || Session.Messages.Count == 0)
+            {
+                return 2;
+            }
+            else
+            {
+                var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
+                var messagesIDsToRemove = sessionMessages.Messages?.Where(id => existingMessagesIDs.Contains(id)).ToList();
+                if (messagesIDsToRemove == null || messagesIDsToRemove.Count == 0) return 3;
+                messagesToRemove = await (from m in _db.Messages
+                                   where messagesIDsToRemove.Contains(m.MessageID)
+                                   select m).ToListAsync();
+            }
+
+            if(messagesToRemove == null || messagesToRemove.Count == 0) 
+                return 3;
+
             foreach (var message in messagesToRemove)
             {
                 Session.Messages.Remove(message);
             }
             _db.Sessions.Update(Session);
             await _db.SaveChangesAsync();
-            return 3;
+            return 4;
+        }
+        public async Task<List<Guid>?> GetSessionUsersIDs(Guid sessionID)
+        {
+            var Users = await (from s in _db.Sessions
+                               where s.SessionID == sessionID
+                               select s.Users).FirstOrDefaultAsync();
+            if (Users == null) return null;
+            var UserIDs = (from u in Users
+                           select u.UserID).ToList();
+
+            return UserIDs;
         }
         public async Task<PagedList<MessageDTO>?> GetSessionMessages(Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {

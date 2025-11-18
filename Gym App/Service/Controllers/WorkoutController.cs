@@ -57,7 +57,7 @@ namespace Gym_App.Service.Controllers
                 return BadRequest(new { message = "Faulty DTO given." });
         }
         [HttpDelete("DeleteWorkout")]
-        public async Task<IActionResult> DeleteWorkout([FromBody] WorkoutDTO workout)
+        public async Task<IActionResult> DeleteWorkout([FromQuery] Guid workout)
         {
             ////Authorization
 

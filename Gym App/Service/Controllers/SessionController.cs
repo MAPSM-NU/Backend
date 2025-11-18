@@ -11,83 +11,92 @@ namespace Gym_App.Service.Controllers
     public class SessionController : Controller
     {
         private readonly ISessionService _sessionService;
-        private readonly IAuthorizationService _authorizationService;
-        public SessionController(ISessionService sessionService,IAuthorizationService authorizationService)
+        public SessionController(ISessionService sessionService)
         {
             _sessionService = sessionService;
-            _authorizationService = authorizationService;
         }
         [HttpPost("CreateSession")]
         public async Task<IActionResult> CreateSession([FromBody] SessionDTO session)
         {
-            //Authorization
+            ////Authorization
 
-            if (session == null) 
-                return BadRequest(new { Message = "Faulty DTO given" });
+            //if (session == null) 
+            //    return BadRequest(new { Message = "Faulty DTO given" });
 
-            var authResult = await _authorizationService.AuthorizeAsync(User,session.UserIDs,"ListUserPolicy");
-            if(!authResult.Succeeded) 
-                return Forbid();
+            //var authResult = await _authorizationService.AuthorizeAsync(User,session.UserIDs,"ListUserPolicy");
+            //if(!authResult.Succeeded) 
+            //    return Forbid();
 
-            //Talking to Database
-            var result = await _sessionService.CreateSession(session);
+            ////Talking to Database
+            var result = await _sessionService.CreateSession(User,session);
 
-            if (result == 2) 
+            if (result == 3)
                 return Ok(new { Message = "Session created succcessfully" });
-            else if (result == 1) 
+            else if (result == 2)
+                return Forbid();
+            else if (result == 1)
                 return BadRequest(new { Message = "User(s) ID is wrong" });
-            else 
+            else
                 return BadRequest(new { Message = "Faulty DTO given" });
 
         }
-        [Authorize(Policy ="ElevatedPower")]//Only for admins to delete a session
+        [Authorize(Policy = "ElevatedPower")]//Only for admins to delete a session
         [HttpDelete("DeleteSession")]
         public async Task<IActionResult> DeleteSession([FromQuery] Guid sessionID)
         {
-            var result = await _sessionService.DeleteSession(sessionID);
-
-            if(result == 0) 
+            var result = await _sessionService.DeleteSession(User,sessionID);
+            if (result == 1)
+                return Forbid();
+            else if(result == 0) 
                 return BadRequest(new { message = "Session not Found" });
             return Ok(new { message = "Session deleted Succesfully" });
         }
         [HttpPost("AddMessages")]
         public async Task<IActionResult> AddMessages([FromBody] SessionMessagesDTO sessionMessages)
         {
-            //Authorization
+            ////Authorization
 
-            if (sessionMessages == null) 
-                return BadRequest(new { Message = "Faulty DTO given" });
+            //if (sessionMessages == null) 
+            //    return BadRequest(new { Message = "Faulty DTO given" });
 
-            var UserIDs = await _sessionService.GetSessionUsersIDs(sessionMessages.SessionID);
-            if (UserIDs == null)
-                return BadRequest(new { Message = "Session not found" });
+            //var UserIDs = await _sessionService.GetSessionUsersIDs(User,sessionMessages.SessionID);
+            //if (UserIDs == null)
+            //    return BadRequest(new { Message = "Session not found" });
 
-            var authResult = await _authorizationService.AuthorizeAsync(User,UserIDs,"ListUserPolicy");
-            if(!authResult.Succeeded) 
-                return Forbid();
+            //var authResult = await _authorizationService.AuthorizeAsync(User,UserIDs,"ListUserPolicy");
+            //if(!authResult.Succeeded) 
+            //    return Forbid();
 
-            //Talking to Database
-            var result = await _sessionService.AddMessages(sessionMessages);
-            if (result == 3) 
+            ////Talking to Database
+            var result = await _sessionService.AddMessages(User,sessionMessages);
+            if (result == 5)
                 return Ok(new { Message = "Messages added succesfully" });
-            else if (result == 2) 
-                return BadRequest(new { Message = "Messages either don't exist or they are already in session " });
-            else if (result == 1) 
+            else if (result == 4)
+                return BadRequest(new { Message = "no messages found" });
+            else if (result == 3)
+                return BadRequest(new { Message = "Messages are already in the session " });
+            else if (result == 2)
+                return Forbid();
+            else if (result == 1)
                 return BadRequest(new { Message = "Session not found" });
-            else 
+            else
                 return BadRequest(new { Message = "Faulty DTO given" });
            
         }
         [HttpDelete("DeleteMessages")]
         public async Task<IActionResult> DeleteMessages([FromBody] SessionMessagesDTO sessionMessages)
-        {//I honestly don't know what to do here for auhtorization
-            var result = await _sessionService.DeleteMessages(sessionMessages);
-            if (result == 4) 
+        {
+            var result = await _sessionService.DeleteMessages(User,sessionMessages);
+            if (result == 6) 
                 return Ok(new { Message = "Messages deleted succesfully" });
-            else if (result == 3) 
+            else if (result == 5)
+                return BadRequest(new { Message = "no messages were found" });
+            else if (result == 4)
                 return BadRequest(new { Message = "Messages either don't exist or they are not in session" });
-            else if (result == 2) 
+            else if (result == 3)
                 return BadRequest(new { Message = "Session has no messages" });
+            else if (result == 2)
+                return Forbid();
             else if (result == 1)
                 return BadRequest(new { Message = "Session not found" });
             else
@@ -97,29 +106,30 @@ namespace Gym_App.Service.Controllers
         [HttpGet("GetSessionMessages")]
         public async Task<IActionResult> GetSessionMessages([FromQuery] Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            //Authorization
-            if(sessionID == Guid.Empty) 
-                return BadRequest(new { Message = "Faulty Session ID given" });
+            ////Authorization
+            //if(sessionID == Guid.Empty) 
+            //    return BadRequest(new { Message = "Faulty Session ID given" });
 
-            var UserIDs = await _sessionService.GetSessionUsersIDs(sessionID);
-            if (UserIDs == null)
-                return BadRequest(new { Message = "Session not found" });
+            //var UserIDs = await _sessionService.GetSessionUsersIDs(User, sessionID);
+            //if (UserIDs == null)
+            //    return BadRequest(new { Message = "Session not found" });
 
-            var authResult = await _authorizationService.AuthorizeAsync(User,UserIDs,"ListUserPolicy");
-            if(!authResult.Succeeded) 
-                return Forbid();
+            //var authResult = await _authorizationService.AuthorizeAsync(User,UserIDs,"ListUserPolicy");
+            //if(!authResult.Succeeded) 
+            //    return Forbid();
 
-            //Talking to Database
-            var messages = await _sessionService.GetSessionMessages(sessionID,startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
+            ////Talking to Database
+            var messages = await _sessionService.GetSessionMessages(User,sessionID,startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
             if (messages == null) 
-                return NotFound(new { message = "No messages found for this session" });
+                return NotFound(new { message = "either you are not permitted to view the messages of this session or this" +
+                    "session has no messages" });
             return Ok(messages);
         }
-        [Authorize(Policy ="ElevatedPower")]//Only for admins to get all users of a session
+        [Authorize(Policy = "ElevatedPower")]//Only for admins to get all users of a session
         [HttpGet("GetUsersOfSession")]
         public async Task<IActionResult> GetUsersOfSession([FromQuery] Guid sessionID,int page,int pageSize)
         {
-            var users = await _sessionService.GetUsersOfSession(sessionID,page,pageSize);
+            var users = await _sessionService.GetUsersOfSession(User,sessionID,page,pageSize);
             if (users == null) 
                 return NotFound(new { message = "No users found for this session" });
             return Ok(users);

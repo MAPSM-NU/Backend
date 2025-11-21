@@ -283,9 +283,9 @@ namespace Gym_App.Service.Functions.The_Applied
             {
                 Expression<Func<Message, Object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
                 {
-                    "message" or "content" => Message => Message.Content, // filter by messages or content
-                    "time" or "t" or "timestamp" => Message => Message.Timestamp, // filter by time or timestamp
-                    _ => Message => Message.MessageID, //failsafe: filter by ID
+                    "message" or "content" => Message => Message.Content, // order by messages or content
+                    "time" or "t" or "timestamp" => Message => Message.Timestamp, // order by time or timestamp
+                    _ => Message => Message.MessageID, //failsafe: order by ID
                 };
                 //If no orderby was inputed, then we sort ascending
                 if (!string.IsNullOrEmpty(OrderBy)) messageQuery = messageQuery.OrderBy(keySelector);
@@ -353,8 +353,11 @@ namespace Gym_App.Service.Functions.The_Applied
         }
         public async Task<PagedList<SessionDTO>>? GetAllSessions(int page,int pageSize)
         {
+            //if page or pageSize are 0, set default values
             if (page == 0) page = 1;
             if (pageSize == 0) pageSize = 10;
+
+            //Getting all sessions from Database and projecting them to SessionDTO
             var sessionsQuery = from s in _db.Sessions
                                select new SessionDTO
                                {

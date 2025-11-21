@@ -21,146 +21,164 @@ namespace Gym_App.Service.Controllers
         [HttpPost("AddSchedule")]
         public async Task<IActionResult> AddSchedule([FromBody] ScheduleDTO schedule)
         {
-            var result = await _scheduleService.AddSchedule(schedule);
-            if (result == 0) 
-                return BadRequest(new { message = "Could not add Schedule" });
-            else 
+            var result = await _scheduleService.AddSchedule(User, schedule);
+            if (result == 3)
                 return Ok(new { message = "Schedule added successfully" });
+            else if (result == 2)
+                return Forbid();
+            else if (result == 1)
+                return BadRequest(new { message = "Given user does not exist" });
+            else
+                return BadRequest(new { message = "Faulty DTO given" });
         }
         [HttpPut("UpdateSchedule")]
         public async Task<IActionResult> UpdateSchedule([FromBody] ScheduleDTO schedule)
         {
-            //Authorization
+            ////Authorization
 
-            if (schedule.ScheduleID == Guid.Empty)
-                return BadRequest(new { message = "" });
+            //if (schedule.ScheduleID == Guid.Empty)
+            //    return BadRequest(new { message = "" });
 
-            var UserID = await _scheduleService.GetScheduleUserID(schedule.ScheduleID);
-            if (UserID == Guid.Empty)
-                return BadRequest(new { message = "Given schedule does not exist" });
+            //var UserID = await _scheduleService.GetScheduleUserID(schedule.ScheduleID);
+            //if (UserID == Guid.Empty)
+            //    return BadRequest(new { message = "Given schedule does not exist" });
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            if (!authResult.Succeeded)
-                return Forbid();
+            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
+            //if (!authResult.Succeeded)
+            //    return Forbid();
             
-            //Talking to Database
+            ////Talking to Database
 
-            var result = await _scheduleService.UpdateSchedule(schedule);
-            if (result == 0)
+            var result = await _scheduleService.UpdateSchedule(User, schedule);
+            if (result == 3)
+                return Ok(new { message = "Schedule updated successfully" });
+            else if (result == 2)
+                return Forbid();
+            else if (result == 1)
                 return BadRequest(new { message = "Given schedule does not exist" });
             else 
-                return Ok(new { message = "Schedule updated successfully" });
+                return BadRequest(new { message = "Faulty DTO given" });
         }
         [HttpDelete("DeleteSchedule")]
         public async Task<IActionResult> DeleteSchedule([FromQuery] Guid scheduleID)
         {
-            //Authorization
+            ////Authorization
             
-            if (scheduleID == Guid.Empty)
-                return BadRequest(new { message = "" });
+            //if (scheduleID == Guid.Empty)
+            //    return BadRequest(new { message = "" });
 
-            var UserID = await _scheduleService.GetScheduleUserID(scheduleID);
-            if (UserID == Guid.Empty)
-                return BadRequest(new { message = "Given schedule does not exist" });
+            //var UserID = await _scheduleService.GetScheduleUserID(scheduleID);
+            //if (UserID == Guid.Empty)
+            //    return BadRequest(new { message = "Given schedule does not exist" });
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
+            //if (!authResult.Succeeded)
+            //    return Forbid();
+            
+            ////Talking to Database
+            
+            var result = await _scheduleService.DeleteSchedule(User, scheduleID);
+            if(result == 3)
+                return Ok(new { message = "Schedule deleted successfully" });
+            else if (result == 2)
                 return Forbid();
-            
-            //Talking to Database
-            
-            var result = await _scheduleService.DeleteSchedule(scheduleID);
-            if (result == 0)
+            else if (result == 1)
                 return BadRequest(new { message = "Given schedule does not exist" });
             else 
-                return Ok(new { message = "Schedule deleted successfully" });
+                return BadRequest(new { message = "Faulty DTO given" });
         }
         [HttpPost("AddWorkoutsToSchedule")]
         public async Task<IActionResult> AddWorkoutsToSchedule([FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            //Authorization
+            ////Authorization
             
-            if (scheduleWorkout.ScheduleID == Guid.Empty)
-                return BadRequest(new { message = "" });
+            //if (scheduleWorkout.ScheduleID == Guid.Empty)
+            //    return BadRequest(new { message = "" });
 
-            var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
-            if (UserID == Guid.Empty)
-                return BadRequest(new { message = "Given schedule does not exist" });
+            //var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
+            //if (UserID == Guid.Empty)
+            //    return BadRequest(new { message = "Given schedule does not exist" });
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            if (!authResult.Succeeded)
-                return Forbid();
+            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
+            //if (!authResult.Succeeded)
+            //    return Forbid();
             
-            //Talking to Database
+            ////Talking to Database
             
-            var result = await _scheduleService.AddWorkoutsToSchedule(scheduleWorkout);
-            if (result == 4)
+            var result = await _scheduleService.AddWorkoutsToSchedule(User, scheduleWorkout);
+            if (result == 5)
                 return Ok(new { Message = "Workouts added to Schedule successfully" });
-            else if (result == 3)
+            else if (result == 4)
                 return BadRequest(new { Message = "Wrong IDs given for the Exercises" });
-            else if (result == 2)
+            else if (result == 3)
                 return BadRequest(new { message = "Workouts already in schedule" });
+            else if (result == 2)
+                return Forbid();
             else if (result == 1)
                 return BadRequest(new { message = "Given Schedule does not exist" });
-            else 
+            else
                 return BadRequest(new { message = "Faulty DTO given" });
         }
         [HttpPost("SetWorkoutsOfSchedule")]
         public async Task<IActionResult> SetWorkoutsOfSchedule([FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            //Authorization
+            ////Authorization
             
-            if (scheduleWorkout.ScheduleID == Guid.Empty)
-                return BadRequest(new { message = "" });
+            //if (scheduleWorkout.ScheduleID == Guid.Empty)
+            //    return BadRequest(new { message = "" });
 
-            var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
-            if (UserID == Guid.Empty)
-                return BadRequest(new { message = "Given schedule does not exist" });
+            //var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
+            //if (UserID == Guid.Empty)
+            //    return BadRequest(new { message = "Given schedule does not exist" });
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            if (!authResult.Succeeded)
-                return Forbid();
+            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
+            //if (!authResult.Succeeded)
+            //    return Forbid();
             
-            //Talking to Database
+            ////Talking to Database
             
-            var result = await _scheduleService.SetWorkoutsOfSchedule(scheduleWorkout);
-            if(result == 3)
+            var result = await _scheduleService.SetWorkoutsOfSchedule(User, scheduleWorkout);
+            if(result == 4)
                 return Ok(new {Message = "Workouts set to Schedule successfully"}) ;
-            else if(result == 2)
+            else if(result == 3)
                 return BadRequest(new { message = "Wrong IDs given for the Exercises" });
+            else if(result == 2)
+                return Forbid();
             else if (result == 1)
                 return BadRequest(new { message = "Given Schedule does not exist" });
-            else 
+            else
                 return BadRequest(new { message = "Faulty DTO given" });
         }
         [HttpDelete("DeleteWorkoutsFromSchedule")]
         public async Task<IActionResult> DeleteWorkoutsFromSchedule([FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            //Authorization
+            ////Authorization
             
-            if (scheduleWorkout.ScheduleID == Guid.Empty)
-                return BadRequest(new { message = "" });
+            //if (scheduleWorkout.ScheduleID == Guid.Empty)
+            //    return BadRequest(new { message = "" });
 
-            var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
-            if (UserID == Guid.Empty)
-                return BadRequest(new { message = "Given schedule does not exist" });
+            //var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
+            //if (UserID == Guid.Empty)
+            //    return BadRequest(new { message = "Given schedule does not exist" });
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            if (!authResult.Succeeded)
-                return Forbid();
+            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
+            //if (!authResult.Succeeded)
+            //    return Forbid();
             
-            //Talking to Database
+            ////Talking to Database
             
-            var result = await _scheduleService.DeleteWorkoutsFromSchedule(scheduleWorkout);
-            if (result == 4)
+            var result = await _scheduleService.DeleteWorkoutsFromSchedule(User, scheduleWorkout);
+            if (result == 5)
                 return Ok(new { Message = "Workouts removed from Schedule successfully" });
-            else if (result == 3)
+            else if (result == 4)
                 return BadRequest(new { Message = "Wrong IDs given for the Exercises" });
-            else if (result == 2)
+            else if (result == 3)
                 return BadRequest(new { message = "Workouts are not in schedule" });
+            else if (result == 2)
+                return Forbid();
             else if (result == 1)
                 return BadRequest(new { message = "Given Schedule does not exist" });
-            else 
+            else
                 return BadRequest(new { message = "Faulty DTO given" });
         }
         [HttpGet("GetScheduleByID")]

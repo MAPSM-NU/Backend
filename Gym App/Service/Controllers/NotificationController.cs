@@ -17,71 +17,85 @@ namespace Gym_App.Service.Controllers
             _notificationService = notificationService;
             _authenticationService = authenticationService;
         }
-        [Authorize(Policy = "ElevatedPower")]//Only Admins can create notifications 
+        //[Authorize(Policy = "ElevatedPower")]//Only Admins can create notifications 
         [HttpPost("CreateNotification")]
         public async Task<IActionResult> CreateNotification([FromBody] NotificationDTO notification)
         {
             
-            var result = await _notificationService.CreateNotification(notification);
-            if (result == 0) 
-                return BadRequest(new { message = "Given user was not found." });
-            return 
-                Ok(new { message = "Notification created successfully." });
+            var result = await _notificationService.CreateNotification(User,notification);
+            if (result == 3)
+                return Ok(new { message = "Notification created succesfully" });
+            else if (result == 2)
+                return Forbid();
+            else if (result == 1)
+                return BadRequest(new { message = "User not found." });
+            else
+                return BadRequest(new { message = "Faulty DTO" });
         }
         [HttpDelete("DeleteNotification")]
         public async Task<IActionResult> DeleteNotification([FromQuery]Guid notificationID)//As in deleting the whole notif. there should be one were we delete the notif from the user's list
         {
-            //Authorization
-            if (notificationID == Guid.Empty)
-                return BadRequest(new { message = "NotificationID cannot be empty." });
+            ////Authorization
+            //if (notificationID == Guid.Empty)
+            //    return BadRequest(new { message = "NotificationID cannot be empty." });
 
-            var userID = await _notificationService.GetNotificationUserID(notificationID);
-            if(userID == Guid.Empty)
-                return BadRequest(new { message = "Notification not found." });
+            //var userID = await _notificationService.GetNotificationUserID(notificationID);
+            //if(userID == Guid.Empty)
+            //    return BadRequest(new { message = "Notification not found." });
 
-            var authResult = await _authenticationService.AuthorizeAsync(User,userID,"SameUserPolicy");
-            if(!authResult.Succeeded)
+            //var authResult = await _authenticationService.AuthorizeAsync(User,userID,"SameUserPolicy");
+            //if(!authResult.Succeeded)
+            //    return Forbid();
+
+            ////Talking to Database
+            var result = await _notificationService.DeleteNotification(User, notificationID);
+            if (result == 3)
+                return Ok(new { message = "Notification Deleted succesfully" });
+            else if (result == 2)
                 return Forbid();
-
-            //Talking to Database
-            var result = await _notificationService.DeleteNotification(notificationID);
-            if (result == 0)
+            else if (result == 1)
                 return BadRequest(new { message = "Notification not found." });
-            return Ok(new { message = "Notification deleted successfully." });
+            else
+                return BadRequest(new { message = "Invalid NotificationID" });
         }
         [HttpDelete("DeleteAllUsersNotifications")]//Note to self. Dont put unnecassary space in the route. Will result in error
         public async Task<IActionResult> DeleteAllNotifications([FromQuery] Guid userID)
         {
-            //Authorization
+            ////Authorization
 
-            if (userID == Guid.Empty)
-                return BadRequest(new { message = "Notification not found." });
+            //if (userID == Guid.Empty)
+            //    return BadRequest(new { message = "Notification not found." });
 
-            var authResult = await _authenticationService.AuthorizeAsync(User, userID, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            //var authResult = await _authenticationService.AuthorizeAsync(User, userID, "SameUserPolicy");
+            //if (!authResult.Succeeded)
+            //    return Forbid();
+
+            ////Talking to Database
+            var result = await _notificationService.DeleteAllNotifications(User, userID);
+            if (result == 3)
+                return Ok(new { message = "Notification Deleted succesfully" });
+            else if (result == 2)
                 return Forbid();
-
-            //Talking to Database
-            var result = await _notificationService.DeleteAllNotifications(userID);
-            if (result == 0) 
+            else if (result == 1)
                 return BadRequest(new { message = "User not found." });
-            return Ok(new{message = "All notifications deleted successfully."});
+            else
+                return BadRequest(new { message = "Invalid NotificationID" });
         }
         [HttpGet("GetUsersNotifications")]
         public async Task<IActionResult> GetNotifications([FromQuery]Guid userID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
         {
-            //Authorization
-            if (userID == Guid.Empty)
-                return BadRequest(new { message = "Notification not found." });
+            ////Authorization
+            //if (userID == Guid.Empty)
+            //    return BadRequest(new { message = "Notification not found." });
 
-            var authResult = await _authenticationService.AuthorizeAsync(User, userID, "SameUserPolicy");
-            if (!authResult.Succeeded)
-                return Forbid();
+            //var authResult = await _authenticationService.AuthorizeAsync(User, userID, "SameUserPolicy");
+            //if (!authResult.Succeeded)
+            //    return Forbid();
 
-            //Talking to Database
-            var notifications = await _notificationService.GetNotifications(userID,startDate,endDate,page,sortColumn,OrderBy,searchTerm,pageSize);
+            ////Talking to Database
+            var notifications = await _notificationService.GetNotifications(User,userID,startDate,endDate,page,sortColumn,OrderBy,searchTerm,pageSize);
             if (notifications == null) 
-                return BadRequest(new { message = "User not found or no notifications." });
+                return BadRequest(new { message = "Unauthorized access,User has no notifications or User doesn't exist" });
             return Ok(notifications);
         }
         [HttpGet("GetAllNotifications")]

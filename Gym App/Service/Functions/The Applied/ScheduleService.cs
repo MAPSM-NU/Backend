@@ -266,8 +266,8 @@ namespace Gym_App.Service.Functions.The_Applied
 
             //Getting schedules from database
             var schedulesQuery = (from s in _db.Schedules
-                            where s.User.UserID == UserID
-                            select s);
+                                  where s.User.UserID == UserID
+                                  select s);
             //if no schedules found, return null
             if (schedulesQuery == null) return null;
 

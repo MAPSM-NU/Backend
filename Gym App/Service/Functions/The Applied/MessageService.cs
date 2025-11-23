@@ -65,7 +65,6 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 5;
         }
-        
         public async Task<int> DeleteMessage(ClaimsPrincipal User, Guid messageID)//0 == Invalid messageID || 1 == Message not found || 2 == Unauthorized || 3 == Success
         {
             //checking for messageID validity

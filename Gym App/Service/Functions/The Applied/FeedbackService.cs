@@ -3,29 +3,51 @@ using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Service.Controllers;
 using Gym_App.Service.Functions.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Linq.Expressions;
+using System.Security.Claims;
 
 namespace Gym_App.Service.Functions.The_Applied
 {
     public class FeedbackService : IFeedbackService
     {
         private readonly DbBase _db;
-        public FeedbackService(DbBase db)
+        private readonly IAuthorizationService _authorizationService;
+        public FeedbackService(DbBase db,IAuthorizationService authorizationService)
         {
             _db = db;
+            _authorizationService = authorizationService;
         }
-        public async Task<int> CreateFeedback(FeedbackDTO feedbackDTO)//0 = Null DTO, 1 = User or Workout not found, 2 = Success
+        public async Task<int> CreateFeedback(ClaimsPrincipal User, FeedbackDTO feedbackDTO)//0 == faulty DTO || 1 == User not found || 2 == Unauthorized || 3 == wokrout not found || 4 == Succesful
         {
-            if (feedbackDTO == null) return 0;
+            //checking DTO validity
+            if (feedbackDTO == null) 
+                return 0;
+
+            //Getting user from Database
             var user = await (from u in _db.Users
                               where u.UserID == feedbackDTO.UserID
                               select u).FirstOrDefaultAsync();
+            //if user not found return
+            if(user == null)
+                return 1;
+
+            //Authorization
+            var authResult = await  _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            if (!authResult.Succeeded)
+                return 2;
+
+            //Getting workout from Databse
             var workout = await (from w in _db.Workouts
                                  where w.WorkoutID == feedbackDTO.WorkoutID
                                  select w).FirstOrDefaultAsync(); ;
-            if (user == null || workout == null) return 1;
+            //if workout not found return
+            if (workout == null)
+                return 3;
+
+            //Creating Feedback
             var feedback = new Feedback
             {
                 FeedbackID = Guid.NewGuid(),
@@ -38,47 +60,76 @@ namespace Gym_App.Service.Functions.The_Applied
                 User = user,
                 Workout = workout
             };
+
+            //Saving to Database
             await _db.Feedbacks.AddAsync(feedback);
             await _db.SaveChangesAsync();
-            return 2;
+            return 4;
         }
-        public async Task<int> UpdateFeedback(FeedbackDTO feedbackDTO)//We really need to set a way to manage updates or modifications on the data
-        {                                                             //0 = Null DTO, 1 = Feedback not found, 2 = Success
-            if (feedbackDTO == null) return 0;
-            var feedback = await _db.Feedbacks.FirstOrDefaultAsync(f => f.FeedbackID == feedbackDTO.FeedbackID);
-            if (feedback == null) return 1;
-            //This part is for if we want to change the user and workout asisgned to the feedback which is think wouldn't happen much if never so I am gonna leave it like this
-            //var user = await _db.Users.FirstOrDefaultAsync(u=>u.UserID == feedbackDTO.UserID);
-            //var workout = await _db.Workouts.FirstOrDefaultAsync(w=>w.WorkoutID==feedbackDTO.WorkoutID);
-            //if (user == null || workout == null) return await Task.FromResult(1);
-            //feedback.Date = feedbackDTO.Date; //why would you update the date? left for later
-            //feedback.User = user;
-            //feedback.Workout = workout;
+        public async Task<int> UpdateFeedback(ClaimsPrincipal User, FeedbackDTO feedbackDTO)//0 == Faulty DTO || 1 == Feedback not found || 2 == unauthorized || 3 == Succesful
+        {
+            //Checking DTO validity
+            if (feedbackDTO == null) 
+                return 0;
+
+            //Getting Feedback from Database
+            var feedback = await (from f in _db.Feedbacks.Include(f => f.User)
+                                  where f.FeedbackID == feedbackDTO.FeedbackID
+                                  select f).FirstOrDefaultAsync();
+
+            //if feedback not found return
+            if (feedback == null) 
+                return 1;
+
+            //Authorization
+            var authResult = await _authorizationService.AuthorizeAsync(User, feedback.User.UserID, "SameUserPolicy");
+            if (!authResult.Succeeded)
+                return 2;
+
+            //Updating given features
             if (!string.IsNullOrWhiteSpace(feedback.Title)) feedback.Title = feedbackDTO.Title;
             if (!string.IsNullOrWhiteSpace(feedback.Type)) feedback.Type = feedbackDTO.Type;
             if (!string.IsNullOrWhiteSpace(feedback.FeedbackText)) feedback.FeedbackText = feedbackDTO.FeedbackText;
             if (feedbackDTO.CaloriesBurned > 0) feedback.CaloriesBurned = feedbackDTO.CaloriesBurned;
             if (feedbackDTO.DurationMinutes > 0) feedback.DurationMinutes = feedbackDTO.DurationMinutes;
+
+            //Saving to Database
             _db.Feedbacks.Update(feedback);
             await _db.SaveChangesAsync();
-            return 2;
+            return 3;
         }
-        public async Task<int> DeleteFeedback(Guid feedbackId)
+        public async Task<int> DeleteFeedback(ClaimsPrincipal User, Guid feedbackID)
         {
-            var feedback = await _db.Feedbacks.FirstOrDefaultAsync(f => f.FeedbackID == feedbackId);
-            if (feedback == null) return 0;
+            //Checking feedbackID validity
+            if (feedbackID == Guid.Empty)
+                return 0;
+
+            //Getting feedback
+            var feedback = await (from f in _db.Feedbacks.Include(f => f.User)
+                                  where f.FeedbackID == feedbackID
+                                  select f).FirstOrDefaultAsync();
+            //if feedback not found return
+            if (feedback == null)
+                return 1;
+
+            //Authorization
+            var authResult = await _authorizationService.AuthorizeAsync(User, feedback.User.UserID, "SameUserPolicy");
+            if(!authResult.Succeeded)
+                return 2;
+
+            //Saving to Database
             _db.Feedbacks.Remove(feedback);
             await _db.SaveChangesAsync();
-            return 1;
+            return 3;
         }
-        public async Task<Guid> GetFeedbackUserID(Guid feedbackID)
+        public async Task<Guid> GetFeedbackUserID(Guid feedbackID)//Not User anymore
         {
             var userID = await (from f in _db.Feedbacks
                                   where f.FeedbackID == feedbackID
                                   select f.User.UserID).FirstOrDefaultAsync();
             return userID;
         }
-        public async Task<FeedbackDTO>? GetFeedbackByID(Guid feedbackID) //Might change it since it returns the DTO not the actual enitity(For Testing purposes)
+        public async Task<FeedbackDTO?> GetFeedbackByID(Guid feedbackID)
         {
             var feedback = await (from f in _db.Feedbacks
                                   where f.FeedbackID == feedbackID

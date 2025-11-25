@@ -1,7 +1,11 @@
 using Gym_App;
+using Gym_App.Service.Authentication;
+using Gym_App.Service.Authorization;
 using Gym_App.Service.Functions.Interfaces;
 using Gym_App.Service.Functions.The_Applied;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+
 //using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer;
@@ -66,11 +70,13 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IScheduleService,ScheduleService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddSingleton<IAuthorizationHandler, SameUserHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();
 
 
 builder.Services.AddDbContext<DbBase>(options =>
 {
-    options.UseSqlServer("Data Source=localhost;Database=master;Initial Catalog=GymApp;Integrated Security=True;Trust Server Certificate=True");//depends on your server!!!
+    options.UseSqlServer("Data Source=DESKTOP-OR6CO4J\\SQLEXPRESS;Initial Catalog=Gym App;Integrated Security=True;Trust Server Certificate=True");//depends on your server!!!
 });
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
     AddJwtBearer(options =>
@@ -98,6 +104,17 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ElevatedPower",
         policy => policy.RequireRole("Admin"));
+});
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("SameUserPolicy", policy =>
+        policy.Requirements.Add(new SameUserRequirement(allowAdmins: true)));
+    // keep other policies (NormalUsage, ElevatedPower) as-is
+});
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ListUserPolicy", policy =>
+        policy.Requirements.Add(new ListUserRequirement(allowAdmins: true)));
 });
 //builder.Services.AddControllersWithViews().AddJsonOptions(x =>
 //   x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);//yezabat error beta3 recurrsion taba3 el json

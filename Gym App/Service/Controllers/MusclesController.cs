@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Service.Controllers
 {
-    //[Authorize(Policy = "ElevatedPower")]
+    [Authorize(Policy = "ElevatedPower")]
     [Route("[controller]")]
     public class MusclesController : Controller
     {
@@ -18,8 +18,10 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> AddMuscle([FromBody] MuscleDTO muscle)
         {
             var result = await _muscleService.CreateMuscle(muscle);
-            if(result == 2) return Ok(new { Message = "Muscle added successfully"});
-            if(result == 1) return BadRequest(new { Message = "Muscle already exists" });
+            if(result == 2) 
+                return Ok(new { Message = "Muscle added successfully"});
+            if(result == 1)
+                return BadRequest(new { Message = "Muscle already exists" });
             return BadRequest(new { Message = "Faulty DTO given" });
         }
         
@@ -27,7 +29,8 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> UpdateMuscle([FromBody] MuscleDTO muscle)
         {
             var result = await _muscleService.UpdateMuscle(muscle);
-            if (result > 0) return Ok(new { Message = "Muscle Updated successfully"});
+            if (result > 0)
+                return Ok(new { Message = "Muscle Updated successfully"});
 
             return BadRequest(new { Message = "Couldn't find the given muscle" });
         }
@@ -35,7 +38,8 @@ namespace Gym_App.Service.Controllers
         public async Task<IActionResult> DeleteMuscle([FromBody] Guid muscleId)
         {
             var result = await _muscleService.DeleteMuscle(muscleId);
-            if (result > 0) return Ok(new { Message = "Muscle deleted successfully" });
+            if (result > 0)
+                return Ok(new { Message = "Muscle deleted successfully" });
 
             return BadRequest(new { Message = "Couldn't find the given muscle" });
         }

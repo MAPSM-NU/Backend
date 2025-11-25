@@ -149,10 +149,6 @@ namespace Gym_App.Service.Functions.The_Applied
         }
         public async Task<PagedList<MessageDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            //if page or pageSize are 0 set default values
-            if (page == 0) page = 1;
-            if (pageSize == 0) pageSize = 10;
-
             var session = await (from s in _db.Sessions.Include(s => s.Users)
                                  where s.SessionID == sessionID
                                  select s).FirstOrDefaultAsync();
@@ -165,6 +161,11 @@ namespace Gym_App.Service.Functions.The_Applied
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
             if (!authResult.Succeeded)
                 return null;
+
+            //if page or pageSize are 0 set default values
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
+
 
             //Getting messages from Database
             var messageQuery = from s in _db.Sessions

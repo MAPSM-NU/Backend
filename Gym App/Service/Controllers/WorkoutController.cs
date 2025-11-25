@@ -31,21 +31,6 @@ namespace Gym_App.Service.Controllers
         [HttpPut("ModifyWorkout")]
         public async Task<IActionResult> UpdateWorkout([FromBody] WorkoutDTO workout)
         {
-            ////Authorization
-
-            //if(workout.WorkoutID == Guid.Empty)
-            //    return BadRequest(new { message = "Given user does not exist." });
-            
-            //var UserID = await _workoutService.GetWorkoutUserID(workout.WorkoutID);
-            //if(UserID == Guid.Empty)
-            //    return BadRequest(new { message = "Given workout does not exist." });
-            
-            //var authResult = await _authorizationService.AuthorizeAsync(User,UserID, "SameUserPolicy");
-            //if (!authResult.Succeeded)
-            //    return Forbid();
-
-            //Talking to Database
-
             var result = await _workoutService.UpdateWorkout(User,workout);
             if (result == 3)
                 return Ok(new { message = "Workout updated successfully." });
@@ -59,21 +44,6 @@ namespace Gym_App.Service.Controllers
         [HttpDelete("DeleteWorkout")]
         public async Task<IActionResult> DeleteWorkout([FromQuery] Guid workout)
         {
-            ////Authorization
-
-            //if (workout.WorkoutID == Guid.Empty)
-            //    return BadRequest(new { message = "Given user does not exist." });
-
-            //var UserID = await _workoutService.GetWorkoutUserID(workout.WorkoutID);
-            //if(UserID == Guid.Empty)
-            //    return BadRequest(new { message = "Given workout does not exist." });
-            
-            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            //if (!authResult.Succeeded)
-            //    return Forbid();
-
-            //Talking to Database
-
             var result = await _workoutService.DeleteWorkout(User,workout);
             if (result == 3)
                 return Ok(new { message = "Workout deleted successfully." });
@@ -87,16 +57,6 @@ namespace Gym_App.Service.Controllers
         [HttpPost("AddExercisestoWorkout")]
         public async Task<IActionResult> AddExercisesToWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
         {
-            ////Authorization
-            
-            //var UserID = await _workoutService.GetWorkoutUserID(workoutExercise.WorkoutID);
-            //if(UserID == Guid.Empty) return BadRequest(new { message = "Given workout does not exist." });
-            
-            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            //if (!authResult.Succeeded) return Forbid();
-            
-            //Talking to Database
-            
             var result = await _workoutService.AddExercisesToWorkout(User,workoutExercise);
             if (result == 4)
                 return Ok(new { message = "Exercises added to workout successfully." });
@@ -112,18 +72,6 @@ namespace Gym_App.Service.Controllers
         [HttpPost("SetExercisesofWorkout")]
         public async Task<IActionResult> SetExercisesOfWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
         {
-            ////Authorization
-            
-            //var UserID = await _workoutService.GetWorkoutUserID(workoutExercise.WorkoutID);
-            //if(UserID == Guid.Empty)
-            //    return BadRequest(new { message = "Given workout does not exist." });
-            
-            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            //if (!authResult.Succeeded)
-            //    return Forbid();
-            
-            //Talking to Database
-            
             var result = await _workoutService.SetExercisesOfWorkout(User,workoutExercise);
             if (result == 4)
                 return Ok(new { message = "Exercises set for workout successfully." });
@@ -139,16 +87,6 @@ namespace Gym_App.Service.Controllers
         [HttpDelete("DeleteExercisesfromWorkout")]
         public async Task<IActionResult> DeleteExercisesFromWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
         {
-            ////Authorization
-            
-            //var UserID = await _workoutService.GetWorkoutUserID(workoutExercise.WorkoutID);
-            //if(UserID == Guid.Empty) return BadRequest(new { message = "Given workout does not exist." });
-            
-            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            //if (!authResult.Succeeded) return Forbid();
-
-            //Talking to Database
-
             var result = await _workoutService.DeleteExercisesFromWorkout(User,workoutExercise);
             if (result == 4)
                 return Ok(new { message = "Exercises removed from workout successfully." });

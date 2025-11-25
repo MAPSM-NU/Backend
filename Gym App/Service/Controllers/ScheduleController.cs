@@ -11,11 +11,9 @@ namespace Gym_App.Service.Controllers
     public class ScheduleController : Controller
     {
         private readonly IScheduleService _scheduleService;
-        private readonly IAuthorizationService _authorizationService;
-        public ScheduleController(IScheduleService scheduleService,IAuthorizationService authorizationService)
+        public ScheduleController(IScheduleService scheduleService)
         {
             _scheduleService = scheduleService;
-            _authorizationService = authorizationService;
         }
 
         [HttpPost("AddSchedule")]
@@ -34,21 +32,6 @@ namespace Gym_App.Service.Controllers
         [HttpPut("UpdateSchedule")]
         public async Task<IActionResult> UpdateSchedule([FromBody] ScheduleDTO schedule)
         {
-            ////Authorization
-
-            //if (schedule.ScheduleID == Guid.Empty)
-            //    return BadRequest(new { message = "" });
-
-            //var UserID = await _scheduleService.GetScheduleUserID(schedule.ScheduleID);
-            //if (UserID == Guid.Empty)
-            //    return BadRequest(new { message = "Given schedule does not exist" });
-
-            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            //if (!authResult.Succeeded)
-            //    return Forbid();
-            
-            ////Talking to Database
-
             var result = await _scheduleService.UpdateSchedule(User, schedule);
             if (result == 3)
                 return Ok(new { message = "Schedule updated successfully" });
@@ -62,21 +45,6 @@ namespace Gym_App.Service.Controllers
         [HttpDelete("DeleteSchedule")]
         public async Task<IActionResult> DeleteSchedule([FromQuery] Guid scheduleID)
         {
-            ////Authorization
-            
-            //if (scheduleID == Guid.Empty)
-            //    return BadRequest(new { message = "" });
-
-            //var UserID = await _scheduleService.GetScheduleUserID(scheduleID);
-            //if (UserID == Guid.Empty)
-            //    return BadRequest(new { message = "Given schedule does not exist" });
-
-            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            //if (!authResult.Succeeded)
-            //    return Forbid();
-            
-            ////Talking to Database
-            
             var result = await _scheduleService.DeleteSchedule(User, scheduleID);
             if(result == 3)
                 return Ok(new { message = "Schedule deleted successfully" });
@@ -90,21 +58,6 @@ namespace Gym_App.Service.Controllers
         [HttpPost("AddWorkoutsToSchedule")]
         public async Task<IActionResult> AddWorkoutsToSchedule([FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            ////Authorization
-            
-            //if (scheduleWorkout.ScheduleID == Guid.Empty)
-            //    return BadRequest(new { message = "" });
-
-            //var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
-            //if (UserID == Guid.Empty)
-            //    return BadRequest(new { message = "Given schedule does not exist" });
-
-            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            //if (!authResult.Succeeded)
-            //    return Forbid();
-            
-            ////Talking to Database
-            
             var result = await _scheduleService.AddWorkoutsToSchedule(User, scheduleWorkout);
             if (result == 5)
                 return Ok(new { Message = "Workouts added to Schedule successfully" });
@@ -122,21 +75,6 @@ namespace Gym_App.Service.Controllers
         [HttpPost("SetWorkoutsOfSchedule")]
         public async Task<IActionResult> SetWorkoutsOfSchedule([FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            ////Authorization
-            
-            //if (scheduleWorkout.ScheduleID == Guid.Empty)
-            //    return BadRequest(new { message = "" });
-
-            //var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
-            //if (UserID == Guid.Empty)
-            //    return BadRequest(new { message = "Given schedule does not exist" });
-
-            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            //if (!authResult.Succeeded)
-            //    return Forbid();
-            
-            ////Talking to Database
-            
             var result = await _scheduleService.SetWorkoutsOfSchedule(User, scheduleWorkout);
             if(result == 4)
                 return Ok(new {Message = "Workouts set to Schedule successfully"}) ;
@@ -152,21 +90,6 @@ namespace Gym_App.Service.Controllers
         [HttpDelete("DeleteWorkoutsFromSchedule")]
         public async Task<IActionResult> DeleteWorkoutsFromSchedule([FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            ////Authorization
-            
-            //if (scheduleWorkout.ScheduleID == Guid.Empty)
-            //    return BadRequest(new { message = "" });
-
-            //var UserID = await _scheduleService.GetScheduleUserID(scheduleWorkout.ScheduleID);
-            //if (UserID == Guid.Empty)
-            //    return BadRequest(new { message = "Given schedule does not exist" });
-
-            //var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            //if (!authResult.Succeeded)
-            //    return Forbid();
-            
-            ////Talking to Database
-            
             var result = await _scheduleService.DeleteWorkoutsFromSchedule(User, scheduleWorkout);
             if (result == 5)
                 return Ok(new { Message = "Workouts removed from Schedule successfully" });

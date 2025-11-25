@@ -11,11 +11,9 @@ namespace Gym_App.Service.Controllers
     public class NotificationController : Controller
     {
         private readonly INotificationService _notificationService;
-        private readonly IAuthorizationService _authenticationService;
-        public NotificationController(INotificationService notificationService,IAuthorizationService authenticationService)
+        public NotificationController(INotificationService notificationService)
         {
             _notificationService = notificationService;
-            _authenticationService = authenticationService;
         }
         //[Authorize(Policy = "ElevatedPower")]//Only Admins can create notifications 
         [HttpPost("CreateNotification")]
@@ -35,19 +33,6 @@ namespace Gym_App.Service.Controllers
         [HttpDelete("DeleteNotification")]
         public async Task<IActionResult> DeleteNotification([FromQuery]Guid notificationID)//As in deleting the whole notif. there should be one were we delete the notif from the user's list
         {
-            ////Authorization
-            //if (notificationID == Guid.Empty)
-            //    return BadRequest(new { message = "NotificationID cannot be empty." });
-
-            //var userID = await _notificationService.GetNotificationUserID(notificationID);
-            //if(userID == Guid.Empty)
-            //    return BadRequest(new { message = "Notification not found." });
-
-            //var authResult = await _authenticationService.AuthorizeAsync(User,userID,"SameUserPolicy");
-            //if(!authResult.Succeeded)
-            //    return Forbid();
-
-            ////Talking to Database
             var result = await _notificationService.DeleteNotification(User, notificationID);
             if (result == 3)
                 return Ok(new { message = "Notification Deleted succesfully" });
@@ -61,16 +46,6 @@ namespace Gym_App.Service.Controllers
         [HttpDelete("DeleteAllUsersNotifications")]//Note to self. Dont put unnecassary space in the route. Will result in error
         public async Task<IActionResult> DeleteAllNotifications([FromQuery] Guid userID)
         {
-            ////Authorization
-
-            //if (userID == Guid.Empty)
-            //    return BadRequest(new { message = "Notification not found." });
-
-            //var authResult = await _authenticationService.AuthorizeAsync(User, userID, "SameUserPolicy");
-            //if (!authResult.Succeeded)
-            //    return Forbid();
-
-            ////Talking to Database
             var result = await _notificationService.DeleteAllNotifications(User, userID);
             if (result == 3)
                 return Ok(new { message = "Notification Deleted succesfully" });
@@ -84,15 +59,6 @@ namespace Gym_App.Service.Controllers
         [HttpGet("GetUsersNotifications")]
         public async Task<IActionResult> GetNotifications([FromQuery]Guid userID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
         {
-            ////Authorization
-            //if (userID == Guid.Empty)
-            //    return BadRequest(new { message = "Notification not found." });
-
-            //var authResult = await _authenticationService.AuthorizeAsync(User, userID, "SameUserPolicy");
-            //if (!authResult.Succeeded)
-            //    return Forbid();
-
-            ////Talking to Database
             var notifications = await _notificationService.GetNotifications(User,userID,startDate,endDate,page,sortColumn,OrderBy,searchTerm,pageSize);
             if (notifications == null) 
                 return BadRequest(new { message = "Unauthorized access,User has no notifications or User doesn't exist" });

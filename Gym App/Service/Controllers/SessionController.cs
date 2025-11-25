@@ -18,16 +18,6 @@ namespace Gym_App.Service.Controllers
         [HttpPost("CreateSession")]
         public async Task<IActionResult> CreateSession([FromBody] SessionDTO session)
         {
-            ////Authorization
-
-            //if (session == null) 
-            //    return BadRequest(new { Message = "Faulty DTO given" });
-
-            //var authResult = await _authorizationService.AuthorizeAsync(User,session.UserIDs,"ListUserPolicy");
-            //if(!authResult.Succeeded) 
-            //    return Forbid();
-
-            ////Talking to Database
             var result = await _sessionService.CreateSession(User,session);
 
             if (result == 3)
@@ -54,20 +44,6 @@ namespace Gym_App.Service.Controllers
         [HttpPost("AddMessages")]
         public async Task<IActionResult> AddMessages([FromBody] SessionMessagesDTO sessionMessages)
         {
-            ////Authorization
-
-            //if (sessionMessages == null) 
-            //    return BadRequest(new { Message = "Faulty DTO given" });
-
-            //var UserIDs = await _sessionService.GetSessionUsersIDs(User,sessionMessages.SessionID);
-            //if (UserIDs == null)
-            //    return BadRequest(new { Message = "Session not found" });
-
-            //var authResult = await _authorizationService.AuthorizeAsync(User,UserIDs,"ListUserPolicy");
-            //if(!authResult.Succeeded) 
-            //    return Forbid();
-
-            ////Talking to Database
             var result = await _sessionService.AddMessages(User,sessionMessages);
             if (result == 5)
                 return Ok(new { Message = "Messages added succesfully" });
@@ -106,19 +82,6 @@ namespace Gym_App.Service.Controllers
         [HttpGet("GetSessionMessages")]
         public async Task<IActionResult> GetSessionMessages([FromQuery] Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            ////Authorization
-            //if(sessionID == Guid.Empty) 
-            //    return BadRequest(new { Message = "Faulty Session ID given" });
-
-            //var UserIDs = await _sessionService.GetSessionUsersIDs(User, sessionID);
-            //if (UserIDs == null)
-            //    return BadRequest(new { Message = "Session not found" });
-
-            //var authResult = await _authorizationService.AuthorizeAsync(User,UserIDs,"ListUserPolicy");
-            //if(!authResult.Succeeded) 
-            //    return Forbid();
-
-            ////Talking to Database
             var messages = await _sessionService.GetSessionMessages(User,sessionID,startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
             if (messages == null) 
                 return NotFound(new { message = "either you are not permitted to view the messages of this session or this" +

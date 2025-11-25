@@ -105,7 +105,6 @@ namespace Gym_App.Service.Functions.The_Applied
                 RefreshToken = RefreshToken
             });
         }
-
         public async Task<ResponseToken> LoginUser(UserDTO u) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
         {   //Checking if the user exists
             var _user = await(from user in _db.Users
@@ -263,7 +262,11 @@ namespace Gym_App.Service.Functions.The_Applied
             var users = await PagedList<UserDTO>.CreateAsync(usersQuery,page,pageSize);
             return users;
         }
-        // Helper Functions
+
+
+        //Helper Functions
+        //-----------------
+
         public async Task<bool> isNameValid(string name)//checks if the name is already taken
         {
             var n = await(from u in _db.Users
@@ -273,8 +276,6 @@ namespace Gym_App.Service.Functions.The_Applied
             if (n is null) return true;
             else return false;
         }
-
-
         public async Task<bool> EmailExists(string email)
         {
             return await _db.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower());
@@ -287,8 +288,6 @@ namespace Gym_App.Service.Functions.The_Applied
             }
             else return false;
         }
-
-
         public async Task<bool> IsPasswordValid(string password)
         {
             var PasswordPolicy = new Microsoft.AspNet.Identity.PasswordValidator
@@ -303,8 +302,6 @@ namespace Gym_App.Service.Functions.The_Applied
             if (result.Succeeded) return true;
             else return false;
         }
-
-
         public async Task<bool> DeleteUser(Guid userID)
         {
             var u = await(from usr in _db.Users

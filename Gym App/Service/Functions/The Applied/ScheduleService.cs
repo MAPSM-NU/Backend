@@ -53,7 +53,6 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 3;
         }
-
         public async Task<int> UpdateSchedule(ClaimsPrincipal User, ScheduleDTO schedule)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized || 3 == success
         {
             //Checking for DTO validity
@@ -143,7 +142,6 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 5;
         }
-        
         public async Task<int> SetWorkoutsOfSchedule(ClaimsPrincipal User, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
                                                                                                               //3 == no workouts found || 4 == success
         {
@@ -181,7 +179,6 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 4;
         }
-
         public async Task<int> DeleteWorkoutsFromSchedule(ClaimsPrincipal User, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
                                                                                                                    //3 == no workouts to remove || 4 == workouts not found || 5 == success
         {
@@ -315,7 +312,6 @@ namespace Gym_App.Service.Functions.The_Applied
             var schedules = await PagedList<ScheduleDTO>.CreateAsync(schedulesResponse,page,pageSize);
             return schedules;
         }
-
         public async Task<PagedList<ScheduleDTO>?> GetAllSchedules(int page,int pageSize)
         {
             //if page and pageSize are 0, set default values
@@ -340,7 +336,6 @@ namespace Gym_App.Service.Functions.The_Applied
             var schedules = await PagedList<ScheduleDTO>.CreateAsync(schedulesQuery, page, pageSize);
             return schedules;
         }
-
         public async Task<Guid> GetScheduleUserID(Guid scheduleID) 
         {
             //Getting userID from database

@@ -82,7 +82,6 @@ namespace Gym_App.Service.Functions.The_Applied
                 return await Task.FromResult(isTokenExists.RefreshToken);
             }
         }
-
         public async Task<ResponseToken>? ValidateAccessToken(string Refreshtoken) // for logging in with Tokens
         {
             var result = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.RefreshToken == Refreshtoken);

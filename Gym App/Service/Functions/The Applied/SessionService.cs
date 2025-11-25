@@ -19,8 +19,6 @@ namespace Gym_App.Service.Functions.The_Applied
             _db = db;
             _authorizationService = authorizationService;
         }
-
-
         public async Task<int> CreateSession(ClaimsPrincipal User, SessionDTO session)// 0 == Faulty DTO || 1 == User not found || 2 == unauthorized || 3 == success
         {//need to check if given users already have past session together?
 
@@ -93,7 +91,6 @@ namespace Gym_App.Service.Functions.The_Applied
             await _db.SaveChangesAsync();
             return 2;
         }
-
         public async Task<int> AddMessages(ClaimsPrincipal User, SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no new messages to add
                                                                                                     //|| 4 == no messages found || 5 == success
         {
@@ -314,7 +311,6 @@ namespace Gym_App.Service.Functions.The_Applied
             var messages = await PagedList<MessageDTO>.CreateAsync(messageResponse, page, pageSize);
             return messages;
         }
-
         public async Task<PagedList<UserDTO>?> GetUsersOfSession(ClaimsPrincipal User,Guid sessionID, int page, int pageSize)//The sessions tree in itself needs a big change man fr
         {
             //if page or pageSize are 0, set default values

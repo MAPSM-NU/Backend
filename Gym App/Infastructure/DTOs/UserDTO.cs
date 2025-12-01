@@ -1,0 +1,14 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Gym_App.Infastructure.DTOs
+{
+    public class UserDTO
+    {
+        public Guid UserID { get; set; }
+        public string? Name { get; set; }
+        public string? Email { get; set; }
+        public string? Password { get; set; }
+        public string UserType { get; set; }
+    }
+}

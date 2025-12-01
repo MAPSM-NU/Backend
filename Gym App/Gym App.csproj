@@ -28,9 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Migrations\" />
+    <Folder Include="Infastructure\Migrations\" />
   </ItemGroup>
+
   <ItemGroup>
-		<None Include="Domain\Entities\workout-data.csv" CopyToOutputDirectory="Always" />
-   </ItemGroup>
+    <None Update="Domain\workout-data.csv" CopyToOutputDirectory="Always" />
+  </ItemGroup>
 </Project>

@@ -1,8 +1,7 @@
-using Gym_App;
-using Gym_App.Service.Authentication;
-using Gym_App.Service.Authorization;
-using Gym_App.Service.Functions.Interfaces;
-using Gym_App.Service.Functions.The_Applied;
+using Gym_App.Application.Authorization;
+using Gym_App.Application.Interfaces;
+using Gym_App.Application.Services;
+using Gym_App.Infastructure.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 
@@ -60,7 +59,7 @@ builder.Services.AddSwaggerGen(c => {
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IUserServise, UserService>();
-builder.Services.AddScoped<ITokenHandler, Gym_App.Service.Functions.The_Applied.TokenHandler>();
+builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHandler>();
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();
 builder.Services.AddScoped<IExerciseService, ExerciseService>();

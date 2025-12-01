@@ -1,0 +1,221 @@
+﻿using Gym_App.Application.Interfaces;
+using Gym_App.Domain;
+using Gym_App.Domain.Transfer_Classes;
+using Gym_App.Infastructure.Context;
+using Gym_App.Infastructure.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+using System.Security.Claims;
+
+namespace Gym_App.Application.Services
+{
+    
+    public class NotificationService : INotificationService // Fuck this class. Needs a change again. relationship with users should not be many to many GRAAAAAA
+    {
+        private readonly DbBase _db;
+        private readonly IAuthorizationService _authorizationService;
+        public NotificationService(DbBase db,IAuthorizationService authorizationService)
+        {
+            _db = db;
+            _authorizationService = authorizationService;
+        }
+        public async Task<int> SendNotificationAsync(NotificationDTO notification)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<int> CreateNotification(ClaimsPrincipal User, NotificationDTO notification)//0 == Faulty DTO || 1 == User not found || 2 == Unauthorized || 3 == Succesful
+        {
+            //Checking for DTO validity
+            if (notification == null)
+                return 0;
+
+            //Getting User from Database
+            var user = await (from u in _db.Users
+                         where u.UserID == notification.UserID
+                         select u).FirstOrDefaultAsync();
+            //If user not found return 
+            if (user == null) 
+                return 1;
+
+            //Authorization
+            var authResult = await _authorizationService.AuthorizeAsync(User,user.UserID,"SameUserPolicy");
+            if(!authResult.Succeeded)
+                return 2;
+
+            //Creating Notification
+            Notification newNotification = new Notification
+            {
+                NotificationID = Guid.NewGuid(),
+                Date = DateTime.UtcNow,
+                Title = notification.Title,
+                Content = notification.Content,
+                User = user,
+            };
+
+            //Saving to the Database
+            user.Notifications?.Add(newNotification);
+            _db.Notifications.Add(newNotification);
+            await _db.SaveChangesAsync();
+            return 3;
+
+        }
+        public async Task<int> DeleteNotification(ClaimsPrincipal User,Guid NotificationID)//0 == Invalid NotificationID || 1 == Notification not found || 2 == Unauthorized || 3 == Successful
+        {
+            //Checking for NotificationID validty
+            if (NotificationID == Guid.Empty) 
+                return 0;
+
+            //Getting notification from Database
+            var Notification =  await (from n in _db.Notifications.Include(n=>n.User)
+                                       where n.NotificationID == NotificationID
+                                       select n).FirstOrDefaultAsync();
+            //If notification not found return
+            if (Notification == null) 
+                return 1;
+
+            //Authorization
+            var authResult = await _authorizationService.AuthorizeAsync(User,Notification.User.UserID,"SameUserPolicy");
+            if(!authResult.Succeeded)
+                return 2;
+
+            //Saving to the Database
+            _db.Notifications.Remove(Notification);
+            await _db.SaveChangesAsync();
+            return 3;
+        }
+        public async Task<int> DeleteAllNotifications(ClaimsPrincipal User, Guid UserID)//0 == Invalid UserID || 1 == User not found || 2 == Unauthorized || 3 == Successful
+                                                                                        //This leaves the notification with no user!
+        {
+            //Checking for UserID validty
+            if (UserID == Guid.Empty)
+                return 0;
+
+            //Getting User from Database
+            var user = await _db.Users
+                .Include(u => u.Notifications)//Include is ,sadly😔, important here
+                .FirstOrDefaultAsync(u => u.UserID == UserID);
+            //If user not found return
+            if (user == null)
+                return 1;
+
+            //Authorization
+            var authResult = await _authorizationService.AuthorizeAsync(User,user.UserID,"SameUserPolicy");
+            if(!authResult.Succeeded)
+                return 2;
+
+            //Saving to the Database
+            user.Notifications?.Clear();
+            _db.Users.Update(user);
+            await _db.SaveChangesAsync();
+            return 3;
+        }
+        public async Task<Guid> GetNotificationUserID(Guid NotificationID)//not used anymore
+        {
+            //Getting UserID from Database
+            var userID = await (from n in _db.Notifications
+                          where n.NotificationID == NotificationID
+                          select n.User.UserID).FirstOrDefaultAsync();
+            return userID;
+        }
+        public async Task<PagedList<NotificationDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        {
+            //Authorization
+            var authResult = await _authorizationService.AuthorizeAsync(User,UserID,"SameUserPolicy");
+            if(!authResult.Succeeded)
+                return null;
+
+            //if page or pageSize are 0 set to default values
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
+
+            //Getting notifications from Database and projecting to DTO
+            var notificationsQuery = from n in _db.Notifications
+                                      where n.User.UserID == UserID
+                                      select new NotificationDTO
+                                      {
+                                         NotificationID = n.NotificationID,
+                                         UserID = UserID,
+                                         Date = n.Date,
+                                         Title = n.Title,
+                                         Content = n.Content
+                                      };
+            //if no notifications found return null
+            if (notificationsQuery == null) return null;
+
+            //Filtering by start date and end date
+            DateTime validStartDate, validEndDate;
+            if(DateTime.TryParse(startDate,out validStartDate))
+            {
+                notificationsQuery = notificationsQuery.Where(n=>n.Date >  validStartDate);
+            }
+            if (DateTime.TryParse(endDate,out validEndDate))
+            {
+                notificationsQuery = notificationsQuery.Where(n=>n.Date < validEndDate);
+            }
+
+            //Filtering by search term in title or content
+            if (!string.IsNullOrEmpty(searchTerm)) notificationsQuery = notificationsQuery.Where(n => n.Content.Contains(searchTerm) || n.Title.Contains(searchTerm));
+
+            //Ordering by a given column
+            if (!string.IsNullOrEmpty(sortColumn))//Either sort by custom given inputs
+            {
+                Expression<Func<NotificationDTO, object>> keySelector = sortColumn.ToLower() switch
+                {
+                    "content" or "c" => Notification => Notification.Content,// ordering by content
+                    "title" or "t" => Notification => Notification.Title, // ordering by title
+                    _ => Notification => Notification.NotificationID//failsafe: ordering by NotificationID
+                };
+
+                //If no orderby was inputed, then we sort ascending
+                if (!string.IsNullOrEmpty(OrderBy)) notificationsQuery = notificationsQuery.OrderBy(keySelector);
+
+                //else if anything was inputed we sort descending
+                else notificationsQuery = notificationsQuery.OrderByDescending(keySelector);
+            }
+            else//Or you can sort from most recent notifications
+            {
+                notificationsQuery = notificationsQuery.OrderByDescending(n => n.Date);
+            }
+
+            //Making Paged list from resultant query
+            var notifications = await PagedList<NotificationDTO>.CreateAsync(notificationsQuery, page, pageSize);
+            return notifications;
+        }
+
+        public async Task<PagedList<NotificationDTO>> GetAllNotifications(int page, int pageSize)
+        {
+            //if page or pageSize are 0 set to default values
+            if (page == 0) page = 1;
+            if(pageSize == 0) pageSize = 10;
+
+            //Getting notifications from Database and projecting to DTO
+            var notificationsQuery =from n in _db.Notifications
+                                select new NotificationDTO
+                                {
+                                    NotificationID = n.NotificationID,
+                                    UserID = n.User.UserID,
+                                    Date = n.Date,
+                                    Title = n.Title,
+                                    Content = n.Content
+                                };
+
+            //Ordering by date descending
+            notificationsQuery = notificationsQuery.OrderByDescending(n => n.Date);
+
+            //Making Paged list from resultant query
+            var notifications = await PagedList<NotificationDTO>.CreateAsync(notificationsQuery,page, pageSize);
+            return notifications;
+        }
+        public Task<int> MarkAllAsRead(Guid UserID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> MarkAsRead(Guid NotificationID)
+        {
+            throw new NotImplementedException();
+        }
+
+    }
+}

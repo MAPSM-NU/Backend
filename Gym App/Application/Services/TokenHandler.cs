@@ -3,7 +3,7 @@ using Gym_App.Domain;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.UserDTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -27,36 +27,37 @@ namespace Gym_App.Application.Services
         public async Task<string> CreateAccessToken(UserDTO u) // For creating access Tokens
         {
             //_logger.LogInformation("Making A new webtoken right now");
-            var Role = await (from user in _db.Users
-                              where user.UserID == u.UserID
-                              select user.Role).ToListAsync(); //All this needs a big ass change fr
-            if (Role == null) return "No Role Specified";
-            string role;
-            if (Role.Any(R => R.Any(r => r.RoleName == "Admin"))) role = "Admin";
-            else role = "User";
-            //_logger.LogInformation($"role = {role}");
-                var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Name, u.Name),
-                new Claim(JwtRegisteredClaimNames.Email, u.Email),
-                new Claim(JwtRegisteredClaimNames.Sub,u.UserID.ToString()),
-                new Claim(ClaimTypes.Role,role)
-                //new Claim(ClaimTypes.Role,u.Role)
-            };
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_config.GetValue<string>("JwtSettings:Token")!));
+            //var Role = await (from user in _db.Users
+            //                  where user.UserID == u.UserID
+            //                  select user.Role).ToListAsync(); //All this needs a big ass change fr
+            //if (Role == null) return "No Role Specified";
+            //string role;
+            //if (Role.Any(R => R.Any(r => r.RoleName == "Admin"))) role = "Admin";
+            //else role = "User";
+            ////_logger.LogInformation($"role = {role}");
+            //    var claims = new List<Claim>
+            //{
+            //    new Claim(JwtRegisteredClaimNames.Name, u.Name),
+            //    new Claim(JwtRegisteredClaimNames.Email, u.Email),
+            //    new Claim(JwtRegisteredClaimNames.Sub,u.UserID.ToString()),
+            //    new Claim(ClaimTypes.Role,role)
+            //    //new Claim(ClaimTypes.Role,u.Role)
+            //};
+            //var key = new SymmetricSecurityKey(
+            //    Encoding.UTF8.GetBytes(_config.GetValue<string>("JwtSettings:Token")!));
 
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            //var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var TokenDescriptor = new JwtSecurityToken(
-                issuer: _config.GetValue<string>("JwtSettings:Issuer"),
-                audience: _config.GetValue<string>("JwtSettings:Audience"),
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),//EXPIRATION DATE
-                signingCredentials: creds
-                );
-            //_logger.LogInformation("Json Web Token created");
-            return new JwtSecurityTokenHandler().WriteToken(TokenDescriptor);
+            //var TokenDescriptor = new JwtSecurityToken(
+            //    issuer: _config.GetValue<string>("JwtSettings:Issuer"),
+            //    audience: _config.GetValue<string>("JwtSettings:Audience"),
+            //    claims: claims,
+            //    expires: DateTime.UtcNow.AddHours(1),//EXPIRATION DATE
+            //    signingCredentials: creds
+            //    );
+            ////_logger.LogInformation("Json Web Token created");
+            //return new JwtSecurityTokenHandler().WriteToken(TokenDescriptor);
+            return 1.ToString(); // Temporary return to avoid errors
         }
         public Task<string> CreateRefreshToken(Guid UserID)//For creating new RefreshTokens
         {
@@ -86,33 +87,37 @@ namespace Gym_App.Application.Services
         }
         public async Task<ResponseToken>? ValidateAccessToken(string Refreshtoken) // for logging in with Tokens
         {
-            var result = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.RefreshToken == Refreshtoken);
-            if (result == null || result.Expires < DateTime.UtcNow)
-            {
-                return null;
-            }
-            var user = await (from u in _db.Users
-                        where u.UserID == result.UserID
-                        select new UserDTO
-                        {
-                            UserID = u.UserID,
-                            Name = u.Name,
-                            Email = u.Email,
-                            Password = u.Password
-                        }).FirstOrDefaultAsync();
-            var Token = await CreateAccessToken(user);
-            result.Expires = DateTime.UtcNow.AddDays(4);
-            result.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            var Response = new ResponseToken
+            //var result = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.RefreshToken == Refreshtoken);
+            //if (result == null || result.Expires < DateTime.UtcNow)
+            //{
+            //    return null;
+            //}
+            //var user = await (from u in _db.Users
+            //            where u.UserID == result.UserID
+            //            select new UserDTO
+            //            {
+            //                UserID = u.UserID,
+            //                Name = u.Name,
+            //                Email = u.Email,
+            //                Password = u.Password
+            //            }).FirstOrDefaultAsync();
+            //var Token = await CreateAccessToken(user);
+            //result.Expires = DateTime.UtcNow.AddDays(4);
+            //result.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            //var Response = new ResponseToken
+            //{
+            //    Status = 1,
+            //    AccessToken = Token,
+            //    RefreshToken = result.RefreshToken,
+            //};
+            //_db.RefreshTokens.Update(result);
+            //await _db.SaveChangesAsync();
+            //return Response;
+            return new ResponseToken
             {
                 Status = 1,
-                AccessToken = Token,
-                RefreshToken = result.RefreshToken,
             };
-            _db.RefreshTokens.Update(result);
-            await _db.SaveChangesAsync();
-            return Response;
-        }
+        } // Temporary return to avoid errors
         public async Task<PagedList<RefreshTokens>> GetAllRefreshTokens(int page,int pageSize)
         {
             if (page == 0) page = 1;

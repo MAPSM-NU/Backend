@@ -4,7 +4,7 @@ using Gym_App.Domain;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.UserDTOs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -22,92 +22,130 @@ namespace Gym_App.Application.Services
             _db = db;
             _tokenHandler = tokenHandler;
         }
-        public async Task<ResponseToken> CreateAdmin(UserDTO u)
+        public async Task<ResponseToken> CreateAdmin(UserCreationDTO u)
         {
             //Creating an admin user
-            if (u.Name == null || u.Email == null || u.Password == null) return new ResponseToken { Status = 0 };
-            if (!await isNameValid(u.Name)) return new ResponseToken { Status = 1 };
-            if (await EmailExists(u.Email)) return new ResponseToken { Status = 2 };
-            if (!IsEmailValid(u.Email)) return new ResponseToken { Status = 3 };
-            if (!IsPasswordValid(u.Password).Result) return new ResponseToken { Status = 4 };
-            User user = new User
-            {
-                UserID = Guid.NewGuid(),
-                Name = u.Name,
-                Email = u.Email,
-                Password = new PasswordHasher<User>().HashPassword(null, u.Password),
-                CreatedAt = DateTime.Now,
-                UserType = "Admin"
-            };
-            var Role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
-            user.Role.Add(Role);
-            //Making the Tokens and saving them to the database
-            u.UserID = user.UserID;
-            var Token = await _tokenHandler.CreateAccessToken(u);
-            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
-            await _db.Users.AddAsync(user);
-            await _db.RefreshTokens.AddAsync(new RefreshTokens
-            {
-                UserID = user.UserID,
-                RefreshToken = RefreshToken,
-                Expires = DateTime.Now.AddDays(4)
-            });
-            await _db.SaveChangesAsync();
-            return await Task.FromResult(new ResponseToken
-            {
-                Status = 5,
-                AccessToken = Token,
-                RefreshToken = RefreshToken
-            });
+            //if (u.Name == null || u.Email == null || u.Password == null) 
+            //    return new ResponseToken { Status = 0 };
+
+            //if (!await isNameValid(u.Name))
+            //    return new ResponseToken { Status = 1 };
+
+            //if (await EmailExists(u.Email))
+            //    return new ResponseToken { Status = 2 };
+
+            //if (!IsEmailValid(u.Email))
+            //    return new ResponseToken { Status = 3 };
+
+            //if (!IsPasswordValid(u.Password).Result)
+            //    return new ResponseToken { Status = 4 };
+
+            //User user = new User
+            //{
+            //    UserID = Guid.NewGuid(),
+            //    Name = u.Name,
+            //    Email = u.Email,
+            //    Password = new PasswordHasher<User>().HashPassword(null, u.Password),
+            //    CreatedAt = DateTime.Now,
+            //    UserType = "Admin"
+            //};
+
+            //var Role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
+            //if (Role == null)
+            //    return new ResponseToken { Status = 6 };
+
+            //user.Role.Add(Role);
+
+            ////Making the Tokens and saving them to the database
+            //u.UserID = user.UserID;
+            //var Token = await _tokenHandler.CreateAccessToken(u);
+            //var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
+
+            //await _db.Users.AddAsync(user);
+            //await _db.RefreshTokens.AddAsync(new RefreshTokens
+            //{
+            //    UserID = user.UserID,
+            //    RefreshToken = RefreshToken,
+            //    Expires = DateTime.Now.AddDays(4)
+            //});
+            //await _db.SaveChangesAsync();
+            //return await Task.FromResult(new ResponseToken
+            //{
+            //    Status = 5,
+            //    AccessToken = Token,
+            //    RefreshToken = RefreshToken
+            //});
+            return new ResponseToken { Status = 5 };
         }
-        public async Task<ResponseToken> SignUpUser(UserDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
-                                                              //5 == Succesful signup
+        public async Task<ResponseToken> SignUpUser(UserCreationDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
+                                                                      //5 == Succesful signup
         {
             //Signing up the user
-            if (u.Name == null || u.Email == null || u.Password == null) return new ResponseToken { Status = 0 };
-            if (!await isNameValid(u.Name)) return new ResponseToken { Status = 1 };
-            if (await EmailExists(u.Email)) return new ResponseToken { Status = 2 };
-            if (!IsEmailValid(u.Email)) return new ResponseToken { Status = 3 };
-            if (!IsPasswordValid(u.Password).Result) return new ResponseToken { Status = 4 };
-            if (u.UserType == null) u.UserType = "Trainee";
-            
-            User user = new User
-            {
-                UserID = Guid.NewGuid(),
-                Name = u.Name,
-                Email = u.Email,
-                Password = new PasswordHasher<User>().HashPassword(null, u.Password),
-                CreatedAt = DateTime.Now,
-            };
-            if (u.UserType == "Trainer" || u.UserType.ToLower() == "t") user.UserType = "Trainee";
-            else if (u.UserType.ToLower() == "coach" || u.UserType.ToLower() == "c") user.UserType = "Coach";
-            else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d") user.UserType = "Doctor";
-            else
-            {
-                return new ResponseToken { Status = 7 };
-            }
-            var Role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
-            user.Role.Add(Role);
-            //Making the Tokens and saving them to the database
-            u.UserID = user.UserID;
-            var Token = await _tokenHandler.CreateAccessToken(u);
-            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
-            await _db.Users.AddAsync(user);
-            await _db.RefreshTokens.AddAsync(new RefreshTokens
-            {
-                UserID = user.UserID,
-                RefreshToken = RefreshToken,
-                Expires = DateTime.Now.AddDays(4)
-            });
-            await _db.SaveChangesAsync();
-            return await Task.FromResult(new ResponseToken
-            {
-                Status = 5,
-                AccessToken = Token,
-                RefreshToken = RefreshToken
-            });
+            //if (u.Name == null || u.Email == null || u.Password == null)
+            //    return new ResponseToken { Status = 0 };
+
+            //if (!await isNameValid(u.Name))
+            //    return new ResponseToken { Status = 1 };
+
+            //if (await EmailExists(u.Email))
+            //    return new ResponseToken { Status = 2 };
+
+            //if (!IsEmailValid(u.Email))
+            //    return new ResponseToken { Status = 3 };
+
+            //if (!await IsPasswordValid(u.Password))
+            //    return new ResponseToken { Status = 4 };
+
+            //if (u.UserType == null)
+            //    u.UserType = "Trainee";
+
+            //User user = new User
+            //{
+            //    UserID = Guid.NewGuid(),
+            //    Name = u.Name,
+            //    Email = u.Email,
+            //    Password = new PasswordHasher<User>().HashPassword(null, u.Password),
+            //    CreatedAt = DateTime.Now,
+            //};
+
+            //if (u.UserType.ToLower() == "coach" || u.UserType.ToLower() == "c")
+            //    user.UserType = "Coach";
+
+            //else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d")
+            //    user.UserType = "Doctor";
+
+            //else
+            //    user.UserType = "Trainee";
+
+            //var Role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
+            //if (Role == null)
+            //    return new ResponseToken { Status = 6 };
+
+            //user.Role.Add(Role);
+            ////Making the Tokens and saving them to the database
+            //u.UserID = user.UserID;
+
+            //var Token = await _tokenHandler.CreateAccessToken(u);
+            //var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
+
+
+            //await _db.Users.AddAsync(user);
+            //await _db.RefreshTokens.AddAsync(new RefreshTokens
+            //{
+            //    UserID = user.UserID,
+            //    RefreshToken = RefreshToken,
+            //    Expires = DateTime.Now.AddDays(4)
+            //});
+            //await _db.SaveChangesAsync();
+            //return await Task.FromResult(new ResponseToken
+            //{
+            //    Status = 5,
+            //    AccessToken = Token,
+            //    RefreshToken = RefreshToken
+            //});
+            return new ResponseToken { Status = 5 };
         }
-        public async Task<ResponseToken> LoginUser(UserDTO u) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
+        public async Task<ResponseToken> LoginUser(UserCreationDTO u) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
         {   //Checking if the user exists
             var _user = await(from user in _db.Users
                          where user.Email.ToLower() == u.Email.ToLower()
@@ -144,33 +182,67 @@ namespace Gym_App.Application.Services
                 if (!await isNameValid(User.Name)) return 1;
                 user.Name = User.Name;
             }
-            if (User.Bio != null) user.Bio = User.Bio;
-            if (User.DOB > user.DOB) user.DOB = User.DOB;
-            if (User.State != null) user.State = User.State;
-            if (User.City != null) user.City = User.City;
-            if (User.Country != null) user.Country = User.Country;
-            if (User.PhoneNumber != null) user.PhoneNumber = User.PhoneNumber;
-            if (User.ProfilePictureUrl != null) user.ProfilePictureUrl = User.ProfilePictureUrl;
-            if (User.HeightCm != null) user.HeightCm = User.HeightCm;
-            if (User.WeightKg != null) user.WeightKg = User.WeightKg;
+            
+            if (User.Bio != null)
+                user.Bio = User.Bio;
+            
+            if (User.DOB > user.DOB)
+                user.DOB = User.DOB;
+            
+            if (User.State != null)
+                user.State = User.State;
+            
+            if (User.City != null)
+                user.City = User.City;
+            
+            if (User.Country != null)
+                user.Country = User.Country;
+            
+            if (User.PhoneNumber != null)
+                user.PhoneNumber = User.PhoneNumber;
+            
+            if (User.ProfilePictureUrl != null)
+                user.ProfilePictureUrl = User.ProfilePictureUrl;
+            
+            if (User.HeightCm != null)
+                user.HeightCm = User.HeightCm;
+            
+            if (User.WeightKg != null) 
+                user.WeightKg = User.WeightKg;
+            
             _db.Users.Update(user);
             await _db.SaveChangesAsync();
             return 2;
         }
         public async Task<int> ChangeUserType(UserTypeDTO User)
         {
-            if(User.UserType == null) return 0;
+            if(User.UserType == null)
+                return 0;
+            
             string keywords = "coach, c, doctor, d, trainee, t";
+            
             if (!keywords.Contains(User.UserType.ToLower()))return 1;
+            
             var user = await(from u in _db.Users
                         where u.UserID == User.UserID
                         select u).FirstOrDefaultAsync();
-            if (user is null) return 2;
+            
+            if (user is null)
+                return 2;
+            
             var usertype = user.UserType.ToLower();
+            
             var incomingUsertype = User.UserType.ToLower();
-            if(incomingUsertype == "t")incomingUsertype = "trainee";
-            if(incomingUsertype == "c")incomingUsertype = "coach";
-            if(incomingUsertype == "d")incomingUsertype = "doctor";
+            
+            if(incomingUsertype == "t")
+                incomingUsertype = "trainee";
+            
+            if(incomingUsertype == "c")
+                incomingUsertype = "coach";
+            
+            if(incomingUsertype == "d")
+                incomingUsertype = "doctor";
+            
             if (usertype == incomingUsertype) return 3;//same user type
             else
             {
@@ -188,6 +260,7 @@ namespace Gym_App.Application.Services
                     user.Certifications = null;
                 }
             }
+
             _db.Users.Update(user);
             await _db.SaveChangesAsync();
             return 4;

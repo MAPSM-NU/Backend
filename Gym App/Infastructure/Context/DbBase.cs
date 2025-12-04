@@ -28,7 +28,16 @@ namespace Gym_App.Infastructure.Context
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<PastInjuries>();
-            modelBuilder.Entity<Workout>();
+
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Role)
+                .WithMany(r => r.Users)
+                .HasForeignKey(u=>u.RoleID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.RoleID)
+                .HasDefaultValue(2);
 
             modelBuilder.Entity<Workout>()
                 .HasOne(w => w.Feedback)

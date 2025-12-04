@@ -1,15 +1,15 @@
 ﻿using DocumentFormat.OpenXml.Bibliography;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.UserDTOs;
 
 namespace Gym_App.Application.Interfaces
 {
     public interface IUserServise
     {
-        Task<ResponseToken> CreateAdmin(UserDTO user);   
-        Task<ResponseToken> SignUpUser(UserDTO user);
-        Task<ResponseToken> LoginUser(UserDTO user);
+        Task<ResponseToken> CreateAdmin(UserCreationDTO user);   
+        Task<ResponseToken> SignUpUser(UserCreationDTO user);
+        Task<ResponseToken> LoginUser(UserCreationDTO user);
         Task<int> UpdateUser(UserUpdateDTO user);
         Task<int> ChangeUserType(UserTypeDTO user);
         Task<UserDTO?> GetUserByID(Guid userID);

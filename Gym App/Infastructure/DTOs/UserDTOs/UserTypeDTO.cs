@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Gym_App.Infastructure.DTOs
+namespace Gym_App.Infastructure.DTOs.UserDTOs
 {
     public class UserTypeDTO
     {

@@ -1,5 +1,5 @@
 ﻿using Gym_App.Application.Interfaces;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.UserDTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

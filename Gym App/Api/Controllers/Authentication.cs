@@ -25,17 +25,17 @@ namespace Gym_App.Api.Controllers
             if (result.Status == 5)
                 return Ok(result);
             else if (result.Status == 4)
-                return BadRequest("Password is not valid");
+                return BadRequest(new { message = "Password is not valid" });
             else if (result.Status == 3)
-                return BadRequest("Email is not valid");
+                return BadRequest(new { message = "Email is not valid" });
             else if (result.Status == 2)
-                return BadRequest("Email is already in use");
+                return BadRequest(new { message = "Email is already in use" });
             else if (result.Status == 1)
-                return BadRequest("Name is already in use");
+                return BadRequest(new { message = "Name is already in use" });
             else if (result.Status == 0)
-                return BadRequest("Missing Credentials");
+                return BadRequest(new { message = "Missing Credentials" });
             else
-                return BadRequest("Failed to Add Admin");
+                return BadRequest(new { message = "Failed to Add Admin" });
         }
         [HttpPost("SignUp")]
         public async Task<IActionResult> NewUser([FromBody] UserCreationDTO user)
@@ -44,37 +44,37 @@ namespace Gym_App.Api.Controllers
             if (result.Status == 5)
                 return Ok(result);
             else if (result.Status == 4)
-                return BadRequest("Password is not valid");
+                return BadRequest(new { message = "Password is not valid" });
             else if (result.Status == 3)
-                return BadRequest("Email is not valid");
+                return BadRequest(new { message = "Email is not valid" });
             else if (result.Status == 2)
-                return BadRequest("Email is already in use");
+                return BadRequest(new { message = "Email is already in use" });
             else if (result.Status == 1)
-                return BadRequest("Name is already in use");
+                return BadRequest(new { message = "Name is already in use" });
             else if (result.Status == 0)
-                return BadRequest("Missing Credentials");
+                return BadRequest(new { message = "Missing Credentials" });
             else
-                return BadRequest("Failed to Add User");
+                return BadRequest(new { message = "Failed to Add User" });
         }
         [HttpPost("SignIn")]
-        public async Task<IActionResult> LoginUser([FromBody] UserCreationDTO user)
+        public async Task<IActionResult> SigninUser([FromQuery]string email,string password)
         {
-            var result = await _userServiceService.LoginUser(user);
+            var result = await _userServiceService.SigninUser(email,password);
             if(result.Status == 0) 
-                return BadRequest("Email not found");
+                return BadRequest(new { message = "Email not found" });
             else if (result.Status == 1) 
-                return BadRequest("Password is wrong");
+                return BadRequest(new { message = "Password is wrong" });
             else if (result.Status == 2)
                 return Ok(result);
             else
-                return BadRequest("Failed to Login");
+                return BadRequest(new { message = "Failed to Login" });
         }
         [HttpPost("LoginbyToken")]
         public async Task<IActionResult> LoginByToken([FromQuery] string Refreshtoken)
         {
             var result = await _tokenHandler.ValidateAccessToken(Refreshtoken);
             if (result == null)
-                return BadRequest("Invalid Token");
+                return BadRequest(new { message = "Invalid Token" });
             else
                 return Ok(result);
         }

@@ -14,7 +14,7 @@ namespace Gym_App.Application.Interfaces
         Task<int> DeleteMessages(ClaimsPrincipal User, SessionMessagesDTO sessionMessages);
         Task<List<Guid>?> GetSessionUsersIDs(ClaimsPrincipal User, Guid sessionID);
         Task<PagedList<MessageDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
-        Task<PagedList<UserDTO>?> GetUsersOfSession(ClaimsPrincipal User, Guid sessionID,int page,int pageSize);
+        Task<PagedList<UserViewDTO>?> GetUsersOfSession(ClaimsPrincipal User, Guid sessionID,int page,int pageSize);
         Task<PagedList<SessionDTO>>? GetAllSessions(int page,int pagSize);
     }
 }

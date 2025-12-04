@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Office2016.Excel;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Gym_App.Application.Interfaces;
 using Gym_App.Domain;
 using Gym_App.Domain.Entities;
@@ -25,144 +26,137 @@ namespace Gym_App.Application.Services
         public async Task<ResponseToken> CreateAdmin(UserCreationDTO u)
         {
             //Creating an admin user
-            //if (u.Name == null || u.Email == null || u.Password == null) 
-            //    return new ResponseToken { Status = 0 };
+            if (u == null || u.Name == null || u.Email == null || u.Password == null)
+                return new ResponseToken { Status = 0 };
 
-            //if (!await isNameValid(u.Name))
-            //    return new ResponseToken { Status = 1 };
+            if (!await isNameValid(u.Name))
+                return new ResponseToken { Status = 1 };
 
-            //if (await EmailExists(u.Email))
-            //    return new ResponseToken { Status = 2 };
+            if (await EmailExists(u.Email))
+                return new ResponseToken { Status = 2 };
 
-            //if (!IsEmailValid(u.Email))
-            //    return new ResponseToken { Status = 3 };
+            if (!IsEmailValid(u.Email))
+                return new ResponseToken { Status = 3 };
 
-            //if (!IsPasswordValid(u.Password).Result)
-            //    return new ResponseToken { Status = 4 };
+            if (!IsPasswordValid(u.Password).Result)
+                return new ResponseToken { Status = 4 };
 
-            //User user = new User
-            //{
-            //    UserID = Guid.NewGuid(),
-            //    Name = u.Name,
-            //    Email = u.Email,
-            //    Password = new PasswordHasher<User>().HashPassword(null, u.Password),
-            //    CreatedAt = DateTime.Now,
-            //    UserType = "Admin"
-            //};
+            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
+            if (role == null)
+                return new ResponseToken { Status = 6 };
 
-            //var Role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
-            //if (Role == null)
-            //    return new ResponseToken { Status = 6 };
+            User user = new User
+            {
+                UserID = Guid.NewGuid(),
+                Name = u.Name,
+                Email = u.Email,
+                Password = new PasswordHasher<User>().HashPassword(null, u.Password),
+                CreatedAt = DateTime.Now,
+                UserType = "Admin",
+                Role = role
+            };
 
-            //user.Role.Add(Role);
+            var Token = await _tokenHandler.CreateAccessToken(user.UserID, user.Name, user.Email, user.Role.RoleName);
 
-            ////Making the Tokens and saving them to the database
-            //u.UserID = user.UserID;
-            //var Token = await _tokenHandler.CreateAccessToken(u);
-            //var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
+            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
 
-            //await _db.Users.AddAsync(user);
-            //await _db.RefreshTokens.AddAsync(new RefreshTokens
-            //{
-            //    UserID = user.UserID,
-            //    RefreshToken = RefreshToken,
-            //    Expires = DateTime.Now.AddDays(4)
-            //});
-            //await _db.SaveChangesAsync();
-            //return await Task.FromResult(new ResponseToken
-            //{
-            //    Status = 5,
-            //    AccessToken = Token,
-            //    RefreshToken = RefreshToken
-            //});
-            return new ResponseToken { Status = 5 };
+            await _db.Users.AddAsync(user);
+            await _db.RefreshTokens.AddAsync(new RefreshTokens
+            {
+                UserID = user.UserID,
+                RefreshToken = RefreshToken,
+                Expires = DateTime.Now.AddDays(4)
+            });
+            await _db.SaveChangesAsync();
+            return await Task.FromResult(new ResponseToken
+            {
+                Status = 5,
+                AccessToken = Token,
+                RefreshToken = RefreshToken
+            });
         }
         public async Task<ResponseToken> SignUpUser(UserCreationDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
                                                                       //5 == Succesful signup
         {
             //Signing up the user
-            //if (u.Name == null || u.Email == null || u.Password == null)
-            //    return new ResponseToken { Status = 0 };
+            if (u.Name == null || u.Email == null || u.Password == null)
+                return new ResponseToken { Status = 0 };
 
-            //if (!await isNameValid(u.Name))
-            //    return new ResponseToken { Status = 1 };
+            if (!await isNameValid(u.Name))
+                return new ResponseToken { Status = 1 };
 
-            //if (await EmailExists(u.Email))
-            //    return new ResponseToken { Status = 2 };
+            if (await EmailExists(u.Email))
+                return new ResponseToken { Status = 2 };
 
-            //if (!IsEmailValid(u.Email))
-            //    return new ResponseToken { Status = 3 };
+            if (!IsEmailValid(u.Email))
+                return new ResponseToken { Status = 3 };
 
-            //if (!await IsPasswordValid(u.Password))
-            //    return new ResponseToken { Status = 4 };
+            if (!await IsPasswordValid(u.Password))
+                return new ResponseToken { Status = 4 };
 
-            //if (u.UserType == null)
-            //    u.UserType = "Trainee";
+            if (u.UserType == null)
+                u.UserType = "Trainee";
 
-            //User user = new User
-            //{
-            //    UserID = Guid.NewGuid(),
-            //    Name = u.Name,
-            //    Email = u.Email,
-            //    Password = new PasswordHasher<User>().HashPassword(null, u.Password),
-            //    CreatedAt = DateTime.Now,
-            //};
+            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
+            if (role == null)
+                return new ResponseToken { Status = 6 };
 
-            //if (u.UserType.ToLower() == "coach" || u.UserType.ToLower() == "c")
-            //    user.UserType = "Coach";
+            User user = new User
+            {
+                UserID = Guid.NewGuid(),
+                Name = u.Name,
+                Email = u.Email,
+                Password = new PasswordHasher<User>().HashPassword(null, u.Password),
+                CreatedAt = DateTime.Now,
+                Role = role
+            };
 
-            //else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d")
-            //    user.UserType = "Doctor";
+            if (u.UserType.ToLower() == "coach" || u.UserType.ToLower() == "c")
+                user.UserType = "Coach";
 
-            //else
-            //    user.UserType = "Trainee";
+            else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d")
+                user.UserType = "Doctor";
 
-            //var Role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
-            //if (Role == null)
-            //    return new ResponseToken { Status = 6 };
+            else
+                user.UserType = "Trainee";
 
-            //user.Role.Add(Role);
-            ////Making the Tokens and saving them to the database
-            //u.UserID = user.UserID;
-
-            //var Token = await _tokenHandler.CreateAccessToken(u);
-            //var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
+            var Token = await _tokenHandler.CreateAccessToken(user.UserID, user.Name, user.Email, user.Role.RoleName);
+            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
 
 
-            //await _db.Users.AddAsync(user);
-            //await _db.RefreshTokens.AddAsync(new RefreshTokens
-            //{
-            //    UserID = user.UserID,
-            //    RefreshToken = RefreshToken,
-            //    Expires = DateTime.Now.AddDays(4)
-            //});
-            //await _db.SaveChangesAsync();
-            //return await Task.FromResult(new ResponseToken
-            //{
-            //    Status = 5,
-            //    AccessToken = Token,
-            //    RefreshToken = RefreshToken
-            //});
-            return new ResponseToken { Status = 5 };
+            await _db.Users.AddAsync(user);
+            await _db.RefreshTokens.AddAsync(new RefreshTokens
+            {
+                UserID = user.UserID,
+                RefreshToken = RefreshToken,
+                Expires = DateTime.Now.AddDays(4)
+            });
+            await _db.SaveChangesAsync();
+            return await Task.FromResult(new ResponseToken
+            {
+                Status = 5,
+                AccessToken = Token,
+                RefreshToken = RefreshToken
+            });
         }
-        public async Task<ResponseToken> LoginUser(UserCreationDTO u) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
+        public async Task<ResponseToken> SigninUser(string email,string password) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
         {   //Checking if the user exists
-            var _user = await(from user in _db.Users
-                         where user.Email.ToLower() == u.Email.ToLower()
-                         select user).FirstOrDefaultAsync();
-            if (_user is null) return new ResponseToken { Status = 0 };
-            var result = new PasswordHasher<User>().VerifyHashedPassword(_user, _user.Password, u.Password);
-            if (result == PasswordVerificationResult.Failed) return new ResponseToken { Status = 1 };
+            var isUserExists = await(from u in _db.Users.Include(u=>u.Role)
+                                     where u.Email.ToLower() == email.ToLower()
+                                     select u).FirstOrDefaultAsync();
+
+            if (isUserExists is null)
+                return new ResponseToken { Status = 0 };
+
+            var result = new PasswordHasher<User>().VerifyHashedPassword(isUserExists, isUserExists.Password, password);
+            if (result == PasswordVerificationResult.Failed)
+                return new ResponseToken { Status = 1 };
             else //Successful login and returning new Tokens
             {
-                var AccessToken = await _tokenHandler.CreateAccessToken(new UserDTO
-                {
-                    UserID = _user.UserID,
-                    Name = _user.Name,
-                    Email = _user.Email,
-                    UserType = _user.UserType
-                });
-                var RefreshToken = await _tokenHandler.RefreshingToken(_user.UserID);
+                var AccessToken = await _tokenHandler.CreateAccessToken(isUserExists.UserID, isUserExists.Name, isUserExists.Email, isUserExists.Role.RoleName);
+                
+                var RefreshToken = await _tokenHandler.RefreshingToken(isUserExists.UserID);
+                
                 return new ResponseToken
                 {
                     Status = 2,
@@ -214,7 +208,7 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 2;
         }
-        public async Task<int> ChangeUserType(UserTypeDTO User)
+        public async Task<int> ChangeUserType(UserChangeTypeDTO User)
         {
             if(User.UserType == null)
                 return 0;
@@ -265,21 +259,43 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 4;
         }
-        public async Task<UserDTO?> GetUserByID(Guid userID)
+        public async Task<bool> DeleteUser(Guid userID)
+        {
+            var u = await(from usr in _db.Users
+                     where usr.UserID == userID
+                     select usr).FirstOrDefaultAsync();
+            if (u is null) return false;
+            _db.Users.Attach(u);
+            _db.Users.Remove(u);
+            await _db.SaveChangesAsync();
+            return true;
+        }
+        public async Task<UserViewDTO?> GetUserByID(Guid userID)
         {
             var user = await(from u in _db.Users
                         where u.UserID == userID
-                        select new UserDTO
+                        select new UserViewDTO
                         {
                             UserID = userID,
                             Name = u.Name,
                             Email = u.Email,
+                            Bio = u.Bio,
+                            CreatedAt = u.CreatedAt,
+                            DOB = u.DOB,
+                            State = u.State,
+                            City = u.City,
+                            Country = u.Country,
+                            PhoneNumber = u.PhoneNumber,
+                            ProfilePictureUrl = u.ProfilePictureUrl,
+                            subscriptionPlan = u.subscriptionPlan,
+                            HeightCm = u.HeightCm,
+                            WeightKg = u.WeightKg,
                             UserType = u.UserType
                         }).FirstOrDefaultAsync();
             if (user is null) return null;
             return user;
         }
-        public async Task<PagedList<UserDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<PagedList<UserSmallViewDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             if (page == 0) page = 1;
             if (pageSize == 0) pageSize = 10;
@@ -312,29 +328,40 @@ namespace Gym_App.Application.Services
                 else userQuery = userQuery.OrderBy(keySelector);
             }
             var userResponse = userQuery
-                                .Select(u => new UserDTO
+                                .Select(u => new UserSmallViewDTO
                                 {
                                     UserID = u.UserID,
                                     Name = u.Name,
                                     Email = u.Email,
-                                    UserType = u.UserType
+                                    ProfilePictureUrl = u.ProfilePictureUrl
                                 });
-            var users = await PagedList<UserDTO>.CreateAsync(userResponse, page, pageSize);
+            var users = await PagedList<UserSmallViewDTO>.CreateAsync(userResponse, page, pageSize);
             return users;
         }
-        public async Task<PagedList<UserDTO>?> GetAllUsers(int page, int pageSize)
+        public async Task<PagedList<UserViewDTO>?> GetAllUsers(int page, int pageSize)
         {
             if (page == 0) page = 1;
             if (pageSize == 0) pageSize = 10;
-            var usersQuery = from u in _db.Users
-                               select new UserDTO
+            var usersQuery =   from u in _db.Users
+                               select new UserViewDTO
                                {
                                    UserID = u.UserID,
                                    Name = u.Name,
                                    Email = u.Email,
+                                   Bio = u.Bio,
+                                   CreatedAt = u.CreatedAt,
+                                   DOB = u.DOB,
+                                   State = u.State,
+                                   City = u.City,
+                                   Country = u.Country,
+                                   PhoneNumber = u.PhoneNumber,
+                                   ProfilePictureUrl = u.ProfilePictureUrl,
+                                   subscriptionPlan = u.subscriptionPlan,
+                                   HeightCm = u.HeightCm,
+                                   WeightKg = u.WeightKg,
                                    UserType = u.UserType
                                };
-            var users = await PagedList<UserDTO>.CreateAsync(usersQuery,page,pageSize);
+            var users = await PagedList<UserViewDTO>.CreateAsync(usersQuery,page,pageSize);
             return users;
         }
 
@@ -376,17 +403,6 @@ namespace Gym_App.Application.Services
             var result = await PasswordPolicy.ValidateAsync(password);
             if (result.Succeeded) return true;
             else return false;
-        }
-        public async Task<bool> DeleteUser(Guid userID)
-        {
-            var u = await(from usr in _db.Users
-                     where usr.UserID == userID
-                     select usr).FirstOrDefaultAsync();
-            if (u is null) return false;
-            _db.Users.Attach(u);
-            _db.Users.Remove(u);
-            await _db.SaveChangesAsync();
-            return true;
         }
     }
 }

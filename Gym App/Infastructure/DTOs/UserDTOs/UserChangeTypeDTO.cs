@@ -2,7 +2,7 @@
 
 namespace Gym_App.Infastructure.DTOs.UserDTOs
 {
-    public class UserTypeDTO
+    public class UserChangeTypeDTO
     {
         public Guid UserID { get; set; }
         public string UserType { get; set; }

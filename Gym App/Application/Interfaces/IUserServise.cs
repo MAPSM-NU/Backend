@@ -9,12 +9,12 @@ namespace Gym_App.Application.Interfaces
     {
         Task<ResponseToken> CreateAdmin(UserCreationDTO user);   
         Task<ResponseToken> SignUpUser(UserCreationDTO user);
-        Task<ResponseToken> LoginUser(UserCreationDTO user);
+        Task<ResponseToken> SigninUser(string email, string password);
         Task<int> UpdateUser(UserUpdateDTO user);
-        Task<int> ChangeUserType(UserTypeDTO user);
-        Task<UserDTO?> GetUserByID(Guid userID);
-        Task<PagedList<UserDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
-        Task<PagedList<UserDTO>?> GetAllUsers(int page, int pageSize);
+        Task<int> ChangeUserType(UserChangeTypeDTO user);
+        Task<UserViewDTO?> GetUserByID(Guid userID);
+        Task<PagedList<UserSmallViewDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
+        Task<PagedList<UserViewDTO>?> GetAllUsers(int page, int pageSize);
         Task<bool> DeleteUser(Guid userID);
         //public Task<string> ModifyUser(Trainee user);
         //still under construction

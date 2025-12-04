@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Infastructure.DTOs.UserDTOs
 {
-    public class UserDTO
+    public class UserViewDTO
     {
         public Guid UserID { get; set; }
         public required string Name { get; set; }

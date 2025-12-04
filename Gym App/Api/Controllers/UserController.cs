@@ -37,7 +37,7 @@ namespace Gym_App.Api.Controllers
         }
         [Authorize(Policy ="ElevatedPower")]
         [HttpPut("ChangeUserType")]
-        public async Task<IActionResult> ChangeUserType([FromBody] UserTypeDTO user)
+        public async Task<IActionResult> ChangeUserType([FromBody] UserChangeTypeDTO user)
         {
             var result = await _user.ChangeUserType(user);
             if (result == 0) 

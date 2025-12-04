@@ -313,41 +313,40 @@ namespace Gym_App.Application.Services
             var messages = await PagedList<MessageDTO>.CreateAsync(messageResponse, page, pageSize);
             return messages;
         }
-        public async Task<PagedList<UserDTO>?> GetUsersOfSession(ClaimsPrincipal User,Guid sessionID, int page, int pageSize)//The sessions tree in itself needs a big change man fr
+        public async Task<PagedList<UserViewDTO>?> GetUsersOfSession(ClaimsPrincipal User,Guid sessionID, int page, int pageSize)//The sessions tree in itself needs a big change man fr
         {
-            ////if page or pageSize are 0, set default values
-            //if (page == 0) page = 1;
-            //if (pageSize == 0) pageSize = 10;
+            //if page or pageSize are 0, set default values
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
 
-            //var session = await _db.Sessions.Include(s=>s.Users).FirstOrDefaultAsync(s => s.SessionID == sessionID);
-            //if (session == null) 
-            //    return null;
+            var session = await _db.Sessions.Include(s => s.Users).FirstOrDefaultAsync(s => s.SessionID == sessionID);
+            if (session == null)
+                return null;
 
-            ////Creating list of UserIDs for authorization
-            //List<Guid> UserIDs = new List<Guid>();
-            //foreach (var UsersID in session.Users) UserIDs.Add(UsersID.UserID);
+            //Creating list of UserIDs for authorization
+            List<Guid> UserIDs = new List<Guid>();
+            foreach (var UsersID in session.Users) UserIDs.Add(UsersID.UserID);
 
-            ////Authroization check
-            //var auhtResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
-            //if(!auhtResult.Succeeded) 
-            //    return null;
+            //Authroization check
+            var auhtResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
+            if (!auhtResult.Succeeded)
+                return null;
 
-            ////Projecting the users to UserDTO
-            //var sessionQuery = from s in _db.Sessions
-            //                   from u in s.Users
-            //                   where s.SessionID == sessionID
-            //                   select new UserDTO
-            //                   {
-            //                       UserID = u.UserID,
-            //                       Name = u.Name,
-            //                       Email = u.Email,
-            //                       Password = u.Password,
-            //                       UserType = u.UserType
-            //                   };
+            //Projecting the users to UserDTO
+            var sessionQuery = from s in _db.Sessions
+                               from u in s.Users
+                               where s.SessionID == sessionID
+                               select new UserViewDTO
+                               {
+                                   UserID = u.UserID,
+                                   Name = u.Name,
+                                   Email = u.Email,
+                                   UserType = u.UserType
+                               };
 
-            ////Making the result as a paged list
-            //var sessionUsers = await PagedList<UserDTO>.CreateAsync(sessionQuery,page,pageSize);
-            //return sessionUsers;
+            //Making the result as a paged list
+            var sessionUsers = await PagedList<UserViewDTO>.CreateAsync(sessionQuery, page, pageSize);
+            return sessionUsers;
             return null;
         }
         public async Task<PagedList<SessionDTO>>? GetAllSessions(int page,int pageSize)

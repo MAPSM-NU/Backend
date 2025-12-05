@@ -29,21 +29,32 @@ namespace Gym_App.Api.Controllers
             //Talking to Database
             
             var result = await _user.UpdateUser(user);
-            if (result == 0) 
-                return BadRequest(new { message = "User not found" });
+            
+            if(result == 3)
+                return Ok(new { message = "User Updated Successfully" });
             else if (result == 2) 
                 return BadRequest(new { message = "Name is not valid" });
-            return Ok(new { message = "User Updated Successfully" });
+            else if (result == 1)
+                return BadRequest(new { message = "User not found" });
+            else
+                return BadRequest(new { message = "Faulty DTO" });
         }
         [Authorize(Policy ="ElevatedPower")]
         [HttpPut("ChangeUserType")]
         public async Task<IActionResult> ChangeUserType([FromBody] UserChangeTypeDTO user)
         {
             var result = await _user.ChangeUserType(user);
-            if (result == 0) 
-                return BadRequest(new { message = "Failed to Update User" });
-            return Ok(new { message = "User Updated Successfully" });
-
+            
+            if(result == 4)
+                return Ok(new { message = "User Type Changed Successfully" });
+            else if(result == 3)
+                return BadRequest(new {message = "Same user type given"});
+            else if (result == 2)
+                return BadRequest(new { message = "User not found" });
+            else if (result == 1)
+                return BadRequest(new { message = "invalid UserType" });
+            else
+                return BadRequest(new { message = "Faulty DTO" });
         }
         [HttpDelete("DeleteUser")]
         public async Task<IActionResult> DeleteUser([FromQuery] Guid UserID)
@@ -57,8 +68,12 @@ namespace Gym_App.Api.Controllers
             //Talking to Database
 
             var result = await _user.DeleteUser(UserID);
-            if (result) return Ok(new { Message = "User Deleted Successfully" });
-            return BadRequest(new { Message = "Failed to Delete User"});
+            if(result == 2)
+                return Ok(new { message = "User Deleted Successfully" });
+            else if (result == 1)
+                return BadRequest(new { message = "User not found" });
+            else
+                return BadRequest(new { message = "Faulty DTO" });
         }
         [HttpGet("GetUserByID")]
         public async Task<IActionResult> GetUserByID([FromQuery] Guid UserID)

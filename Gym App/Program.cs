@@ -7,11 +7,9 @@ using Microsoft.AspNetCore.Authorization;
 
 //using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
-using System.Configuration;
 using System.Text;
 using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);

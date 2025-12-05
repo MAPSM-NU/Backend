@@ -23,28 +23,34 @@ namespace Gym_App.Application.Services
             _db = db;
             _tokenHandler = tokenHandler;
         }
+
+        //        *********** Setters ***********
+
         public async Task<ResponseToken> CreateAdmin(UserCreationDTO u)
         {
             //Creating an admin user
             if (u == null || u.Name == null || u.Email == null || u.Password == null)
                 return new ResponseToken { Status = 0 };
 
+            //Checking for name Validity
             if (!await isNameValid(u.Name))
                 return new ResponseToken { Status = 1 };
-
-            if (await EmailExists(u.Email))
-                return new ResponseToken { Status = 2 };
-
+            //Checking if Email is valid or not
             if (!IsEmailValid(u.Email))
+                return new ResponseToken { Status = 2 };
+            //Checking if the email already exists
+            if (await EmailExists(u.Email))
                 return new ResponseToken { Status = 3 };
-
+            //Checking for password validity
             if (!IsPasswordValid(u.Password).Result)
                 return new ResponseToken { Status = 4 };
 
+            //Creating the admin user
             var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
             if (role == null)
                 return new ResponseToken { Status = 6 };
 
+            //Creating the user 
             User user = new User
             {
                 UserID = Guid.NewGuid(),
@@ -56,10 +62,11 @@ namespace Gym_App.Application.Services
                 Role = role
             };
 
+            //Generating Tokens
             var Token = await _tokenHandler.CreateAccessToken(user.UserID, user.Name, user.Email, user.Role.RoleName);
-
             var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
 
+            //Saving to Database
             await _db.Users.AddAsync(user);
             await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
@@ -81,26 +88,25 @@ namespace Gym_App.Application.Services
             //Signing up the user
             if (u.Name == null || u.Email == null || u.Password == null)
                 return new ResponseToken { Status = 0 };
-
+            //Checking for name Validity
             if (!await isNameValid(u.Name))
                 return new ResponseToken { Status = 1 };
-
-            if (await EmailExists(u.Email))
-                return new ResponseToken { Status = 2 };
-
+            //Checking if Email is valid or not
             if (!IsEmailValid(u.Email))
+                return new ResponseToken { Status = 2 };
+            //Checking if the email already exists
+            if (await EmailExists(u.Email))
                 return new ResponseToken { Status = 3 };
-
+            //Checking for password validity
             if (!await IsPasswordValid(u.Password))
                 return new ResponseToken { Status = 4 };
 
-            if (u.UserType == null)
-                u.UserType = "Trainee";
-
+            //Getting the role for the user
             var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
             if (role == null)
                 return new ResponseToken { Status = 6 };
 
+            //Creating the user
             User user = new User
             {
                 UserID = Guid.NewGuid(),
@@ -111,19 +117,21 @@ namespace Gym_App.Application.Services
                 Role = role
             };
 
+            //Setting UserType to Coach
             if (u.UserType.ToLower() == "coach" || u.UserType.ToLower() == "c")
                 user.UserType = "Coach";
-
+            //Setting UserType to Doctor
             else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d")
                 user.UserType = "Doctor";
-
+            //If not coach or Doctor set to Trainee
             else
                 user.UserType = "Trainee";
 
+            //Generating Tokens
             var Token = await _tokenHandler.CreateAccessToken(user.UserID, user.Name, user.Email, user.Role.RoleName);
             var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
 
-
+            //Saving to Database
             await _db.Users.AddAsync(user);
             await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
@@ -144,19 +152,23 @@ namespace Gym_App.Application.Services
             var isUserExists = await(from u in _db.Users.Include(u=>u.Role)
                                      where u.Email.ToLower() == email.ToLower()
                                      select u).FirstOrDefaultAsync();
-
+            //If User does not exist return
             if (isUserExists is null)
                 return new ResponseToken { Status = 0 };
 
+            //Checking password of found User
             var result = new PasswordHasher<User>().VerifyHashedPassword(isUserExists, isUserExists.Password, password);
+            //If password does not match return
             if (result == PasswordVerificationResult.Failed)
                 return new ResponseToken { Status = 1 };
-            else //Successful login and returning new Tokens
+            //Successful login and returning new Tokens
+            else
             {
+                //Creating Tokens
                 var AccessToken = await _tokenHandler.CreateAccessToken(isUserExists.UserID, isUserExists.Name, isUserExists.Email, isUserExists.Role.RoleName);
-                
                 var RefreshToken = await _tokenHandler.RefreshingToken(isUserExists.UserID);
                 
+                //Returning Tokens 
                 return new ResponseToken
                 {
                     Status = 2,
@@ -165,81 +177,98 @@ namespace Gym_App.Application.Services
                 };
             }
         }
-        public async Task<int> UpdateUser(UserUpdateDTO User)
+        public async Task<int> UpdateUser(UserUpdateDTO user)//0 == invalid user || 1 == user not found || 2 == name not valid || 3 == succesful update
         {
-            var user = await(from u in _db.Users
-                        where u.UserID == User.UserID
-                        select u).FirstOrDefaultAsync();
-            if (user is null) return 0;
-            if (User.Name != null)
+            if(user == null)
+                return 0;
+            //Getting the user from the database
+            var isUserExists = await (from u in _db.Users
+                                    where u.UserID == user.UserID
+                                    select u).FirstOrDefaultAsync();
+            //If user does not exist return
+            if (isUserExists is null) return 1;
+
+            //If user wants to change name check if the name is valid
+            if (!string.IsNullOrEmpty(user.Name))
             {
-                if (!await isNameValid(User.Name)) return 1;
-                user.Name = User.Name;
+                //If name is not valid return
+                if (!await isNameValid(user.Name)) 
+                    return 2;
+                //Else change to new name
+                isUserExists.Name = user.Name;
             }
-            
-            if (User.Bio != null)
-                user.Bio = User.Bio;
-            
-            if (User.DOB > user.DOB)
-                user.DOB = User.DOB;
-            
-            if (User.State != null)
-                user.State = User.State;
-            
-            if (User.City != null)
-                user.City = User.City;
-            
-            if (User.Country != null)
-                user.Country = User.Country;
-            
-            if (User.PhoneNumber != null)
-                user.PhoneNumber = User.PhoneNumber;
-            
-            if (User.ProfilePictureUrl != null)
-                user.ProfilePictureUrl = User.ProfilePictureUrl;
-            
-            if (User.HeightCm != null)
-                user.HeightCm = User.HeightCm;
-            
-            if (User.WeightKg != null) 
-                user.WeightKg = User.WeightKg;
-            
-            _db.Users.Update(user);
+            //Updating Bio
+            if (!string.IsNullOrEmpty(user.Bio))
+                isUserExists.Bio = user.Bio;    
+            //Updating DOB
+            if (user.DOB.ToString() != null)
+                isUserExists.DOB = user.DOB;
+            //Updating State 
+            if (!string.IsNullOrEmpty(user.State))
+                isUserExists.State = user.State;
+            //Updating City
+            if (!string.IsNullOrEmpty(user.City))
+                isUserExists.City = user.City;
+            //Updating Country
+            if (!string.IsNullOrEmpty(user.Country))
+                isUserExists.Country = user.Country;
+            //Updating PhoneNumber
+            if (!string.IsNullOrEmpty(user.PhoneNumber))
+                isUserExists.PhoneNumber = user.PhoneNumber;
+            //Updating Profile Picture
+            if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                isUserExists.ProfilePictureUrl = user.ProfilePictureUrl;
+            //Updating Height
+            if (user.HeightCm > 0)
+                isUserExists.HeightCm = user.HeightCm;
+            //Updating Weight
+            if (user.WeightKg > 0)
+                isUserExists.WeightKg = user.WeightKg;
+
+            //Saving to Database
+            _db.Users.Update(isUserExists);
             await _db.SaveChangesAsync();
-            return 2;
+            return 3;
         }
-        public async Task<int> ChangeUserType(UserChangeTypeDTO User)
+        public async Task<int> ChangeUserType(UserChangeTypeDTO User)//0 == Faulty UserType || 1 == invalid UserType || 2 == user not found || 3 == same user type || 4 == succesful change
         {
-            if(User.UserType == null)
+            //Checking UserType validity
+            if(User == null || User.UserType == null)
                 return 0;
             
+            //Keywords to check for UserType 
             string keywords = "coach, c, doctor, d, trainee, t";
+            //If Usertype is none of the keywords return
+            if (!keywords.Contains(User.UserType.ToLower()))
+                return 1;
             
-            if (!keywords.Contains(User.UserType.ToLower()))return 1;
-            
+            //Getting User from Database
             var user = await(from u in _db.Users
                         where u.UserID == User.UserID
                         select u).FirstOrDefaultAsync();
-            
+            //If user not found return
             if (user is null)
                 return 2;
             
+            //Making all usertypes into lowercase letters
             var usertype = user.UserType.ToLower();
-            
             var incomingUsertype = User.UserType.ToLower();
             
+            // Changing userType from initials to full words to immedietly apply them to the user
             if(incomingUsertype == "t")
                 incomingUsertype = "trainee";
             
             if(incomingUsertype == "c")
                 incomingUsertype = "coach";
-            
+
             if(incomingUsertype == "d")
                 incomingUsertype = "doctor";
             
-            if (usertype == incomingUsertype) return 3;//same user type
+            if (usertype == incomingUsertype)
+                return 3;//same user type
             else
             {
+                //Changing from Trainee to either doctor or coach
                 user.UserType = incomingUsertype;
                 if (incomingUsertype == "coach" || incomingUsertype == "doctor")// could maybe make the trainne doctor and coach be t,d,c to make the comparisons less computational
                 {
@@ -247,6 +276,7 @@ namespace Gym_App.Application.Services
                     user.ExperienceYears = User.ExperienceYears;
                     user.Certifications = User.Certifications;
                 }
+                //Changing from coach or doctor to trainee
                 else
                 {
                     user.Specialty = null;
@@ -255,21 +285,76 @@ namespace Gym_App.Application.Services
                 }
             }
 
+            //Saving to Database
             _db.Users.Update(user);
             await _db.SaveChangesAsync();
             return 4;
         }
-        public async Task<bool> DeleteUser(Guid userID)
+        public async Task<int> DeleteUser(Guid userID)//0 == invalid userID || 1 == user not found || 2 == succesful deletion
         {
+            //Checking userID validity
+            if (userID == Guid.Empty)
+                return 0;
+
+            //Getting user from database
             var u = await(from usr in _db.Users
                      where usr.UserID == userID
                      select usr).FirstOrDefaultAsync();
-            if (u is null) return false;
-            _db.Users.Attach(u);
+            //If user not found return
+            if (u == null)
+                return 1;
+
+            //Saving to Database
             _db.Users.Remove(u);
             await _db.SaveChangesAsync();
-            return true;
+            return 2;
         }
+
+        //-----------------------------------------------------------------------
+
+
+        //        *********** Extra Validation Function ***********
+
+        public async Task<bool> isNameValid(string name)//checks if the name is already taken
+        {
+            var n = await (from u in _db.Users
+                           where u.Name.ToLower() == name.ToLower()
+                           select u).FirstOrDefaultAsync();
+
+            if (n is null) return true;
+            else return false;
+        }
+        public async Task<bool> EmailExists(string email)
+        {
+            return await _db.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower());
+        }
+        public bool IsEmailValid(string email)
+        {
+            if (new EmailAddressAttribute().IsValid(email) && email != null)
+            {
+                return true;
+            }
+            else return false;
+        }
+        public async Task<bool> IsPasswordValid(string password)
+        {
+            var PasswordPolicy = new Microsoft.AspNet.Identity.PasswordValidator
+            {
+                RequiredLength = 8,
+                RequireNonLetterOrDigit = false,
+                RequireDigit = true,
+                RequireLowercase = true,
+                RequireUppercase = true,
+            };
+            var result = await PasswordPolicy.ValidateAsync(password);
+            if (result.Succeeded) return true;
+            else return false;
+        }
+
+        //-----------------------------------------------------------------------
+
+        //        *********** Getters ***********
+
         public async Task<UserViewDTO?> GetUserByID(Guid userID)
         {
             var user = await(from u in _db.Users
@@ -365,44 +450,5 @@ namespace Gym_App.Application.Services
             return users;
         }
 
-
-        //Helper Functions
-        //-----------------
-
-        public async Task<bool> isNameValid(string name)//checks if the name is already taken
-        {
-            var n = await(from u in _db.Users
-                     where u.Name.ToLower() == name.ToLower()
-                     select u).FirstOrDefaultAsync();
-
-            if (n is null) return true;
-            else return false;
-        }
-        public async Task<bool> EmailExists(string email)
-        {
-            return await _db.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower());
-        }
-        public bool IsEmailValid(string email)
-        {
-            if (new EmailAddressAttribute().IsValid(email) && email != null)
-            {
-                return true;
-            }
-            else return false;
-        }
-        public async Task<bool> IsPasswordValid(string password)
-        {
-            var PasswordPolicy = new Microsoft.AspNet.Identity.PasswordValidator
-            {
-                RequiredLength = 8,
-                RequireNonLetterOrDigit = false,
-                RequireDigit = true,
-                RequireLowercase = true,
-                RequireUppercase = true,
-            };
-            var result = await PasswordPolicy.ValidateAsync(password);
-            if (result.Succeeded) return true;
-            else return false;
-        }
     }
 }

@@ -27,9 +27,9 @@ namespace Gym_App.Api.Controllers
             else if (result.Status == 4)
                 return BadRequest(new { message = "Password is not valid" });
             else if (result.Status == 3)
-                return BadRequest(new { message = "Email is not valid" });
-            else if (result.Status == 2)
                 return BadRequest(new { message = "Email is already in use" });
+            else if (result.Status == 2)
+                return BadRequest(new { message = "Email is not valid" });
             else if (result.Status == 1)
                 return BadRequest(new { message = "Name is already in use" });
             else if (result.Status == 0)
@@ -46,9 +46,9 @@ namespace Gym_App.Api.Controllers
             else if (result.Status == 4)
                 return BadRequest(new { message = "Password is not valid" });
             else if (result.Status == 3)
-                return BadRequest(new { message = "Email is not valid" });
-            else if (result.Status == 2)
                 return BadRequest(new { message = "Email is already in use" });
+            else if (result.Status == 2)
+                return BadRequest(new { message = "Email is not valid" });
             else if (result.Status == 1)
                 return BadRequest(new { message = "Name is already in use" });
             else if (result.Status == 0)

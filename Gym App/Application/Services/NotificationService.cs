@@ -20,7 +20,7 @@ namespace Gym_App.Application.Services
             _db = db;
             _authorizationService = authorizationService;
         }
-        public async Task<int> SendNotificationAsync(NotificationDTO notification)
+        public Task<int> SendNotificationAsync(NotificationDTO notification)
         {
             throw new NotImplementedException();
         }

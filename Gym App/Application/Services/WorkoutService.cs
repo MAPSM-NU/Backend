@@ -23,7 +23,9 @@ namespace Gym_App.Application.Services
             _authorizationService = authorizationService;
         }
 
-        public async Task<int> CreateWorkout(ClaimsPrincipal User,WorkoutCreationDTO workout)//0 == faulty DTO ||1 == User not found || 2 == forbidden from access || 3 == success
+        //        *********** Setters ***********
+
+        public async Task<int> CreateWorkout(ClaimsPrincipal User,WorkoutCreationDTO workout)//0 == faulty DTO || 1 == User not found || 2 == forbidden from access || 3 == success
         {//Important detail: day attribute can't be more than 15 chars
 
             //Checking the validity of the DTO
@@ -257,6 +259,10 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 4;
         }
+
+        //-----------------------------------------------------------------------
+
+        //        *********** Getters ***********
         public async Task<Guid> GetWorkoutUserID(Guid workoutID)
         {
             //Getting the user by ID

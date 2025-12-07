@@ -1,6 +1,6 @@
-﻿namespace Gym_App.Infastructure.DTOs
+﻿namespace Gym_App.Infastructure.DTOs.Session
 {
-    public class SessionDTO
+    public class SessionViewDTO
     {
         public Guid SessionID { get; set; }
         public DateTime StartTime { get; set; }

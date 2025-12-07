@@ -1,5 +1,6 @@
 ﻿using Gym_App.Application.Interfaces;
 using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Session;
 using MailKit.Search;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,9 +17,9 @@ namespace Gym_App.Api.Controllers
             _sessionService = sessionService;
         }
         [HttpPost("CreateSession")]
-        public async Task<IActionResult> CreateSession([FromBody] SessionDTO session)
+        public async Task<IActionResult> CreateSession([FromQuery] Guid user1,Guid user2)
         {
-            var result = await _sessionService.CreateSession(User,session);
+            var result = await _sessionService.CreateSession(User,user1,user2);
 
             if (result == 3)
                 return Ok(new { Message = "Session created succcessfully" });
@@ -42,9 +43,9 @@ namespace Gym_App.Api.Controllers
             return Ok(new { message = "Session deleted Succesfully" });
         }
         [HttpPost("AddMessages")]
-        public async Task<IActionResult> AddMessages([FromBody] SessionMessagesDTO sessionMessages)
+        public async Task<IActionResult> AddMessages([FromQuery] Guid sessionID, [FromBody] List<Guid> messages)
         {
-            var result = await _sessionService.AddMessages(User,sessionMessages);
+            var result = await _sessionService.AddMessages(User, sessionID, messages);
             if (result == 5)
                 return Ok(new { Message = "Messages added succesfully" });
             else if (result == 4)
@@ -60,9 +61,9 @@ namespace Gym_App.Api.Controllers
            
         }
         [HttpDelete("DeleteMessages")]
-        public async Task<IActionResult> DeleteMessages([FromBody] SessionMessagesDTO sessionMessages)
+        public async Task<IActionResult> DeleteMessages([FromQuery] Guid sessionID, [FromBody] List<Guid> messages)
         {
-            var result = await _sessionService.DeleteMessages(User,sessionMessages);
+            var result = await _sessionService.DeleteMessages(User, sessionID, messages);
             if (result == 6) 
                 return Ok(new { Message = "Messages deleted succesfully" });
             else if (result == 5)
@@ -85,7 +86,7 @@ namespace Gym_App.Api.Controllers
             var messages = await _sessionService.GetSessionMessages(User,sessionID,startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
             if (messages == null) 
                 return NotFound(new { message = "either you are not permitted to view the messages of this session or this" +
-                    "session has no messages" });
+                    " session has no messages" });
             return Ok(messages);
         }
         [Authorize(Policy = "ElevatedPower")]//Only for admins to get all users of a session

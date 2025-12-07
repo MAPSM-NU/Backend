@@ -1,11 +1,14 @@
-﻿using Gym_App.Application.Interfaces;
+﻿using DocumentFormat.OpenXml.InkML;
+using Gym_App.Application.Interfaces;
 using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Session;
 using Gym_App.Infastructure.DTOs.UserDTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Claims;
@@ -16,25 +19,31 @@ namespace Gym_App.Application.Services
     {
         private readonly DbBase _db;
         private readonly IAuthorizationService _authorizationService;
+
+        //        *********** Setters ***********
+
         public SessionService(DbBase db,IAuthorizationService authorizationService)
         {
             _db = db;
             _authorizationService = authorizationService;
         }
-        public async Task<int> CreateSession(ClaimsPrincipal User, SessionDTO session)// 0 == Faulty DTO || 1 == User not found || 2 == unauthorized || 3 == success
+        public async Task<int> CreateSession(ClaimsPrincipal User, Guid user1,Guid user2)// 0 == Faulty DTO || 1 == User not found || 2 == unauthorized || 3 == success
         {//need to check if given users already have past session together?
 
             //checking the validity of the DTO
-            if (session == null) return 0;
+            if (user1 == Guid.Empty || user2 == Guid.Empty)
+                return 0;
+
+            List<Guid> userIDs = new List<Guid> { user1, user2 };
 
             //Authorization check
-            var authResult = await _authorizationService.AuthorizeAsync(User, session.UserIDs, "ListUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, userIDs, "ListUserPolicy");
             if(!authResult.Succeeded)
                 return 2;
 
             //Finding the users from the Database
             List<User> users = new List<User>();
-            foreach (var ID in session.UserIDs) 
+            foreach (var ID in userIDs) 
             {
                 var user = await _db.Users.FirstOrDefaultAsync(u => u.UserID == ID);
                 if ( user == null ) 
@@ -93,16 +102,16 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 2;
         }
-        public async Task<int> AddMessages(ClaimsPrincipal User, SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no new messages to add
+        public async Task<int> AddMessages(ClaimsPrincipal User, Guid sessionID,List<Guid> messages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no new messages to add
                                                                                                     //|| 4 == no messages found || 5 == success
         {
             //checking the validity of the DTO
-            if (sessionMessages == null || sessionMessages.Messages == null || sessionMessages.SessionID == Guid.Empty) 
+            if (messages == null || messages.Count == 0 || sessionID == Guid.Empty) 
                 return 0;
 
             //Getting the session from the Database
             var Session = await (from s in _db.Sessions.Include(s => s.Messages).Include(s => s.Users)
-                                 where s.SessionID == sessionMessages.SessionID
+                                 where s.SessionID == sessionID
                                  select s).FirstOrDefaultAsync();
             Console.WriteLine($"Users count: {Session?.Users?.Count ?? -1}");
 
@@ -125,7 +134,7 @@ namespace Gym_App.Application.Services
             {
                 //If session has no messages, add all given messages if their IDs point to acctual messages in the database
                 messagesToAdd = await (from m in _db.Messages
-                                    where sessionMessages.Messages.Contains(m.MessageID)
+                                    where messages.Contains(m.MessageID)
                                     select m).ToListAsync();
                 Session.Messages = new List<Message>();
             }
@@ -133,7 +142,7 @@ namespace Gym_App.Application.Services
             {
                 //If session has messages, only add the new ones if their IDs point to acctual messages in the database
                 var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
-                var messagesIDsToAdd = sessionMessages.Messages?.Where(id => !existingMessagesIDs.Contains(id)).ToList();
+                var messagesIDsToAdd = messages?.Where(id => !existingMessagesIDs.Contains(id)).ToList();
                 if (messagesIDsToAdd == null || messagesIDsToAdd.Count == 0)
                     return 3;
                 messagesToAdd = await (from m in _db.Messages
@@ -156,16 +165,16 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 5;
         }
-        public async Task<int> DeleteMessages(ClaimsPrincipal User , SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no messages in session
+        public async Task<int> DeleteMessages(ClaimsPrincipal User , Guid sessionID, List<Guid> messages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no messages in session
                                                                                                         //|| 4 == no messages to remove found || 5 == no messages found || 6 == success
         {
             //checking the validity of the DTO
-            if (sessionMessages == null || sessionMessages.Messages == null) 
+            if (messages == null || messages.Count == 0 || sessionID == Guid.Empty) 
                 return 0;
 
             //Getting the session from the Database
             var Session = await (from s in _db.Sessions.Include(s => s.Messages).Include(s => s.Users)
-                                 where s.SessionID == sessionMessages.SessionID
+                                 where s.SessionID == sessionID
                                  select s).FirstOrDefaultAsync();
 
             //Return if session was not found
@@ -181,6 +190,11 @@ namespace Gym_App.Application.Services
             if(!authResult.Succeeded) 
                 return 2;
             
+            //Getting Sender ID
+            var senderID = GettingSenderID(User);
+            if(senderID == Guid.Empty)
+                return 2;
+
             //checking the messages to remove
             List<Message> messagesToRemove;
             if (Session.Messages == null || Session.Messages.Count == 0)
@@ -192,12 +206,12 @@ namespace Gym_App.Application.Services
             {
                 //If session has messages, only remove the ones that exist in the session
                 var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
-                var messagesIDsToRemove = sessionMessages.Messages?.Where(id => existingMessagesIDs.Contains(id)).ToList();
+                var messagesIDsToRemove = messages?.Where(id => existingMessagesIDs.Contains(id)).ToList();
                 if (messagesIDsToRemove == null || messagesIDsToRemove.Count == 0)
                     return 4;
-                messagesToRemove = await (from m in _db.Messages
-                                   where messagesIDsToRemove.Contains(m.MessageID)
-                                   select m).ToListAsync();
+                messagesToRemove = await (from m in _db.Messages.Include(m=>m.Sender)
+                                          where messagesIDsToRemove.Contains(m.MessageID)
+                                          select m).ToListAsync();
             }
 
             //If there are no messages to remove, return
@@ -207,6 +221,10 @@ namespace Gym_App.Application.Services
             //Removing the messages from the session
             foreach (var message in messagesToRemove)
             {
+                //If the user is trying to delete a message that is not his return forbidden
+                if (message.Sender.UserID != senderID)
+                    return 2;
+
                 Session.Messages.Remove(message);
             }
 
@@ -215,6 +233,37 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 6;
         }
+
+        //-----------------------------------------------------------------------
+
+
+        //        *********** Extra Validation Function ***********
+
+        public async Task<bool> isMessageBelongUser(Guid messageID, Guid userID)
+        {
+            var message = await _db.Messages.Include(m => m.Sender).FirstOrDefaultAsync(m => m.MessageID == messageID);
+            if (message == null) 
+                return false;
+            return message.Sender.UserID == userID;
+        }
+        public Guid GettingSenderID(ClaimsPrincipal User)
+        {
+            var userID = User.FindFirst(ClaimTypes.NameIdentifier)
+                        ?? User.FindFirst(JwtRegisteredClaimNames.Sub)
+                        ?? User.FindFirst("sub")
+                        ?? User.FindFirst("userId")
+                        ?? User.FindFirst("id");
+
+            if (Guid.TryParse(userID!.Value, out var validID))
+                return validID;
+            else
+                return Guid.Empty;
+        }
+
+        //-----------------------------------------------------------------------
+
+        //        *********** Getters ***********
+
         public async Task<List<Guid>?> GetSessionUsersIDs(ClaimsPrincipal User,Guid sessionID)
         {
             //Getting the users of the session from the Database
@@ -347,9 +396,8 @@ namespace Gym_App.Application.Services
             //Making the result as a paged list
             var sessionUsers = await PagedList<UserViewDTO>.CreateAsync(sessionQuery, page, pageSize);
             return sessionUsers;
-            return null;
         }
-        public async Task<PagedList<SessionDTO>>? GetAllSessions(int page,int pageSize)
+        public async Task<PagedList<SessionViewDTO>>? GetAllSessions(int page,int pageSize)
         {
             //if page or pageSize are 0, set default values
             if (page == 0) page = 1;
@@ -357,13 +405,13 @@ namespace Gym_App.Application.Services
 
             //Getting all sessions from Database and projecting them to SessionDTO
             var sessionsQuery = from s in _db.Sessions
-                               select new SessionDTO
+                               select new SessionViewDTO
                                {
                                    SessionID = s.SessionID,
                                    StartTime = s.StartTime,
                                    UserIDs = s.Users.Select(u => u.UserID).ToList(),
                                };
-            var sessions = await PagedList<SessionDTO>.CreateAsync(sessionsQuery, page, pageSize);
+            var sessions = await PagedList<SessionViewDTO>.CreateAsync(sessionsQuery, page, pageSize);
             return sessions;
         }
     }

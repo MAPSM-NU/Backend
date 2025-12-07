@@ -24,6 +24,8 @@ namespace Gym_App.Application.Services
             _config = config;
             //_logger = logger;
         }
+        
+        //        *********** Setters ***********
         public async Task<string> CreateAccessToken(Guid userID, string name,string email, string role) // For creating access Tokens
         {
             var claims = new List<Claim>
@@ -75,6 +77,12 @@ namespace Gym_App.Application.Services
                 return await Task.FromResult(isTokenExists.RefreshToken);
             }
         }
+
+        //-----------------------------------------------------------------------
+
+
+        //        *********** Extra Validation Function ***********
+
         public async Task<ResponseToken?> ValidateAccessToken(string Refreshtoken) // for logging in with Tokens
         {
             var result = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.RefreshToken == Refreshtoken);
@@ -104,7 +112,11 @@ namespace Gym_App.Application.Services
             _db.RefreshTokens.Update(result);
             await _db.SaveChangesAsync();
             return Response;
-        } 
+        }
+
+        //-----------------------------------------------------------------------
+
+        //        *********** Getters ***********
         public async Task<PagedList<RefreshTokens>> GetAllRefreshTokens(int page,int pageSize)
         {
             if (page == 0)

@@ -5,6 +5,7 @@ using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -22,7 +23,7 @@ namespace Gym_App.Application.Services
             _authorizationService = authorizationService;
         }
 
-        public async Task<int> CreateWorkout(ClaimsPrincipal User,WorkoutDTO workout)//0 == faulty DTO ||1 == User not found || 2 == forbidden from access || 3 == success
+        public async Task<int> CreateWorkout(ClaimsPrincipal User,WorkoutCreationDTO workout)//0 == faulty DTO ||1 == User not found || 2 == forbidden from access || 3 == success
         {//Important detail: day attribute can't be more than 15 chars
 
             //Checking the validity of the DTO
@@ -60,14 +61,14 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 3;
         }
-        public async Task<int> UpdateWorkout(ClaimsPrincipal User, WorkoutDTO workout)//0 == faulty DTO ||1 == Workout not found || 2 == Forbidden from access || 3 == success
+        public async Task<int> UpdateWorkout(ClaimsPrincipal User,Guid workoutID, WorkoutUpdateDTO workout)//0 == faulty DTO ||1 == Workout not found || 2 == Forbidden from access || 3 == success
         {
             //Checking the validity of the DTO
-            if (workout == null || workout.WorkoutID == Guid.Empty) return 0;
+            if (workout == null || workoutID == Guid.Empty) return 0;
 
             //Searching for the Workout
             var WorkoutToBeUpdated = await(from w in _db.Workouts.Include(w => w.User)
-                                      where w.WorkoutID == workout.WorkoutID
+                                      where w.WorkoutID == workoutID
                                       select w).FirstOrDefaultAsync();
             if (WorkoutToBeUpdated == null) 
                 return 1;
@@ -121,18 +122,18 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 3;
         }
-        public async Task<int> AddExercisesToWorkout(ClaimsPrincipal User, WorkoutExerciseDTO workoutExercise)//0 == faulty DTO || 1 == Workout not found || 2 == Forbidden from access ||
+        public async Task<int> AddExercisesToWorkout(ClaimsPrincipal User,Guid workoutID, List<Guid> exercises)//0 == faulty DTO || 1 == Workout not found || 2 == Forbidden from access ||
                                                                                                               // 3 == No new exercises to add || 4 == success
         {//there is a problem here
 
             //Checking the validity of the DTO
-            if (workoutExercise == null || workoutExercise.WorkoutID == Guid.Empty) return 0;
+            if (exercises == null || workoutID == Guid.Empty) return 0;
 
             //Searching for the Workout
             var workout = await _db.Workouts
                 .Include(w => w.Exercises)
                 .Include(w => w.User)
-                .FirstOrDefaultAsync(w => w.WorkoutID == workoutExercise.WorkoutID);
+                .FirstOrDefaultAsync(w => w.WorkoutID == workoutID);
             if (workout == null)
                 return 1;
 
@@ -143,7 +144,7 @@ namespace Gym_App.Application.Services
 
             //Determening if there are new exercises to add
             var existingExerciseIds = new HashSet<Guid>(workout.Exercises.Select(e => e.ExerciseID));
-            var exerciseIdsToAdd = workoutExercise.ExercisesID?.Where(id => !existingExerciseIds.Contains(id)).ToList();
+            var exerciseIdsToAdd = exercises?.Where(id => !existingExerciseIds.Contains(id)).ToList();
 
             if (exerciseIdsToAdd == null || !exerciseIdsToAdd.Any())
                 return 3;
@@ -166,17 +167,17 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 4;
         }
-        public async Task<int> SetExercisesOfWorkout(ClaimsPrincipal User, WorkoutExerciseDTO workoutExercise)//0 == faulty DTO || 1 == Workout not found ||2 == Forbidden from access ||
+        public async Task<int> SetExercisesOfWorkout(ClaimsPrincipal User, Guid workoutID, List<Guid> exercises)//0 == faulty DTO || 1 == Workout not found ||2 == Forbidden from access ||
                                                                                                               //3 == No new exercises to add || 4 == success
         {//there is a problem here
 
             //Checking the validity of the DTO
-            if (workoutExercise == null || workoutExercise.WorkoutID == Guid.Empty) 
+            if (exercises == null || workoutID == Guid.Empty) 
                 return 0;
 
             //Searching for the Workout
             var isWorkoutExist = await(from w in _db.Workouts.Include(w => w.Exercises).Include(w => w.User)
-                                       where w.WorkoutID == workoutExercise.WorkoutID
+                                       where w.WorkoutID == workoutID
                                   select w).FirstOrDefaultAsync();
             if(isWorkoutExist == null) 
                 return 1;
@@ -190,7 +191,7 @@ namespace Gym_App.Application.Services
             isWorkoutExist.Exercises.Clear();
 
             //Determening if there are new exercises to add
-            var exerciseIDsToAdd = workoutExercise.ExercisesID.ToList();
+            var exerciseIDsToAdd = exercises.ToList();
             if (exerciseIDsToAdd == null || exerciseIDsToAdd.Count == 0) 
                 return 3;
 
@@ -212,17 +213,17 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 4;
         }
-        public async Task<int> DeleteExercisesFromWorkout(ClaimsPrincipal User, WorkoutExerciseDTO workoutExercise)//0 == faulty DTO || 1 == Workout not found || 2 == Forbidden from access
+        public async Task<int> DeleteExercisesFromWorkout(ClaimsPrincipal User, Guid workoutID, List<Guid> exercises)//0 == faulty DTO || 1 == Workout not found || 2 == Forbidden from access
                                                                                                                    //3 == No exercises to remove || 4 == success
         {
 
             //checking the Validitiy of the DTO
-            if (workoutExercise == null || workoutExercise.WorkoutID == Guid.Empty) 
+            if (exercises == null || workoutID == Guid.Empty) 
                 return 0;
 
             //Searching for the Workout
             var isWorkoutExist = await(from w in _db.Workouts.Include(w => w.Exercises).Include(w => w.User)
-                                  where w.WorkoutID == workoutExercise.WorkoutID
+                                  where w.WorkoutID == workoutID
                                   select w).FirstOrDefaultAsync();
             if (isWorkoutExist == null) 
                 return 1;
@@ -234,7 +235,7 @@ namespace Gym_App.Application.Services
 
             //Determening if there are exercises to Delete
             var existingExerciseIDs = new HashSet<Guid>(isWorkoutExist.Exercises.Select(i => i.ExerciseID));
-            var exerciseIDsToRemove = workoutExercise.ExercisesID?.Where(id => existingExerciseIDs.Contains(id)).ToList();
+            var exerciseIDsToRemove = exercises?.Where(id => existingExerciseIDs.Contains(id)).ToList();
             if (exerciseIDsToRemove == null || !exerciseIDsToRemove.Any()) 
                 return 3;
 
@@ -264,12 +265,12 @@ namespace Gym_App.Application.Services
                                select w.User.UserID).FirstOrDefaultAsync();
             return UserID; 
         }
-        public async Task<WorkoutDTO?> GetWorkoutByName(string name)
+        public async Task<WorkoutViewDTO?> GetWorkoutByName(string name)
         {
             //Getting workout by name
             var Workout = await(from w in _db.Workouts
                           where w.Name == name
-                          select new WorkoutDTO
+                          select new WorkoutViewDTO
                           {
                                 WorkoutID = w.WorkoutID,
                                 Name = w.Name,
@@ -280,12 +281,12 @@ namespace Gym_App.Application.Services
                           }).FirstOrDefaultAsync();
             return Workout;
         }
-        public async Task<WorkoutDTO?> GetWorkoutByID(Guid ID)
+        public async Task<WorkoutViewDTO?> GetWorkoutByID(Guid ID)
         {
             //Getting the Workout by ID
             var Workout = await(from w in _db.Workouts
                           where w.WorkoutID == ID
-                          select new WorkoutDTO
+                          select new WorkoutViewDTO
                           {
                               WorkoutID = w.WorkoutID,
                               Name = w.Name,
@@ -348,7 +349,7 @@ namespace Gym_App.Application.Services
             var exercises = await PagedList<ExerciseDTO>.CreateAsync(exerciseResult, page, pageSize);
             return exercises;
         }
-        public async Task<PagedList<WorkoutDTO>?> GetAllWorkouts(int page, int pageSize)
+        public async Task<PagedList<WorkoutViewDTO>?> GetAllWorkouts(int page, int pageSize)
         {
             //checking if page and Pagesize are 0 or not entered
             if (page == 0) page = 1;
@@ -356,8 +357,9 @@ namespace Gym_App.Application.Services
 
             //Getting all workouts and projecting them as WorkoutDTO
             var workoutsQuery = from w in _db.Workouts
-                           select new WorkoutDTO
+                           select new WorkoutViewDTO
                            {
+                               UserID = w.User.UserID,
                                WorkoutID = w.WorkoutID,
                                Name = w.Name,
                                Description = w.Description,
@@ -367,7 +369,7 @@ namespace Gym_App.Application.Services
                            };
 
             //turning the result into a paged list
-            var workouts = await PagedList<WorkoutDTO>.CreateAsync(workoutsQuery, page, pageSize);
+            var workouts = await PagedList<WorkoutViewDTO>.CreateAsync(workoutsQuery, page, pageSize);
             return workouts;
         }
     }

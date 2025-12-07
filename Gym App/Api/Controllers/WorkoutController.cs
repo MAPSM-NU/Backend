@@ -1,5 +1,5 @@
 ﻿using Gym_App.Application.Interfaces;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,7 +15,7 @@ namespace Gym_App.Api.Controllers
             _workoutService = workoutService;
         }
         [HttpPost("CreateWorkout")]//That is one way of adding it. I like Route but I may diverge into this
-        public async Task<IActionResult> CreateWorkout([FromBody] WorkoutDTO workout)
+        public async Task<IActionResult> CreateWorkout([FromBody] WorkoutCreationDTO workout)
         {
             var result = await _workoutService.CreateWorkout(User,workout);
 
@@ -29,9 +29,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given." });
         }
         [HttpPut("ModifyWorkout")]
-        public async Task<IActionResult> UpdateWorkout([FromBody] WorkoutDTO workout)
+        public async Task<IActionResult> UpdateWorkout([FromQuery] Guid workoutID, [FromBody] WorkoutUpdateDTO workout)
         {
-            var result = await _workoutService.UpdateWorkout(User,workout);
+            var result = await _workoutService.UpdateWorkout(User, workoutID, workout);
             if (result == 3)
                 return Ok(new { message = "Workout updated successfully." });
             else if (result == 2)
@@ -55,9 +55,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given." });
         }
         [HttpPost("AddExercisestoWorkout")]
-        public async Task<IActionResult> AddExercisesToWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
+        public async Task<IActionResult> AddExercisesToWorkout([FromQuery] Guid workoutID,[FromBody] List<Guid> exercises)
         {
-            var result = await _workoutService.AddExercisesToWorkout(User,workoutExercise);
+            var result = await _workoutService.AddExercisesToWorkout(User, workoutID, exercises);
             if (result == 4)
                 return Ok(new { message = "Exercises added to workout successfully." });
             else if (result == 3)
@@ -70,9 +70,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given." });
         }
         [HttpPost("SetExercisesofWorkout")]
-        public async Task<IActionResult> SetExercisesOfWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
+        public async Task<IActionResult> SetExercisesOfWorkout([FromQuery] Guid workoutID,[FromBody] List<Guid> exercises)
         {
-            var result = await _workoutService.SetExercisesOfWorkout(User,workoutExercise);
+            var result = await _workoutService.SetExercisesOfWorkout(User,workoutID,exercises);
             if (result == 4)
                 return Ok(new { message = "Exercises set for workout successfully." });
             else if (result == 3)
@@ -85,9 +85,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given." });
         }
         [HttpDelete("DeleteExercisesfromWorkout")]
-        public async Task<IActionResult> DeleteExercisesFromWorkout([FromBody] WorkoutExerciseDTO workoutExercise)
+        public async Task<IActionResult> DeleteExercisesFromWorkout([FromQuery] Guid workoutID, [FromBody] List<Guid> exercises)
         {
-            var result = await _workoutService.DeleteExercisesFromWorkout(User,workoutExercise);
+            var result = await _workoutService.DeleteExercisesFromWorkout(User,workoutID,exercises);
             if (result == 4)
                 return Ok(new { message = "Exercises removed from workout successfully." });
             else if (result == 3)

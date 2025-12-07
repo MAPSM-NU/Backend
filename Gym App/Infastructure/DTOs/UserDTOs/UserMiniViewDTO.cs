@@ -1,6 +1,6 @@
 ﻿namespace Gym_App.Infastructure.DTOs.UserDTOs
 {
-    public class UserSmallViewDTO
+    public class UserMiniViewDTO
     {
         public Guid UserID { get; set; }
         public required string Name { get; set; }

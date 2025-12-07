@@ -17,7 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Serilog Configuration
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
-    .WriteTo.File("logs/gymapp.txt", rollingInterval: RollingInterval.Day)
+    .WriteTo.File("Infastructure/logs/gymapp.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
 builder.Logging.ClearProviders().AddSerilog();

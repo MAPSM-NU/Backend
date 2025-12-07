@@ -13,7 +13,7 @@ namespace Gym_App.Application.Interfaces
         Task<int> ChangeUserType(UserChangeTypeDTO user);
         Task<int> DeleteUser(Guid userID);
         Task<UserViewDTO?> GetUserByID(Guid userID);
-        Task<PagedList<UserSmallViewDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
+        Task<PagedList<UserMiniViewDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
         Task<PagedList<UserViewDTO>?> GetAllUsers(int page, int pageSize);
 
     }

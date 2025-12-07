@@ -380,7 +380,7 @@ namespace Gym_App.Application.Services
             if (user is null) return null;
             return user;
         }
-        public async Task<PagedList<UserSmallViewDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<PagedList<UserMiniViewDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             if (page == 0) page = 1;
             if (pageSize == 0) pageSize = 10;
@@ -413,14 +413,14 @@ namespace Gym_App.Application.Services
                 else userQuery = userQuery.OrderBy(keySelector);
             }
             var userResponse = userQuery
-                                .Select(u => new UserSmallViewDTO
+                                .Select(u => new UserMiniViewDTO
                                 {
                                     UserID = u.UserID,
                                     Name = u.Name,
                                     Email = u.Email,
                                     ProfilePictureUrl = u.ProfilePictureUrl
                                 });
-            var users = await PagedList<UserSmallViewDTO>.CreateAsync(userResponse, page, pageSize);
+            var users = await PagedList<UserMiniViewDTO>.CreateAsync(userResponse, page, pageSize);
             return users;
         }
         public async Task<PagedList<UserViewDTO>?> GetAllUsers(int page, int pageSize)

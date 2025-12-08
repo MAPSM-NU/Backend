@@ -5,6 +5,7 @@ using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Muscle;
 using MailKit.Search;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -147,14 +148,14 @@ namespace Gym_App.Application.Services
             if (Exercise == null) return Exercise;
             return Exercise;
         }
-        public async Task<List<MuscleDTO>?> GetExerciseMuscles(Guid exerciseID)
+        public async Task<List<MuscleViewDTO>?> GetExerciseMuscles(Guid exerciseID)
         {
             var exercise = await (from e in _db.Exercises.Include(e=>e.Muscles)
                                  where e.ExerciseID == exerciseID
                                  select e).FirstOrDefaultAsync();
             if (exercise == null) return null;
             var muscleDTOs = (from m in exercise.Muscles
-                              select new MuscleDTO
+                              select new MuscleViewDTO
                               {
                                 MusclesID = m.MusclesID,
                                 Name = m.Name,

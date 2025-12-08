@@ -1,4 +1,4 @@
-﻿namespace Gym_App.Infastructure.DTOs
+﻿namespace Gym_App.Infastructure.DTOs.Exercise
 {
     public class ExerciseListDTO
     {

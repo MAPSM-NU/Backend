@@ -4,7 +4,7 @@ using Gym_App.Domain;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Exercise;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -303,7 +303,7 @@ namespace Gym_App.Application.Services
                           }).FirstOrDefaultAsync();
             return Workout;
         }
-        public async Task<PagedList<ExerciseDTO>?> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<PagedList<ExerciseViewDTO>?> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //checking if page and Pagesize are 0 or not entered
             if (page == 0) page = 1;
@@ -340,7 +340,7 @@ namespace Gym_App.Application.Services
 
             //Projecting the resultant exercise queries as exerciseDTO
             var exerciseResult = exercisesQuery
-                                .Select(e => new ExerciseDTO
+                                .Select(e => new ExerciseViewDTO
                                 {
                                     ExerciseID = e.ExerciseID,
                                     Name = e.Name,
@@ -352,7 +352,7 @@ namespace Gym_App.Application.Services
                                 });
 
             //Making the result as a paged list
-            var exercises = await PagedList<ExerciseDTO>.CreateAsync(exerciseResult, page, pageSize);
+            var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exerciseResult, page, pageSize);
             return exercises;
         }
         public async Task<PagedList<WorkoutViewDTO>?> GetAllWorkouts(int page, int pageSize)

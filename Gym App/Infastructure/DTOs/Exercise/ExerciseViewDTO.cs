@@ -1,12 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Gym_App.Infastructure.DTOs
+namespace Gym_App.Infastructure.DTOs.Exercise
 {
-    public class ExerciseDTO
+    public class ExerciseViewDTO
     {
         public Guid ExerciseID { get; set; }
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public string? Description { get; set; }
         public string? Difficulty { get; set; }
         public string? VideoUrl { get; set; }

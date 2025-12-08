@@ -2,7 +2,7 @@
 using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Notification;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -20,11 +20,13 @@ namespace Gym_App.Application.Services
             _db = db;
             _authorizationService = authorizationService;
         }
-        public Task<int> SendNotificationAsync(NotificationDTO notification)
+
+        //        *********** Setters ***********
+        public Task<int> SendNotificationAsync(NotificationViewDTO notification)
         {
             throw new NotImplementedException();
         }
-        public async Task<int> CreateNotification(ClaimsPrincipal User, NotificationDTO notification)//0 == Faulty DTO || 1 == User not found || 2 == Unauthorized || 3 == Succesful
+        public async Task<int> CreateNotification(ClaimsPrincipal User,Guid userID, NotificationCreationDTO notification)//0 == Faulty DTO || 1 == User not found || 2 == Unauthorized || 3 == Succesful
         {
             //Checking for DTO validity
             if (notification == null)
@@ -32,7 +34,7 @@ namespace Gym_App.Application.Services
 
             //Getting User from Database
             var user = await (from u in _db.Users
-                         where u.UserID == notification.UserID
+                         where u.UserID == userID
                          select u).FirstOrDefaultAsync();
             //If user not found return 
             if (user == null) 
@@ -110,6 +112,10 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 3;
         }
+
+        //-----------------------------------------------------------------------
+
+        //        *********** Getters ***********
         public async Task<Guid> GetNotificationUserID(Guid NotificationID)//not used anymore
         {
             //Getting UserID from Database
@@ -118,7 +124,7 @@ namespace Gym_App.Application.Services
                           select n.User.UserID).FirstOrDefaultAsync();
             return userID;
         }
-        public async Task<PagedList<NotificationDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<PagedList<NotificationMiniViewDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User,UserID,"SameUserPolicy");
@@ -132,16 +138,16 @@ namespace Gym_App.Application.Services
             //Getting notifications from Database and projecting to DTO
             var notificationsQuery = from n in _db.Notifications
                                       where n.User.UserID == UserID
-                                      select new NotificationDTO
+                                      select new NotificationMiniViewDTO
                                       {
                                          NotificationID = n.NotificationID,
-                                         UserID = UserID,
                                          Date = n.Date,
                                          Title = n.Title,
                                          Content = n.Content
                                       };
             //if no notifications found return null
-            if (notificationsQuery == null) return null;
+            if (notificationsQuery == null) 
+                    return null;
 
             //Filtering by start date and end date
             DateTime validStartDate, validEndDate;
@@ -160,7 +166,7 @@ namespace Gym_App.Application.Services
             //Ordering by a given column
             if (!string.IsNullOrEmpty(sortColumn))//Either sort by custom given inputs
             {
-                Expression<Func<NotificationDTO, object>> keySelector = sortColumn.ToLower() switch
+                Expression<Func<NotificationMiniViewDTO, object>> keySelector = sortColumn.ToLower() switch
                 {
                     "content" or "c" => Notification => Notification.Content,// ordering by content
                     "title" or "t" => Notification => Notification.Title, // ordering by title
@@ -179,11 +185,10 @@ namespace Gym_App.Application.Services
             }
 
             //Making Paged list from resultant query
-            var notifications = await PagedList<NotificationDTO>.CreateAsync(notificationsQuery, page, pageSize);
+            var notifications = await PagedList<NotificationMiniViewDTO>.CreateAsync(notificationsQuery, page, pageSize);
             return notifications;
         }
-
-        public async Task<PagedList<NotificationDTO>> GetAllNotifications(int page, int pageSize)
+        public async Task<PagedList<NotificationViewDTO>> GetAllNotifications(int page, int pageSize)
         {
             //if page or pageSize are 0 set to default values
             if (page == 0) page = 1;
@@ -191,7 +196,7 @@ namespace Gym_App.Application.Services
 
             //Getting notifications from Database and projecting to DTO
             var notificationsQuery =from n in _db.Notifications
-                                select new NotificationDTO
+                                select new NotificationViewDTO
                                 {
                                     NotificationID = n.NotificationID,
                                     UserID = n.User.UserID,
@@ -204,14 +209,13 @@ namespace Gym_App.Application.Services
             notificationsQuery = notificationsQuery.OrderByDescending(n => n.Date);
 
             //Making Paged list from resultant query
-            var notifications = await PagedList<NotificationDTO>.CreateAsync(notificationsQuery,page, pageSize);
+            var notifications = await PagedList<NotificationViewDTO>.CreateAsync(notificationsQuery,page, pageSize);
             return notifications;
         }
         public Task<int> MarkAllAsRead(Guid UserID)
         {
             throw new NotImplementedException();
         }
-
         public Task<int> MarkAsRead(Guid NotificationID)
         {
             throw new NotImplementedException();

@@ -184,6 +184,8 @@ namespace Gym_App.Application.Services
         }
         public async Task<PagedList<ExerciseDTO>?> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
         {
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
             IQueryable<Exercise> exerciseQuery = _db.Exercises;
 
             if(!string.IsNullOrEmpty(searchTerm))exerciseQuery = exerciseQuery.Where(e => e.Name.Contains(searchTerm) || e.Difficulty.Contains(searchTerm));
@@ -217,6 +219,8 @@ namespace Gym_App.Application.Services
         {
             IQueryable<Exercise> exerciseQuery = _db.Exercises;
 
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
             var exercisesResponse = exerciseQuery
                                         .Select(e=> new ExerciseDTO
                                        {

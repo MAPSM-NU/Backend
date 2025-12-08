@@ -1,5 +1,5 @@
 ﻿using Gym_App.Application.Interfaces;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Notification;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,10 +17,10 @@ namespace Gym_App.Api.Controllers
         }
         //[Authorize(Policy = "ElevatedPower")]//Only Admins can create notifications 
         [HttpPost("CreateNotification")]
-        public async Task<IActionResult> CreateNotification([FromBody] NotificationDTO notification)
+        public async Task<IActionResult> CreateNotification([FromQuery]Guid userID,[FromBody] NotificationCreationDTO notification)
         {
-            
-            var result = await _notificationService.CreateNotification(User,notification);
+
+            var result = await _notificationService.CreateNotification(User, userID, notification);
             if (result == 3)
                 return Ok(new { message = "Notification created succesfully" });
             else if (result == 2)

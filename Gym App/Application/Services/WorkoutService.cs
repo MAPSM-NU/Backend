@@ -124,12 +124,12 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 3;
         }
-        public async Task<int> AddExercisesToWorkout(ClaimsPrincipal User,Guid workoutID, List<Guid> exercises)//0 == faulty DTO || 1 == Workout not found || 2 == Forbidden from access ||
+        public async Task<int> AddExercisesToWorkout(ClaimsPrincipal User,Guid workoutID, WorkoutExerciseDTO workoutExercises)//0 == faulty DTO || 1 == Workout not found || 2 == Forbidden from access ||
                                                                                                               // 3 == No new exercises to add || 4 == success
         {//there is a problem here
 
             //Checking the validity of the DTO
-            if (exercises == null || workoutID == Guid.Empty) return 0;
+            if (workoutExercises == null || workoutID == Guid.Empty) return 0;
 
             //Searching for the Workout
             var workout = await _db.Workouts
@@ -146,7 +146,7 @@ namespace Gym_App.Application.Services
 
             //Determening if there are new exercises to add
             var existingExerciseIds = new HashSet<Guid>(workout.Exercises.Select(e => e.ExerciseID));
-            var exerciseIdsToAdd = exercises?.Where(id => !existingExerciseIds.Contains(id)).ToList();
+            var exerciseIdsToAdd = workoutExercises.ExercisesID?.Where(id => !existingExerciseIds.Contains(id)).ToList();
 
             if (exerciseIdsToAdd == null || !exerciseIdsToAdd.Any())
                 return 3;
@@ -169,12 +169,12 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 4;
         }
-        public async Task<int> SetExercisesOfWorkout(ClaimsPrincipal User, Guid workoutID, List<Guid> exercises)//0 == faulty DTO || 1 == Workout not found ||2 == Forbidden from access ||
+        public async Task<int> SetExercisesOfWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)//0 == faulty DTO || 1 == Workout not found ||2 == Forbidden from access ||
                                                                                                               //3 == No new exercises to add || 4 == success
         {//there is a problem here
 
             //Checking the validity of the DTO
-            if (exercises == null || workoutID == Guid.Empty) 
+            if (workoutExercises == null || workoutID == Guid.Empty) 
                 return 0;
 
             //Searching for the Workout
@@ -193,7 +193,7 @@ namespace Gym_App.Application.Services
             isWorkoutExist.Exercises.Clear();
 
             //Determening if there are new exercises to add
-            var exerciseIDsToAdd = exercises.ToList();
+            var exerciseIDsToAdd = workoutExercises.ExercisesID.ToList();
             if (exerciseIDsToAdd == null || exerciseIDsToAdd.Count == 0) 
                 return 3;
 
@@ -215,12 +215,12 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 4;
         }
-        public async Task<int> DeleteExercisesFromWorkout(ClaimsPrincipal User, Guid workoutID, List<Guid> exercises)//0 == faulty DTO || 1 == Workout not found || 2 == Forbidden from access
+        public async Task<int> DeleteExercisesFromWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)//0 == faulty DTO || 1 == Workout not found || 2 == Forbidden from access
                                                                                                                    //3 == No exercises to remove || 4 == success
         {
 
             //checking the Validitiy of the DTO
-            if (exercises == null || workoutID == Guid.Empty) 
+            if (workoutExercises == null || workoutID == Guid.Empty) 
                 return 0;
 
             //Searching for the Workout
@@ -237,7 +237,7 @@ namespace Gym_App.Application.Services
 
             //Determening if there are exercises to Delete
             var existingExerciseIDs = new HashSet<Guid>(isWorkoutExist.Exercises.Select(i => i.ExerciseID));
-            var exerciseIDsToRemove = exercises?.Where(id => existingExerciseIDs.Contains(id)).ToList();
+            var exerciseIDsToRemove = workoutExercises.ExercisesID?.Where(id => existingExerciseIDs.Contains(id)).ToList();
             if (exerciseIDsToRemove == null || !exerciseIDsToRemove.Any()) 
                 return 3;
 

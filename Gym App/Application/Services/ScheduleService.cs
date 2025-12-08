@@ -2,7 +2,7 @@
 using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Schedule;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -21,8 +21,9 @@ namespace Gym_App.Application.Services
             _authorizationService = authorizationService;
         }
 
+        //        *********** Setters ***********
 
-        public async Task<int> AddSchedule(ClaimsPrincipal User, ScheduleDTO schedule)//0 == faulty DTO || 1 == user not found || 2 == unauthorized || 3 == success
+        public async Task<int> AddSchedule(ClaimsPrincipal User,Guid userID, ScheduleCreationAndEditDTO schedule)//0 == faulty DTO || 1 == user not found || 2 == unauthorized || 3 == success
         {
             //Checking for DTO validity
             if (schedule == null) 
@@ -30,7 +31,7 @@ namespace Gym_App.Application.Services
 
             //Checking if user exists
             var user = await (from u in _db.Users
-                       where u.UserID == schedule.UserID
+                       where u.UserID == userID
                        select u).FirstOrDefaultAsync();
             if (user == null) 
                 return 1;
@@ -56,7 +57,7 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 3;
         }
-        public async Task<int> UpdateSchedule(ClaimsPrincipal User, ScheduleDTO schedule)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized || 3 == success
+        public async Task<int> UpdateSchedule(ClaimsPrincipal User,Guid scheduleID, ScheduleCreationAndEditDTO schedule)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized || 3 == success
         {
             //Checking for DTO validity
             if (schedule == null) 
@@ -64,7 +65,7 @@ namespace Gym_App.Application.Services
 
             //Getting schedule from database
             var existingSchedule = await (from s in _db.Schedules.Include(s=>s.User)
-                                    where s.ScheduleID == schedule.ScheduleID
+                                    where s.ScheduleID == scheduleID
                                     select s).FirstOrDefaultAsync();
             if (existingSchedule == null) 
                 return 1;
@@ -106,7 +107,7 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 3;
         }
-        public async Task<int> AddWorkoutsToSchedule(ClaimsPrincipal User, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
+        public async Task<int> AddWorkoutsToSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
                                                                                                               //3 == no new workouts to add || 4 == workouts not found || 5 == success
         {
             //checking DTO
@@ -115,7 +116,7 @@ namespace Gym_App.Application.Services
 
             //Getting schedule from database
             var schedule = await(from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
-                                 where s.ScheduleID == scheduleWorkout.ScheduleID
+                                 where s.ScheduleID == scheduleID
                             select s).FirstOrDefaultAsync();
             if (schedule == null) 
                 return 1;
@@ -145,7 +146,7 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 5;
         }
-        public async Task<int> SetWorkoutsOfSchedule(ClaimsPrincipal User, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
+        public async Task<int> SetWorkoutsOfSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
                                                                                                               //3 == no workouts found || 4 == success
         {
             //Checking for DTO validity
@@ -154,7 +155,7 @@ namespace Gym_App.Application.Services
 
             //Getting schedule from database    
             var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s=>s.User)
-                                  where s.ScheduleID == scheduleWorkout.ScheduleID
+                                  where s.ScheduleID == scheduleID
                             select s).FirstOrDefaultAsync();
             if (schedule == null)
                 return 1;
@@ -182,7 +183,7 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 4;
         }
-        public async Task<int> DeleteWorkoutsFromSchedule(ClaimsPrincipal User, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
+        public async Task<int> DeleteWorkoutsFromSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
                                                                                                                    //3 == no workouts to remove || 4 == workouts not found || 5 == success
         {
             //Checking for DTO validity
@@ -191,7 +192,7 @@ namespace Gym_App.Application.Services
 
             //Getting schedule from database
             var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
-                            where s.ScheduleID == scheduleWorkout.ScheduleID
+                            where s.ScheduleID == scheduleID
                             select s).FirstOrDefaultAsync();
             if (schedule == null) 
                 return 1;
@@ -225,12 +226,16 @@ namespace Gym_App.Application.Services
         //I am thinking of letting the Schedules be public so everyone can access eachother's workout schedules
         //In the future if that doesn't pan out, we can make these fucntions have authorization
 
-        public async Task<ScheduleDTO?> GetScheduleById(Guid scheduleID)//AHHHHHHHHHHHHHHHHH
+        //-----------------------------------------------------------------------
+
+        //        *********** Getters ***********
+
+        public async Task<ScheduleViewDTO?> GetScheduleById(Guid scheduleID)//AHHHHHHHHHHHHHHHHH
         {
             //Getting schedule from database and projecting to DTO
             var schedule = await(from s in _db.Schedules
                             where s.ScheduleID == scheduleID
-                            select new ScheduleDTO
+                            select new ScheduleViewDTO
                             {
                                 ScheduleID = s.ScheduleID,
                                 Name = s.Name,
@@ -250,7 +255,6 @@ namespace Gym_App.Application.Services
                             where s.ScheduleID == scheduleID
                             select new ScheduleWorkoutDTO
                             {
-                                ScheduleID = s.ScheduleID,
                                 WorkoutsID = s.Workouts.Select(w => w.WorkoutID).ToList()
                             }).FirstOrDefaultAsync();
             //Returning null if schedule not found
@@ -258,7 +262,7 @@ namespace Gym_App.Application.Services
 
             return schedule;
         }
-        public async Task<PagedList<ScheduleDTO>?> GetSchedulesByOfUser(Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<PagedList<ScheduleViewDTO>?> GetSchedulesByOfUser(Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //if page and pageSize are 0, set default values
             if (page == 0) page = 1;
@@ -302,7 +306,7 @@ namespace Gym_App.Application.Services
                 else schedulesQuery = schedulesQuery.OrderByDescending(keySelector);
             }
             //Projecting the resultant message queries to messageDTO
-            var schedulesResponse = schedulesQuery.Select(s => new ScheduleDTO
+            var schedulesResponse = schedulesQuery.Select(s => new ScheduleViewDTO
                                     {
                                         UserID = s.User.UserID,
                                         ScheduleID = s.ScheduleID,
@@ -312,10 +316,10 @@ namespace Gym_App.Application.Services
                                     });
 
             //Making the result as a paged list
-            var schedules = await PagedList<ScheduleDTO>.CreateAsync(schedulesResponse,page,pageSize);
+            var schedules = await PagedList<ScheduleViewDTO>.CreateAsync(schedulesResponse,page,pageSize);
             return schedules;
         }
-        public async Task<PagedList<ScheduleDTO>?> GetAllSchedules(int page,int pageSize)
+        public async Task<PagedList<ScheduleViewDTO>?> GetAllSchedules(int page,int pageSize)
         {
             //if page and pageSize are 0, set default values
             if (page == 0)page = 1;
@@ -323,7 +327,7 @@ namespace Gym_App.Application.Services
 
             //Getting schedules from database and projecting to DTO
             var schedulesQuery = from s in _db.Schedules
-                            select new ScheduleDTO
+                            select new ScheduleViewDTO
                             {
                                 UserID = s.User.UserID,
                                 ScheduleID = s.ScheduleID,
@@ -336,7 +340,7 @@ namespace Gym_App.Application.Services
             if (schedulesQuery == null) return null;
 
             //Making the result as a paged list
-            var schedules = await PagedList<ScheduleDTO>.CreateAsync(schedulesQuery, page, pageSize);
+            var schedules = await PagedList<ScheduleViewDTO>.CreateAsync(schedulesQuery, page, pageSize);
             return schedules;
         }
         public async Task<Guid> GetScheduleUserID(Guid scheduleID) 

@@ -43,9 +43,9 @@ namespace Gym_App.Api.Controllers
             return Ok(new { message = "Session deleted Succesfully" });
         }
         [HttpPost("AddMessages")]
-        public async Task<IActionResult> AddMessages([FromQuery] Guid sessionID, [FromBody] List<Guid> messages)
+        public async Task<IActionResult> AddMessages([FromQuery] Guid sessionID, [FromBody] SessionMessagesDTO sessionMessages)
         {
-            var result = await _sessionService.AddMessages(User, sessionID, messages);
+            var result = await _sessionService.AddMessages(User, sessionID, sessionMessages);
             if (result == 5)
                 return Ok(new { Message = "Messages added succesfully" });
             else if (result == 4)
@@ -61,9 +61,9 @@ namespace Gym_App.Api.Controllers
            
         }
         [HttpDelete("DeleteMessages")]
-        public async Task<IActionResult> DeleteMessages([FromQuery] Guid sessionID, [FromBody] List<Guid> messages)
+        public async Task<IActionResult> DeleteMessages([FromQuery] Guid sessionID, [FromBody] SessionMessagesDTO sessionMessages)
         {
-            var result = await _sessionService.DeleteMessages(User, sessionID, messages);
+            var result = await _sessionService.DeleteMessages(User, sessionID, sessionMessages);
             if (result == 6) 
                 return Ok(new { Message = "Messages deleted succesfully" });
             else if (result == 5)

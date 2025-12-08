@@ -55,9 +55,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given." });
         }
         [HttpPost("AddExercisestoWorkout")]
-        public async Task<IActionResult> AddExercisesToWorkout([FromQuery] Guid workoutID,[FromBody] List<Guid> exercises)
+        public async Task<IActionResult> AddExercisesToWorkout([FromQuery] Guid workoutID,[FromBody] WorkoutExerciseDTO workoutExercise)
         {
-            var result = await _workoutService.AddExercisesToWorkout(User, workoutID, exercises);
+            var result = await _workoutService.AddExercisesToWorkout(User, workoutID, workoutExercise);
             if (result == 4)
                 return Ok(new { message = "Exercises added to workout successfully." });
             else if (result == 3)
@@ -70,9 +70,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given." });
         }
         [HttpPost("SetExercisesofWorkout")]
-        public async Task<IActionResult> SetExercisesOfWorkout([FromQuery] Guid workoutID,[FromBody] List<Guid> exercises)
+        public async Task<IActionResult> SetExercisesOfWorkout([FromQuery] Guid workoutID,[FromBody] WorkoutExerciseDTO workoutExercises)
         {
-            var result = await _workoutService.SetExercisesOfWorkout(User,workoutID,exercises);
+            var result = await _workoutService.SetExercisesOfWorkout(User,workoutID,workoutExercises);
             if (result == 4)
                 return Ok(new { message = "Exercises set for workout successfully." });
             else if (result == 3)
@@ -85,9 +85,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given." });
         }
         [HttpDelete("DeleteExercisesfromWorkout")]
-        public async Task<IActionResult> DeleteExercisesFromWorkout([FromQuery] Guid workoutID, [FromBody] List<Guid> exercises)
+        public async Task<IActionResult> DeleteExercisesFromWorkout([FromQuery] Guid workoutID, [FromBody] WorkoutExerciseDTO workoutExercises)
         {
-            var result = await _workoutService.DeleteExercisesFromWorkout(User,workoutID,exercises);
+            var result = await _workoutService.DeleteExercisesFromWorkout(User,workoutID,workoutExercises);
             if (result == 4)
                 return Ok(new { message = "Exercises removed from workout successfully." });
             else if (result == 3)

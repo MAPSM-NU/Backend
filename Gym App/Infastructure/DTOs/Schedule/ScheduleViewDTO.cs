@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Gym_App.Infastructure.DTOs
+namespace Gym_App.Infastructure.DTOs.Schedule
 {
-    public class ScheduleDTO
+    public class ScheduleViewDTO
     {
         public Guid UserID { get; set; }
         public Guid ScheduleID { get; set; }

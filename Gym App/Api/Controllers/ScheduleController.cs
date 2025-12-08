@@ -1,6 +1,6 @@
 ﻿using Gym_App.Application.Interfaces;
 using Gym_App.Domain.Entities;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Schedule;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,9 +17,9 @@ namespace Gym_App.Api.Controllers
         }
 
         [HttpPost("AddSchedule")]
-        public async Task<IActionResult> AddSchedule([FromBody] ScheduleDTO schedule)
+        public async Task<IActionResult> AddSchedule([FromQuery]Guid userID,[FromBody] ScheduleCreationAndEditDTO schedule)
         {
-            var result = await _scheduleService.AddSchedule(User, schedule);
+            var result = await _scheduleService.AddSchedule(User, userID, schedule);
             if (result == 3)
                 return Ok(new { message = "Schedule added successfully" });
             else if (result == 2)
@@ -30,9 +30,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given" });
         }
         [HttpPut("UpdateSchedule")]
-        public async Task<IActionResult> UpdateSchedule([FromBody] ScheduleDTO schedule)
+        public async Task<IActionResult> UpdateSchedule([FromQuery] Guid scheduleID,[FromBody] ScheduleCreationAndEditDTO schedule)
         {
-            var result = await _scheduleService.UpdateSchedule(User, schedule);
+            var result = await _scheduleService.UpdateSchedule(User, scheduleID, schedule);
             if (result == 3)
                 return Ok(new { message = "Schedule updated successfully" });
             else if (result == 2)
@@ -56,9 +56,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given" });
         }
         [HttpPost("AddWorkoutsToSchedule")]
-        public async Task<IActionResult> AddWorkoutsToSchedule([FromBody] ScheduleWorkoutDTO scheduleWorkout)
+        public async Task<IActionResult> AddWorkoutsToSchedule([FromQuery] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            var result = await _scheduleService.AddWorkoutsToSchedule(User, scheduleWorkout);
+            var result = await _scheduleService.AddWorkoutsToSchedule(User, scheduleID, scheduleWorkout);
             if (result == 5)
                 return Ok(new { Message = "Workouts added to Schedule successfully" });
             else if (result == 4)
@@ -73,9 +73,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given" });
         }
         [HttpPost("SetWorkoutsOfSchedule")]
-        public async Task<IActionResult> SetWorkoutsOfSchedule([FromBody] ScheduleWorkoutDTO scheduleWorkout)
+        public async Task<IActionResult> SetWorkoutsOfSchedule([FromQuery] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            var result = await _scheduleService.SetWorkoutsOfSchedule(User, scheduleWorkout);
+            var result = await _scheduleService.SetWorkoutsOfSchedule(User, scheduleID, scheduleWorkout);
             if(result == 4)
                 return Ok(new {Message = "Workouts set to Schedule successfully"}) ;
             else if(result == 3)
@@ -88,9 +88,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "Faulty DTO given" });
         }
         [HttpDelete("DeleteWorkoutsFromSchedule")]
-        public async Task<IActionResult> DeleteWorkoutsFromSchedule([FromBody] ScheduleWorkoutDTO scheduleWorkout)
+        public async Task<IActionResult> DeleteWorkoutsFromSchedule([FromQuery] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            var result = await _scheduleService.DeleteWorkoutsFromSchedule(User, scheduleWorkout);
+            var result = await _scheduleService.DeleteWorkoutsFromSchedule(User, scheduleID, scheduleWorkout);
             if (result == 5)
                 return Ok(new { Message = "Workouts removed from Schedule successfully" });
             else if (result == 4)

@@ -1,8 +1,7 @@
-﻿namespace Gym_App.Infastructure.DTOs
+﻿namespace Gym_App.Infastructure.DTOs.Schedule
 {
     public class ScheduleWorkoutDTO
     {
-        public Guid ScheduleID { get; set; }
         public List<Guid> WorkoutsID { get; set; } = new List<Guid>();
     }
 }

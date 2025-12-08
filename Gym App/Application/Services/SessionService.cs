@@ -102,18 +102,17 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 2;
         }
-        public async Task<int> AddMessages(ClaimsPrincipal User, Guid sessionID,List<Guid> messages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no new messages to add
+        public async Task<int> AddMessages(ClaimsPrincipal User, Guid sessionID, SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no new messages to add
                                                                                                     //|| 4 == no messages found || 5 == success
         {
             //checking the validity of the DTO
-            if (messages == null || messages.Count == 0 || sessionID == Guid.Empty) 
+            if (sessionMessages == null || sessionID == Guid.Empty) 
                 return 0;
 
             //Getting the session from the Database
             var Session = await (from s in _db.Sessions.Include(s => s.Messages).Include(s => s.Users)
                                  where s.SessionID == sessionID
                                  select s).FirstOrDefaultAsync();
-            Console.WriteLine($"Users count: {Session?.Users?.Count ?? -1}");
 
             //Return if session was not found
             if (Session == null) 
@@ -134,7 +133,7 @@ namespace Gym_App.Application.Services
             {
                 //If session has no messages, add all given messages if their IDs point to acctual messages in the database
                 messagesToAdd = await (from m in _db.Messages
-                                    where messages.Contains(m.MessageID)
+                                    where sessionMessages.messagesID.Contains(m.MessageID)
                                     select m).ToListAsync();
                 Session.Messages = new List<Message>();
             }
@@ -142,7 +141,7 @@ namespace Gym_App.Application.Services
             {
                 //If session has messages, only add the new ones if their IDs point to acctual messages in the database
                 var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
-                var messagesIDsToAdd = messages?.Where(id => !existingMessagesIDs.Contains(id)).ToList();
+                var messagesIDsToAdd = sessionMessages.messagesID?.Where(id => !existingMessagesIDs.Contains(id)).ToList();
                 if (messagesIDsToAdd == null || messagesIDsToAdd.Count == 0)
                     return 3;
                 messagesToAdd = await (from m in _db.Messages
@@ -165,11 +164,11 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 5;
         }
-        public async Task<int> DeleteMessages(ClaimsPrincipal User , Guid sessionID, List<Guid> messages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no messages in session
+        public async Task<int> DeleteMessages(ClaimsPrincipal User , Guid sessionID, SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no messages in session
                                                                                                         //|| 4 == no messages to remove found || 5 == no messages found || 6 == success
         {
             //checking the validity of the DTO
-            if (messages == null || messages.Count == 0 || sessionID == Guid.Empty) 
+            if (sessionMessages == null|| sessionID == Guid.Empty) 
                 return 0;
 
             //Getting the session from the Database
@@ -206,7 +205,7 @@ namespace Gym_App.Application.Services
             {
                 //If session has messages, only remove the ones that exist in the session
                 var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
-                var messagesIDsToRemove = messages?.Where(id => existingMessagesIDs.Contains(id)).ToList();
+                var messagesIDsToRemove = sessionMessages.messagesID.Where(id => existingMessagesIDs.Contains(id)).ToList();
                 if (messagesIDsToRemove == null || messagesIDsToRemove.Count == 0)
                     return 4;
                 messagesToRemove = await (from m in _db.Messages.Include(m=>m.Sender)

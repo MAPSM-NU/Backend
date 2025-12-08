@@ -1,5 +1,5 @@
 ﻿using Gym_App.Application.Interfaces;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Feedback;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,9 +15,9 @@ namespace Gym_App.Api.Controllers
             _feedbackService = feedbackService;
         }
         [HttpPost("CreateFeedback")]
-        public async Task<IActionResult> CreateFeedback([FromBody] FeedbackDTO feedbackDTO)
+        public async Task<IActionResult> CreateFeedback([FromQuery]Guid userID,[FromBody] FeedbackCreationDTO feedbackDTO)
         {
-            var result = await _feedbackService.CreateFeedback(User, feedbackDTO);
+            var result = await _feedbackService.CreateFeedback(User,userID, feedbackDTO);
             if(result == 5)
                 return Ok(new { Message = "Feedback created successfully." });
             else if(result == 4)
@@ -32,9 +32,9 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { Message = "Faulty DTO was given" });
         }
         [HttpPut("UpdateFeedback")]
-        public async Task<IActionResult> UpdateFeedback([FromBody] FeedbackDTO feedbackDTO)
+        public async Task<IActionResult> UpdateFeedback([FromQuery]Guid feedbackID,[FromBody] FeedbackUpdateDTO feedbackDTO)
         {
-            var result = await _feedbackService.UpdateFeedback(User, feedbackDTO);
+            var result = await _feedbackService.UpdateFeedback(User,feedbackID, feedbackDTO);
             if(result == 3)
                 return Ok(new { Message = "Feedback updated successfully." });
             else if(result == 2)
@@ -68,10 +68,18 @@ namespace Gym_App.Api.Controllers
 
             return Ok(feedback);
         }
-        [HttpGet("GetUserFeedbacksByFilter")]
-        public async Task<IActionResult> GetUserFeedbacksByFilter([FromQuery]Guid UserID, string startDate,string endDate,string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        [HttpGet("GetFeedbackOfWorkout")]
+        public async Task<IActionResult> GetFeedbackOfWorkout([FromQuery]Guid workoutID)
+        {
+            var feedback = await _feedbackService.GetFeedbackOfWorkout(User, workoutID);
+            if (feedback == null)
+                return BadRequest("Feedback not found or not authorized");
+            return Ok(feedback);
+        }
+        [HttpGet("GetUserFeedbacks")]
+        public async Task<IActionResult> GetUserFeedbacks([FromQuery]Guid UserID, string startDate,string endDate,string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {//startDate and endDate are string so I can parse and check them
-            var feedbacks = await _feedbackService.GetUserFeedbacksByFilter(User, UserID,startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            var feedbacks = await _feedbackService.GetUserFeedbacks(User, UserID,startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
             if (feedbacks == null)
                 return BadRequest("No feedbacks found or not authorized");
             return Ok(feedbacks);

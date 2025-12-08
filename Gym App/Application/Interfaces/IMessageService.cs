@@ -1,19 +1,19 @@
 ﻿using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Message;
 using System.Security.Claims;
 
 namespace Gym_App.Application.Interfaces
 {
     public interface IMessageService
     {
-        public Task<int> AddMessage(ClaimsPrincipal User, MessageDTO sessionMessages);
+        public Task<int> AddMessage(ClaimsPrincipal User,Guid senderID, MessageCreationDTO sessionMessages);
+        public Task<int> UpdateMessage(ClaimsPrincipal User,Guid messageID, MessageUpdateDTO message);
         public Task<int> DeleteMessage(ClaimsPrincipal User, Guid messageID);
-        public Task<int> UpdateMessage(ClaimsPrincipal User, MessageDTO message);
         public Task<Guid> GetMessageUserID(Guid messageID);
         public Task<List<Guid>?> GetSessionUsersIDs(ClaimsPrincipal User, Guid sessionID);
-        public Task<PagedList<MessageDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
-        public Task<PagedList<MessageDTO>> GetMessagesByFilter(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
-        public Task<PagedList<MessageDTO>> GetMessages(int page, int pageSize);
+        public Task<PagedList<MessageMiniViewDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
+        public Task<PagedList<MessageViewDTO>> GetMessagesByFilter(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
+        public Task<PagedList<MessageViewDTO>> GetMessages(int page, int pageSize);
     }
 }

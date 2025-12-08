@@ -2,7 +2,7 @@
 using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Message;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -19,8 +19,11 @@ namespace Gym_App.Application.Services
             _db = db;
             _authorizationService = authorizationService;
         }
-        public async Task<int> AddMessage(ClaimsPrincipal User, MessageDTO message)//0 == Invalid DTO || 1 == User not found || 2 == Unauthorized ||
-                                                                                   //3 == Session not found || 4 == User not in session || 5 == Success
+
+        //        *********** Setters ***********
+
+        public async Task<int> AddMessage(ClaimsPrincipal User,Guid senderID, MessageCreationDTO message)//0 == Invalid DTO || 1 == User not found || 2 == Unauthorized ||
+                                                                                                         //3 == Session not found || 4 == User not in session || 5 == Success
         {
             //checking for DTO validity
             if (message == null)
@@ -28,7 +31,7 @@ namespace Gym_App.Application.Services
 
             //Getting user from Database
             var user = await (from u in _db.Users
-                              where u.UserID == message.SenderID
+                              where u.UserID == senderID
                               select u).FirstOrDefaultAsync();
             //if user not found return 
             if (user == null)
@@ -66,6 +69,33 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 5;
         }
+        public async Task<int> UpdateMessage(ClaimsPrincipal User,Guid messageID, MessageUpdateDTO message)//0 == Invalid DTO || 1 == Message not found || 2 == Unauthorized || 3 == Success
+        {
+            //checking for DTO validity
+            if (message == null)
+                return 0;
+
+            //Getting message from Database
+            var Message = await (from u in _db.Messages.Include(m=>m.Sender)
+                                 where u.MessageID == messageID
+                                 select u).FirstOrDefaultAsync();
+            //if message not found return
+            if (Message == null) 
+                return 1;
+
+            //Authorization
+            var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.UserID, "SameUserPolicy");
+            if(!authResult.Succeeded)
+                return 2;
+
+            //Updating message
+            Message.Content = message.Content;
+            Message.IsRead = message.IsRead;
+
+            //Saving to Database
+            await _db.SaveChangesAsync();
+            return 3;
+        }
         public async Task<int> DeleteMessage(ClaimsPrincipal User, Guid messageID)//0 == Invalid messageID || 1 == Message not found || 2 == Unauthorized || 3 == Success
         {
             //checking for messageID validity
@@ -89,33 +119,11 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return 3;
         }
-        public async Task<int> UpdateMessage(ClaimsPrincipal User, MessageDTO message)//0 == Invalid DTO || 1 == Message not found || 2 == Unauthorized || 3 == Success
-        {
-            //checking for DTO validity
-            if (message == null)
-                return 0;
 
-            //Getting message from Database
-            var Message = await (from u in _db.Messages.Include(m=>m.Sender)
-                                 where u.MessageID == message.MessageID
-                                 select u).FirstOrDefaultAsync();
-            //if message not found return
-            if (Message == null) 
-                return 1;
+        //-----------------------------------------------------------------------
 
-            //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.UserID, "SameUserPolicy");
-            if(!authResult.Succeeded)
-                return 2;
+        //        *********** Getters ***********
 
-            //Updating message
-            Message.Content = message.Content;
-            Message.IsRead = message.IsRead;
-
-            //Saving to Database
-            await _db.SaveChangesAsync();
-            return 3;
-        }
         public async Task<Guid> GetMessageUserID(Guid messageID)//Not used anymore
         {
             var userID = await (from m in _db.Messages
@@ -148,7 +156,7 @@ namespace Gym_App.Application.Services
 
             return UserIDs;
         }
-        public async Task<PagedList<MessageDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<PagedList<MessageMiniViewDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             var session = await (from s in _db.Sessions.Include(s => s.Users)
                                  where s.SessionID == sessionID
@@ -210,10 +218,9 @@ namespace Gym_App.Application.Services
 
             //Projecting the resultant message queries to messageDTO
             var messageResponse = messageQuery
-                                    .Select(m => new MessageDTO
+                                    .Select(m => new MessageMiniViewDTO
                                     {
                                         SenderID = m.Sender.UserID,
-                                        SessionID = m.Session.SessionID,
                                         MessageID = m.MessageID,
                                         Content = m.Content,
                                         IsRead = m.IsRead,
@@ -221,10 +228,10 @@ namespace Gym_App.Application.Services
                                     });
 
             //Making the result as a paged list
-            var messages = await PagedList<MessageDTO>.CreateAsync(messageResponse, page, pageSize);
+            var messages = await PagedList<MessageMiniViewDTO>.CreateAsync(messageResponse, page, pageSize);
             return messages;
         }
-        public async Task<PagedList<MessageDTO>> GetMessagesByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)//will be accessed by admin only
+        public async Task<PagedList<MessageViewDTO>> GetMessagesByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)//will be accessed by admin only
                                                                                                                                                                                   //so there is no need for authorization
         {
             //if page or pageSize are 0 set default values
@@ -265,7 +272,7 @@ namespace Gym_App.Application.Services
 
             //Projecting the resultant message queries to messageDTO
             var messageResponse = messageQuery
-                                    .Select(m => new MessageDTO
+                                    .Select(m => new MessageViewDTO
                                     {
                                         SenderID = m.Sender.UserID,
                                         SessionID = m.Session.SessionID,
@@ -276,10 +283,10 @@ namespace Gym_App.Application.Services
                                     });
 
             //Making the result as a paged list
-            var messages = await PagedList<MessageDTO>.CreateAsync(messageResponse,page,pageSize);
+            var messages = await PagedList<MessageViewDTO>.CreateAsync(messageResponse,page,pageSize);
             return messages;
         }
-        public async Task<PagedList<MessageDTO>> GetMessages(int page, int pageSize)
+        public async Task<PagedList<MessageViewDTO>> GetMessages(int page, int pageSize)
         {
             //if page or pageSize are 0 set default values
             if (page == 0) page = 1;
@@ -287,7 +294,7 @@ namespace Gym_App.Application.Services
 
             //Getting messages from Database
             var messagesQuery = from m in _db.Messages
-                                  select new MessageDTO
+                                  select new MessageViewDTO
                            {
                                SenderID = m.Sender.UserID,
                                SessionID = m.Session.SessionID,
@@ -298,7 +305,7 @@ namespace Gym_App.Application.Services
                            };
 
             //Making the result as a paged list
-            var messages = await PagedList<MessageDTO>.CreateAsync(messagesQuery, page, pageSize);
+            var messages = await PagedList<MessageViewDTO>.CreateAsync(messagesQuery, page, pageSize);
             return messages;
         }
 

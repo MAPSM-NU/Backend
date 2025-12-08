@@ -3,7 +3,7 @@ using Gym_App.Application.Interfaces;
 using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
-using Gym_App.Infastructure.DTOs;
+using Gym_App.Infastructure.DTOs.Message;
 using Gym_App.Infastructure.DTOs.Session;
 using Gym_App.Infastructure.DTOs.UserDTOs;
 using Microsoft.AspNetCore.Authorization;
@@ -284,7 +284,7 @@ namespace Gym_App.Application.Services
 
             return UserIDs;
         }
-        public async Task<PagedList<MessageDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<PagedList<MessageViewDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //if page or pageSize are 0, set default values
             if (page == 0) page = 1;
@@ -347,7 +347,7 @@ namespace Gym_App.Application.Services
             }
             ////Projecting the resultant message queries to messageDTO
             var messageResponse = messageQuery
-                                        .Select(m => new MessageDTO
+                                        .Select(m => new MessageViewDTO
                                         {
                                             SenderID = m.Sender.UserID,
                                             SessionID = m.Session.SessionID,
@@ -358,7 +358,7 @@ namespace Gym_App.Application.Services
                                         });
 
             //Making the result as a paged list
-            var messages = await PagedList<MessageDTO>.CreateAsync(messageResponse, page, pageSize);
+            var messages = await PagedList<MessageViewDTO>.CreateAsync(messageResponse, page, pageSize);
             return messages;
         }
         public async Task<PagedList<UserViewDTO>?> GetUsersOfSession(ClaimsPrincipal User,Guid sessionID, int page, int pageSize)//The sessions tree in itself needs a big change man fr

@@ -19,85 +19,72 @@ namespace Gym_App.Api.Controllers
         {
             var result = await _workoutService.CreateWorkout(User,workout);
 
-            if (result == 3)
-                return Ok(new { message = "Workout created successfully with exercises." });
-            if (result == 2)
+            if(result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if(result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { message = "Given user does not exist." });
             else
-                return BadRequest(new { message = "Faulty DTO given." });
+                return Ok(new { message = result.msg });
         }
         [HttpPut("ModifyWorkout")]
         public async Task<IActionResult> UpdateWorkout([FromQuery] Guid workoutID, [FromBody] WorkoutUpdateDTO workout)
         {
             var result = await _workoutService.UpdateWorkout(User, workoutID, workout);
-            if (result == 3)
-                return Ok(new { message = "Workout updated successfully." });
-            else if (result == 2)
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { message = "Given workout does not exist." });
             else
-                return BadRequest(new { message = "Faulty DTO given." });
+                return Ok(new { message = result.msg });
         }
         [HttpDelete("DeleteWorkout")]
         public async Task<IActionResult> DeleteWorkout([FromQuery] Guid workout)
         {
             var result = await _workoutService.DeleteWorkout(User,workout);
-            if (result == 3)
-                return Ok(new { message = "Workout deleted successfully." });
-            else if (result == 2)
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { message = "Given workout does not exist." });
             else
-                return BadRequest(new { message = "Faulty DTO given." });
+                return Ok(new { message = result.msg });
         }
         [HttpPost("AddExercisestoWorkout")]
         public async Task<IActionResult> AddExercisesToWorkout([FromQuery] Guid workoutID,[FromBody] WorkoutExerciseDTO workoutExercise)
         {
             var result = await _workoutService.AddExercisesToWorkout(User, workoutID, workoutExercise);
-            if (result == 4)
-                return Ok(new { message = "Exercises added to workout successfully." });
-            else if (result == 3)
-                return BadRequest(new { message = "Either given exercises don't exist or no new exercises to add." });
-            else if (result == 2)
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { message = "Given workout does not exist." });
             else
-                return BadRequest(new { message = "Faulty DTO given." });
+                return Ok(new { message = result.msg });
         }
         [HttpPost("SetExercisesofWorkout")]
         public async Task<IActionResult> SetExercisesOfWorkout([FromQuery] Guid workoutID,[FromBody] WorkoutExerciseDTO workoutExercises)
         {
             var result = await _workoutService.SetExercisesOfWorkout(User,workoutID,workoutExercises);
-            if (result == 4)
-                return Ok(new { message = "Exercises set for workout successfully." });
-            else if (result == 3)
-                return BadRequest(new { message = "Either given exercises don't exist or no new exercises to set." });
-            else if (result == 2)
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { message = "Given workout does not exist." });
             else
-                return BadRequest(new { message = "Faulty DTO given." });
+                return Ok(new { message = result.msg });
         }
         [HttpDelete("DeleteExercisesfromWorkout")]
         public async Task<IActionResult> DeleteExercisesFromWorkout([FromQuery] Guid workoutID, [FromBody] WorkoutExerciseDTO workoutExercises)
         {
             var result = await _workoutService.DeleteExercisesFromWorkout(User,workoutID,workoutExercises);
-            if (result == 4)
-                return Ok(new { message = "Exercises removed from workout successfully." });
-            else if (result == 3)
-                return BadRequest(new { message = "Either given exercises don't exist or no exercises to remove." });
-            else if (result == 2)
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { message = "Given workout does not exist." });
             else
-                return BadRequest(new { message = "Faulty DTO given." });
+                return Ok(new { message = result.msg });
         }
         [HttpGet("GetWorkoutbyName")]
         public async Task<IActionResult> GetWorkoutByName([FromQuery] string name)

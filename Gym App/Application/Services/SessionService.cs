@@ -6,10 +6,10 @@ using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Message;
 using Gym_App.Infastructure.DTOs.Session;
 using Gym_App.Infastructure.DTOs.UserDTOs;
+using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Claims;
 
@@ -22,24 +22,25 @@ namespace Gym_App.Application.Services
 
         //        *********** Setters ***********
 
+        //0 == Error || 1 ==Unauthorized || 2 == Success
         public SessionService(DbBase db,IAuthorizationService authorizationService)
         {
             _db = db;
             _authorizationService = authorizationService;
         }
-        public async Task<int> CreateSession(ClaimsPrincipal User, Guid user1,Guid user2)// 0 == Faulty DTO || 1 == User not found || 2 == unauthorized || 3 == success
+        public async Task<SettersResponse> CreateSession(ClaimsPrincipal User, Guid user1,Guid user2)
         {//need to check if given users already have past session together?
 
             //checking the validity of the DTO
             if (user1 == Guid.Empty || user2 == Guid.Empty)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid user IDs" };
 
             List<Guid> userIDs = new List<Guid> { user1, user2 };
 
             //Authorization check
             var authResult = await _authorizationService.AuthorizeAsync(User, userIDs, "ListUserPolicy");
             if(!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Finding the users from the Database
             List<User> users = new List<User>();
@@ -47,7 +48,7 @@ namespace Gym_App.Application.Services
             {
                 var user = await _db.Users.FirstOrDefaultAsync(u => u.UserID == ID);
                 if ( user == null ) 
-                    return 1;
+                    return new SettersResponse { status = 0, msg = "User not found" };
                 else
                 {
                     users.Add(user);
@@ -69,15 +70,15 @@ namespace Gym_App.Application.Services
             }
 
             //Saving to Database
-            _db.Sessions.Add(Session);
+            await _db.Sessions.AddAsync(Session);
             await _db.SaveChangesAsync();
-            return 3;
+            return new SettersResponse { status = 2, msg = "Session created successfully" };
         }
-        public async Task<int> DeleteSession(ClaimsPrincipal User, Guid sessionID)//0 == session not found || 1 == unauthorized || 2 == success
+        public async Task<SettersResponse> DeleteSession(ClaimsPrincipal User, Guid sessionID)
         {
             //checking the validity of the given Guid
             if(sessionID == Guid.Empty) 
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid session ID" };
 
             //Getting the session from the Database
             var session = await (from s in _db.Sessions.Include(s=>s.Users)
@@ -86,7 +87,7 @@ namespace Gym_App.Application.Services
 
             //Return if session was not found
             if (session == null) 
-                return 0;
+                return new SettersResponse { status = 0, msg = "Session not found" };
 
             //Creating list of UserIDs for authorization
             List<Guid> UserIDs = new List<Guid>();
@@ -95,19 +96,18 @@ namespace Gym_App.Application.Services
             //Authorization check
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
             if(!authResult.Succeeded) 
-                return 1;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Removing from Database
             _db.Sessions.Remove(session);
             await _db.SaveChangesAsync();
-            return 2;
+            return new SettersResponse { status = 2, msg = "Session deleted successfully" };
         }
-        public async Task<int> AddMessages(ClaimsPrincipal User, Guid sessionID, SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no new messages to add
-                                                                                                    //|| 4 == no messages found || 5 == success
+        public async Task<SettersResponse> AddMessages(ClaimsPrincipal User, Guid sessionID, SessionMessagesDTO sessionMessages)
         {
             //checking the validity of the DTO
             if (sessionMessages == null || sessionID == Guid.Empty) 
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid session ID or messages" };
 
             //Getting the session from the Database
             var Session = await (from s in _db.Sessions.Include(s => s.Messages).Include(s => s.Users)
@@ -116,7 +116,7 @@ namespace Gym_App.Application.Services
 
             //Return if session was not found
             if (Session == null) 
-                return 1;
+                return new SettersResponse { status = 0, msg = "Session not found" };
 
             //Creating list of UserIDs for authorization
             List<Guid> UserIDs = new List<Guid>();
@@ -125,7 +125,7 @@ namespace Gym_App.Application.Services
             //Authorization check
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
             if(!authResult.Succeeded) 
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //checking the messages to add
             List<Message> messagesToAdd;
@@ -143,7 +143,7 @@ namespace Gym_App.Application.Services
                 var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
                 var messagesIDsToAdd = sessionMessages.messagesID?.Where(id => !existingMessagesIDs.Contains(id)).ToList();
                 if (messagesIDsToAdd == null || messagesIDsToAdd.Count == 0)
-                    return 3;
+                    return new SettersResponse { status = 0, msg = "No new messages to add" };
                 messagesToAdd = await (from m in _db.Messages
                                 where messagesIDsToAdd.Contains(m.MessageID)
                                 select m).ToListAsync();
@@ -151,7 +151,7 @@ namespace Gym_App.Application.Services
 
             //return if no messages where found in the Database
             if (messagesToAdd == null || messagesToAdd.Count == 0) 
-                return 4;
+                return new SettersResponse { status = 0, msg = "No messages found in the database" };
 
             //Adding the messages to the session
             foreach (var messageID in messagesToAdd)
@@ -162,14 +162,13 @@ namespace Gym_App.Application.Services
             //Saving to Database
             _db.Sessions.Update(Session);
             await _db.SaveChangesAsync();
-            return 5;
+            return new SettersResponse { status = 2, msg = "Messages added successfully" };
         }
-        public async Task<int> DeleteMessages(ClaimsPrincipal User , Guid sessionID, SessionMessagesDTO sessionMessages)//0 == Faulty DTO || 1 == session not found || 2 == unauthorized || 3 == no messages in session
-                                                                                                        //|| 4 == no messages to remove found || 5 == no messages found || 6 == success
+        public async Task<SettersResponse> DeleteMessages(ClaimsPrincipal User , Guid sessionID, SessionMessagesDTO sessionMessages)
         {
             //checking the validity of the DTO
             if (sessionMessages == null|| sessionID == Guid.Empty) 
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid session ID or messages" };
 
             //Getting the session from the Database
             var Session = await (from s in _db.Sessions.Include(s => s.Messages).Include(s => s.Users)
@@ -178,7 +177,7 @@ namespace Gym_App.Application.Services
 
             //Return if session was not found
             if (Session == null) 
-                return 1;
+                return new SettersResponse { status = 0, msg = "Session not found" };
 
             //Creating list of UserIDs for authorization
             List<Guid> UserIDs = new List<Guid>();
@@ -187,19 +186,19 @@ namespace Gym_App.Application.Services
             //Authorization check
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
             if(!authResult.Succeeded) 
-                return 2;
-            
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
+
             //Getting Sender ID
             var senderID = GettingSenderID(User);
             if(senderID == Guid.Empty)
-                return 2;
+                return new SettersResponse { status = 0, msg = "Invalid sender ID" };
 
             //checking the messages to remove
             List<Message> messagesToRemove;
             if (Session.Messages == null || Session.Messages.Count == 0)
             {
                 //If session has no messages, return
-                return 3;
+                return new SettersResponse { status = 0, msg = "No messages found in the session" };
             }
             else
             {
@@ -207,7 +206,7 @@ namespace Gym_App.Application.Services
                 var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
                 var messagesIDsToRemove = sessionMessages.messagesID.Where(id => existingMessagesIDs.Contains(id)).ToList();
                 if (messagesIDsToRemove == null || messagesIDsToRemove.Count == 0)
-                    return 4;
+                    return new SettersResponse { status = 0, msg = "No messages found in the database" };
                 messagesToRemove = await (from m in _db.Messages.Include(m=>m.Sender)
                                           where messagesIDsToRemove.Contains(m.MessageID)
                                           select m).ToListAsync();
@@ -215,14 +214,14 @@ namespace Gym_App.Application.Services
 
             //If there are no messages to remove, return
             if (messagesToRemove == null || messagesToRemove.Count == 0) 
-                return 5;
+                return new SettersResponse { status = 0, msg = "No messages found to remove" };
 
             //Removing the messages from the session
             foreach (var message in messagesToRemove)
             {
                 //If the user is trying to delete a message that is not his return forbidden
                 if (message.Sender.UserID != senderID)
-                    return 2;
+                    return new SettersResponse { status = 1, msg = "Unauthorized" };
 
                 Session.Messages.Remove(message);
             }
@@ -230,7 +229,7 @@ namespace Gym_App.Application.Services
             //Saving to Database
             _db.Sessions.Update(Session);
             await _db.SaveChangesAsync();
-            return 6;
+            return new SettersResponse { status = 2, msg = "Messages removed successfully" };
         }
 
         //-----------------------------------------------------------------------

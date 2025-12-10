@@ -21,63 +21,50 @@ namespace Gym_App.Api.Controllers
         {
             var result = await _sessionService.CreateSession(User,user1,user2);
 
-            if (result == 3)
-                return Ok(new { Message = "Session created succcessfully" });
-            else if (result == 2)
+            if(result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if(result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { Message = "User(s) ID is wrong" });
             else
-                return BadRequest(new { Message = "Faulty DTO given" });
-
+                return Ok(new { message = result.msg });
         }
         [Authorize(Policy = "ElevatedPower")]//Only for admins to delete a session
         [HttpDelete("DeleteSession")]
         public async Task<IActionResult> DeleteSession([FromQuery] Guid sessionID)
         {
             var result = await _sessionService.DeleteSession(User,sessionID);
-            if (result == 1)
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if(result == 0) 
-                return BadRequest(new { message = "Session not Found" });
-            return Ok(new { message = "Session deleted Succesfully" });
+            else
+                return Ok(new { message = result.msg });
         }
         [HttpPost("AddMessages")]
         public async Task<IActionResult> AddMessages([FromQuery] Guid sessionID, [FromBody] SessionMessagesDTO sessionMessages)
         {
             var result = await _sessionService.AddMessages(User, sessionID, sessionMessages);
-            if (result == 5)
-                return Ok(new { Message = "Messages added succesfully" });
-            else if (result == 4)
-                return BadRequest(new { Message = "no messages found" });
-            else if (result == 3)
-                return BadRequest(new { Message = "Messages are already in the session " });
-            else if (result == 2)
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { Message = "Session not found" });
             else
-                return BadRequest(new { Message = "Faulty DTO given" });
-           
+                return Ok(new { message = result.msg });
+
         }
         [HttpDelete("DeleteMessages")]
         public async Task<IActionResult> DeleteMessages([FromQuery] Guid sessionID, [FromBody] SessionMessagesDTO sessionMessages)
         {
             var result = await _sessionService.DeleteMessages(User, sessionID, sessionMessages);
-            if (result == 6) 
-                return Ok(new { Message = "Messages deleted succesfully" });
-            else if (result == 5)
-                return BadRequest(new { Message = "no messages were found" });
-            else if (result == 4)
-                return BadRequest(new { Message = "Messages either don't exist or they are not in session" });
-            else if (result == 3)
-                return BadRequest(new { Message = "Session has no messages" });
-            else if (result == 2)
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { Message = "Session not found" });
             else
-                return BadRequest(new { Message = "Faulty DTO given" });
+                return Ok(new { message = result.msg });
 
         }
         [HttpGet("GetSessionMessages")]

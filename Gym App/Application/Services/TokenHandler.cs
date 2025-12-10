@@ -107,6 +107,7 @@ namespace Gym_App.Application.Services
                 Status = 1,
                 AccessToken = Token,
                 RefreshToken = result.RefreshToken,
+                msg = "Token refreshed successfully"
             };
 
             _db.RefreshTokens.Update(result);

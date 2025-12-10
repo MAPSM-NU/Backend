@@ -6,6 +6,7 @@ using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.UserDTOs;
+using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -30,25 +31,25 @@ namespace Gym_App.Application.Services
         {
             //Creating an admin user
             if (u == null || u.Name == null || u.Email == null || u.Password == null)
-                return new ResponseToken { Status = 0 };
+                return new ResponseToken { Status = 0 , msg = "Invalid Data" };
 
             //Checking for name Validity
             if (!await isNameValid(u.Name))
-                return new ResponseToken { Status = 1 };
+                return new ResponseToken { Status = 0 , msg = "Name is already used" };
             //Checking if Email is valid or not
             if (!IsEmailValid(u.Email))
-                return new ResponseToken { Status = 2 };
+                return new ResponseToken { Status = 0 , msg = "Invalid Email" };
             //Checking if the email already exists
             if (await EmailExists(u.Email))
-                return new ResponseToken { Status = 3 };
+                return new ResponseToken { Status = 0 , msg = "Email already in use" };
             //Checking for password validity
             if (!IsPasswordValid(u.Password).Result)
-                return new ResponseToken { Status = 4 };
+                return new ResponseToken { Status = 0 , msg = "Invalid Password" };
 
             //Creating the admin user
             var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
             if (role == null)
-                return new ResponseToken { Status = 6 };
+                return new ResponseToken { Status = 0 , msg = "Role not found" };
 
             //Creating the user 
             User user = new User
@@ -77,9 +78,10 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return await Task.FromResult(new ResponseToken
             {
-                Status = 5,
+                Status = 1,
                 AccessToken = Token,
-                RefreshToken = RefreshToken
+                RefreshToken = RefreshToken,
+                msg = "Admin created successfully"
             });
         }
         public async Task<ResponseToken> SignUpUser(UserCreationDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
@@ -87,24 +89,24 @@ namespace Gym_App.Application.Services
         {
             //Signing up the user
             if (u.Name == null || u.Email == null || u.Password == null)
-                return new ResponseToken { Status = 0 };
+                return new ResponseToken { Status = 0 , msg = "Missing Information" };
             //Checking for name Validity
             if (!await isNameValid(u.Name))
-                return new ResponseToken { Status = 1 };
+                return new ResponseToken { Status = 0 , msg = "Name is already used" };
             //Checking if Email is valid or not
             if (!IsEmailValid(u.Email))
-                return new ResponseToken { Status = 2 };
+                return new ResponseToken { Status = 0 , msg = "Invalid Email" };
             //Checking if the email already exists
             if (await EmailExists(u.Email))
-                return new ResponseToken { Status = 3 };
+                return new ResponseToken { Status = 0 , msg = "Email already in use" };
             //Checking for password validity
             if (!await IsPasswordValid(u.Password))
-                return new ResponseToken { Status = 4 };
+                return new ResponseToken { Status = 0 , msg = "Invalid Password" };
 
             //Getting the role for the user
             var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
             if (role == null)
-                return new ResponseToken { Status = 6 };
+                return new ResponseToken { Status = 0 , msg = "Role not found" };
 
             //Creating the user
             User user = new User
@@ -142,9 +144,10 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return await Task.FromResult(new ResponseToken
             {
-                Status = 5,
+                Status = 1,
                 AccessToken = Token,
-                RefreshToken = RefreshToken
+                RefreshToken = RefreshToken,
+                msg = "User created successfully"
             });
         }
         public async Task<ResponseToken> SigninUser(string email,string password) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
@@ -154,13 +157,13 @@ namespace Gym_App.Application.Services
                                      select u).FirstOrDefaultAsync();
             //If User does not exist return
             if (isUserExists is null)
-                return new ResponseToken { Status = 0 };
+                return new ResponseToken { Status = 0 , msg = "User not found" };
 
             //Checking password of found User
             var result = new PasswordHasher<User>().VerifyHashedPassword(isUserExists, isUserExists.Password, password);
             //If password does not match return
             if (result == PasswordVerificationResult.Failed)
-                return new ResponseToken { Status = 1 };
+                return new ResponseToken { Status = 0 , msg = "Invalid Password" };
             //Successful login and returning new Tokens
             else
             {
@@ -171,29 +174,31 @@ namespace Gym_App.Application.Services
                 //Returning Tokens 
                 return new ResponseToken
                 {
-                    Status = 2,
+                    Status = 1,
                     AccessToken = AccessToken,
-                    RefreshToken = RefreshToken
+                    RefreshToken = RefreshToken,
+                    msg = "Login successful"
                 };
             }
         }
-        public async Task<int> UpdateUser(UserUpdateDTO user)//0 == invalid user || 1 == user not found || 2 == name not valid || 3 == succesful update
+        public async Task<SettersResponse> UpdateUser(UserUpdateDTO user)//0 == invalid user || 1 == user not found || 2 == name not valid || 3 == succesful update
         {
             if(user == null)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid user data." };
             //Getting the user from the database
             var isUserExists = await (from u in _db.Users
                                     where u.UserID == user.UserID
                                     select u).FirstOrDefaultAsync();
             //If user does not exist return
-            if (isUserExists is null) return 1;
+            if (isUserExists is null) 
+                return new SettersResponse { status = 0, msg = "User not found." };
 
             //If user wants to change name check if the name is valid
             if (!string.IsNullOrEmpty(user.Name))
             {
                 //If name is not valid return
                 if (!await isNameValid(user.Name)) 
-                    return 2;
+                    return new SettersResponse { status = 0, msg = "Name is not valid." };
                 //Else change to new name
                 isUserExists.Name = user.Name;
             }
@@ -228,19 +233,19 @@ namespace Gym_App.Application.Services
             //Saving to Database
             _db.Users.Update(isUserExists);
             await _db.SaveChangesAsync();
-            return 3;
+            return new SettersResponse { status = 1, msg = "User updated successfully." };
         }
-        public async Task<int> ChangeUserType(UserChangeTypeDTO User)//0 == Faulty UserType || 1 == invalid UserType || 2 == user not found || 3 == same user type || 4 == succesful change
+        public async Task<SettersResponse> ChangeUserType(UserChangeTypeDTO User)//0 == Faulty UserType || 1 == invalid UserType || 2 == user not found || 3 == same user type || 4 == succesful change
         {
             //Checking UserType validity
             if(User == null || User.UserType == null)
-                return 0;
-            
+                return new SettersResponse { status = 0, msg = "Invalid user type." };
+
             //Keywords to check for UserType 
             string keywords = "coach, c, doctor, d, trainee, t";
             //If Usertype is none of the keywords return
             if (!keywords.Contains(User.UserType.ToLower()))
-                return 1;
+                return new SettersResponse { status = 0, msg = "Invalid user type." };
             
             //Getting User from Database
             var user = await(from u in _db.Users
@@ -248,7 +253,7 @@ namespace Gym_App.Application.Services
                         select u).FirstOrDefaultAsync();
             //If user not found return
             if (user is null)
-                return 2;
+                return new SettersResponse { status = 0, msg = "Invalid user data." };
             
             //Making all usertypes into lowercase letters
             var usertype = user.UserType.ToLower();
@@ -265,7 +270,7 @@ namespace Gym_App.Application.Services
                 incomingUsertype = "doctor";
             
             if (usertype == incomingUsertype)
-                return 3;//same user type
+                return new SettersResponse { status = 0, msg = "Same user type" };//same user type
             else
             {
                 //Changing from Trainee to either doctor or coach
@@ -288,13 +293,13 @@ namespace Gym_App.Application.Services
             //Saving to Database
             _db.Users.Update(user);
             await _db.SaveChangesAsync();
-            return 4;
+            return new SettersResponse { status = 1, msg = "User type changed successfully." };
         }
-        public async Task<int> DeleteUser(Guid userID)//0 == invalid userID || 1 == user not found || 2 == succesful deletion
+        public async Task<SettersResponse> DeleteUser(Guid userID)//0 == error || 1 == successfull
         {
             //Checking userID validity
             if (userID == Guid.Empty)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid user ID." };
 
             //Getting user from database
             var u = await(from usr in _db.Users
@@ -302,12 +307,12 @@ namespace Gym_App.Application.Services
                      select usr).FirstOrDefaultAsync();
             //If user not found return
             if (u == null)
-                return 1;
+                return new SettersResponse { status = 0, msg = "User not found." };
 
             //Saving to Database
             _db.Users.Remove(u);
             await _db.SaveChangesAsync();
-            return 2;
+            return new SettersResponse { status = 1, msg = "User deleted successfully." };
         }
 
         //-----------------------------------------------------------------------

@@ -1,15 +1,16 @@
 ﻿using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.DTOs.Feedback;
+using Gym_App.Infastructure.Transfer_Classes;
 using System.Security.Claims;
 
 namespace Gym_App.Application.Interfaces
 {
     public interface IFeedbackService
     {
-        Task<int> CreateFeedback(ClaimsPrincipal User,Guid userID, FeedbackCreationDTO feedbackDTO);
-        Task<int> UpdateFeedback(ClaimsPrincipal User,Guid feedbackID, FeedbackUpdateDTO feedbackDTO);
-        Task<int> DeleteFeedback(ClaimsPrincipal User, Guid feedbackId);
+        Task<SettersResponse> CreateFeedback(ClaimsPrincipal User,Guid userID, FeedbackCreationDTO feedbackDTO);
+        Task<SettersResponse> UpdateFeedback(ClaimsPrincipal User,Guid feedbackID, FeedbackUpdateDTO feedbackDTO);
+        Task<SettersResponse> DeleteFeedback(ClaimsPrincipal User, Guid feedbackId);
         Task<Guid> GetFeedbackUserID(ClaimsPrincipal User, Guid feedbackId);
         Task<FeedbackViewDTO?> GetFeedbackByID(ClaimsPrincipal User, Guid feedbackId);
         Task<FeedbackMiniViewDTO?> GetFeedbackOfWorkout(ClaimsPrincipal User, Guid workoutID);

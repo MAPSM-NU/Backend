@@ -3,6 +3,7 @@ using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Feedback;
+using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -22,11 +23,14 @@ namespace Gym_App.Application.Services
         }
 
         //        *********** Setters ***********
-        public async Task<int> CreateFeedback(ClaimsPrincipal User, Guid userID, FeedbackCreationDTO feedbackDTO)//0 == faulty DTO || 1 == User not found || 2 == Unauthorized || 3 == wokrout not found || 4 == Feedback already exists || 5 == Succesful
+
+        //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
+
+        public async Task<SettersResponse> CreateFeedback(ClaimsPrincipal User, Guid userID, FeedbackCreationDTO feedbackDTO)
         {
             //checking DTO validity
             if (feedbackDTO == null) 
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
             //Getting user from Database
             var user = await (from u in _db.Users
@@ -34,12 +38,12 @@ namespace Gym_App.Application.Services
                               select u).FirstOrDefaultAsync();
             //if user not found return
             if(user == null)
-                return 1;
+                return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Getting workout from Databse
             var workout = await (from w in _db.Workouts.Include(w => w.Feedback)
@@ -47,15 +51,15 @@ namespace Gym_App.Application.Services
                                  select w).FirstOrDefaultAsync(); ;
             //if workout not found return
             if (workout == null)
-                return 3;
+                return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Checking if the workout belongs to the user
             if (workout.User.UserID != user.UserID)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Feedback already exists for this workout
             if (workout.Feedback != null)
-                return 4;
+                return new SettersResponse { status = 0, msg = "Feedback already exists" };
 
             //Creating Feedback
             var feedback = new Feedback
@@ -74,13 +78,13 @@ namespace Gym_App.Application.Services
             //Saving to Database
             await _db.Feedbacks.AddAsync(feedback);
             await _db.SaveChangesAsync();
-            return 5;
+            return new SettersResponse { status = 2, msg = "Success" };
         }
-        public async Task<int> UpdateFeedback(ClaimsPrincipal User, Guid feedbackID, FeedbackUpdateDTO feedbackDTO)//0 == Faulty DTO || 1 == Feedback not found || 2 == unauthorized || 3 == Succesful
+        public async Task<SettersResponse> UpdateFeedback(ClaimsPrincipal User, Guid feedbackID, FeedbackUpdateDTO feedbackDTO)
         {
             //Checking DTO validity
-            if (feedbackDTO == null) 
-                return 0;
+            if (feedbackDTO == null)
+                return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
             //Getting Feedback from Database
             var feedback = await (from f in _db.Feedbacks.Include(f => f.User)
@@ -88,13 +92,13 @@ namespace Gym_App.Application.Services
                                   select f).FirstOrDefaultAsync();
 
             //if feedback not found return
-            if (feedback == null) 
-                return 1;
+            if (feedback == null)
+                return new SettersResponse { status = 0, msg = "Feedback not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, feedback.User.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Updating given features
             if (!string.IsNullOrWhiteSpace(feedback.Title))
@@ -115,13 +119,13 @@ namespace Gym_App.Application.Services
             //Saving to Database
             _db.Feedbacks.Update(feedback);
             await _db.SaveChangesAsync();
-            return 3;
+            return new SettersResponse { status = 2, msg = "Success" };
         }
-        public async Task<int> DeleteFeedback(ClaimsPrincipal User, Guid feedbackID)//0 == faulty feedbackID || 1 == feedback not found || 2 == unauthorized || 3 == succesful
+        public async Task<SettersResponse> DeleteFeedback(ClaimsPrincipal User, Guid feedbackID)
         {
             //Checking feedbackID validity
             if (feedbackID == Guid.Empty)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid feedback ID" };
 
             //Getting feedback
             var feedback = await (from f in _db.Feedbacks.Include(f => f.User)
@@ -129,17 +133,17 @@ namespace Gym_App.Application.Services
                                   select f).FirstOrDefaultAsync();
             //if feedback not found return
             if (feedback == null)
-                return 1;
+                return new SettersResponse { status = 0, msg = "Feedback not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, feedback.User.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to Database
             _db.Feedbacks.Remove(feedback);
             await _db.SaveChangesAsync();
-            return 3;
+            return new SettersResponse { status = 2, msg = "Success" };
         }
 
         //-----------------------------------------------------------------------

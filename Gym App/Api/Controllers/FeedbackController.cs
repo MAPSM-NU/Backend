@@ -18,44 +18,37 @@ namespace Gym_App.Api.Controllers
         public async Task<IActionResult> CreateFeedback([FromQuery]Guid userID,[FromBody] FeedbackCreationDTO feedbackDTO)
         {
             var result = await _feedbackService.CreateFeedback(User,userID, feedbackDTO);
-            if(result == 5)
-                return Ok(new { Message = "Feedback created successfully." });
-            else if(result == 4)
-                return BadRequest(new { Message = "Feedback for this workout by this user already exists." });
-            else if (result == 3)
-                return NotFound(new { Message = "Workout not found." });
-            else if (result == 2)
+
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { Message = "User not found" });
             else
-                return BadRequest(new { Message = "Faulty DTO was given" });
+                return Ok(new { message = result.msg });
         }
         [HttpPut("UpdateFeedback")]
         public async Task<IActionResult> UpdateFeedback([FromQuery]Guid feedbackID,[FromBody] FeedbackUpdateDTO feedbackDTO)
         {
             var result = await _feedbackService.UpdateFeedback(User,feedbackID, feedbackDTO);
-            if(result == 3)
-                return Ok(new { Message = "Feedback updated successfully." });
-            else if(result == 2)
+
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return NotFound(new { Message = "Feedback not found." });
-            else 
-                return BadRequest(new { Message = "Faulty DTO was given" });
+            else
+                return Ok(new { message = result.msg });
         }
         [HttpDelete("DeleteFeedback")]
         public async Task<IActionResult> DeleteFeedback([FromQuery]Guid feedbackID)
         {
             var result = await _feedbackService.DeleteFeedback(User, feedbackID);
-            if(result == 3)
-                return Ok(new { Message = "Feedback deleted successfully." });
-            else if(result == 2)
+
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if(result == 1)
-                return NotFound(new { Message = "Feedback not found." });
-            else 
-                return BadRequest(new { Message = "Faulty ID was given" });
+            else
+                return Ok(new { message = result.msg });
         }
         [HttpGet("GetFeedbackByID")]
         public async Task<IActionResult> GetFeedbackByID([FromQuery]Guid feedbackId)

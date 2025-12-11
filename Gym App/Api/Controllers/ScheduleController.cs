@@ -24,7 +24,7 @@ namespace Gym_App.Api.Controllers
             if(result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if(result.status == 1)
-                return Forbid(result.msg);
+                return Forbid();
             else
                 return Ok(new { message = result.msg });
         }
@@ -36,7 +36,7 @@ namespace Gym_App.Api.Controllers
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)
-                return Forbid(result.msg);
+                return Forbid();
             else
                 return Ok(new { message = result.msg });
         }
@@ -48,7 +48,7 @@ namespace Gym_App.Api.Controllers
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)
-                return Forbid(result.msg);
+                return Forbid();
             else
                 return Ok(new { message = result.msg });
         }
@@ -60,7 +60,7 @@ namespace Gym_App.Api.Controllers
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)
-                return Forbid(result.msg);
+                return Forbid();
             else
                 return Ok(new { message = result.msg });
         }
@@ -72,7 +72,7 @@ namespace Gym_App.Api.Controllers
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)
-                return Forbid(result.msg);
+                return Forbid();
             else
                 return Ok(new { message = result.msg });
         }
@@ -84,7 +84,7 @@ namespace Gym_App.Api.Controllers
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)
-                return Forbid(result.msg);
+                return Forbid();
             else
                 return Ok(new { message = result.msg });
         }

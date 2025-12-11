@@ -21,40 +21,37 @@ namespace Gym_App.Api.Controllers
         {
 
             var result = await _notificationService.CreateNotification(User, userID, notification);
-            if (result == 3)
-                return Ok(new { message = "Notification created succesfully" });
-            else if (result == 2)
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { message = "User not found." });
             else
-                return BadRequest(new { message = "Faulty DTO" });
+                return Ok(new { message = result.msg });
         }
         [HttpDelete("DeleteNotification")]
         public async Task<IActionResult> DeleteNotification([FromQuery]Guid notificationID)//As in deleting the whole notif. there should be one were we delete the notif from the user's list
         {
             var result = await _notificationService.DeleteNotification(User, notificationID);
-            if (result == 3)
-                return Ok(new { message = "Notification Deleted succesfully" });
-            else if (result == 2)
+
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { message = "Notification not found." });
             else
-                return BadRequest(new { message = "Invalid NotificationID" });
+                return Ok(new { message = result.msg });
         }
         [HttpDelete("DeleteAllUsersNotifications")]//Note to self. Dont put unnecassary space in the route. Will result in error
         public async Task<IActionResult> DeleteAllNotifications([FromQuery] Guid userID)
         {
             var result = await _notificationService.DeleteAllNotifications(User, userID);
-            if (result == 3)
-                return Ok(new { message = "Notification Deleted succesfully" });
-            else if (result == 2)
+
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
-            else if (result == 1)
-                return BadRequest(new { message = "User not found." });
             else
-                return BadRequest(new { message = "Invalid NotificationID" });
+                return Ok(new { message = result.msg });
         }
         [HttpGet("GetUsersNotifications")]
         public async Task<IActionResult> GetNotifications([FromQuery]Guid userID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)

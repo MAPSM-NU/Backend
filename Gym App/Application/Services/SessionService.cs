@@ -22,7 +22,7 @@ namespace Gym_App.Application.Services
 
         //        *********** Setters ***********
 
-        //0 == Error || 1 ==Unauthorized || 2 == Success
+        //0 == Error(Bad Request) || 1 ==Unauthorized (Forbid) || 2 == Success (Ok)
         public SessionService(DbBase db,IAuthorizationService authorizationService)
         {
             _db = db;

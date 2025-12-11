@@ -3,6 +3,7 @@ using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Schedule;
+using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -23,23 +24,25 @@ namespace Gym_App.Application.Services
 
         //        *********** Setters ***********
 
-        public async Task<int> AddSchedule(ClaimsPrincipal User,Guid userID, ScheduleCreationAndEditDTO schedule)//0 == faulty DTO || 1 == user not found || 2 == unauthorized || 3 == success
+        //0 == Error(Bad Request) || 1 ==Unauthorized (Forbid) || 2 == Success (Ok)
+
+        public async Task<SettersResponse> AddSchedule(ClaimsPrincipal User,Guid userID, ScheduleCreationAndEditDTO schedule)
         {
             //Checking for DTO validity
             if (schedule == null) 
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid schedule data" };
 
             //Checking if user exists
             var user = await (from u in _db.Users
                        where u.UserID == userID
                        select u).FirstOrDefaultAsync();
             if (user == null) 
-                return 1;
+                return new SettersResponse { status = 0, msg = "User not found" };
             
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User,user.UserID,"SameUserPolicy");
             if (!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Creating schedule
             var newSchedule = new Schedule
@@ -55,25 +58,25 @@ namespace Gym_App.Application.Services
             //Saving to Database
             _db.Schedules.Add(newSchedule);
             await _db.SaveChangesAsync();
-            return 3;
+            return new SettersResponse { status = 2, msg = "Schedule created successfully" };
         }
-        public async Task<int> UpdateSchedule(ClaimsPrincipal User,Guid scheduleID, ScheduleCreationAndEditDTO schedule)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized || 3 == success
+        public async Task<SettersResponse> UpdateSchedule(ClaimsPrincipal User,Guid scheduleID, ScheduleCreationAndEditDTO schedule)
         {
             //Checking for DTO validity
             if (schedule == null) 
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid schedule data" };
 
             //Getting schedule from database
             var existingSchedule = await (from s in _db.Schedules.Include(s=>s.User)
                                     where s.ScheduleID == scheduleID
                                     select s).FirstOrDefaultAsync();
             if (existingSchedule == null) 
-                return 1;
+                return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, existingSchedule.User.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Updating fields
             if (!string.IsNullOrEmpty(schedule.Name)) existingSchedule.Name = schedule.Name;
@@ -82,60 +85,59 @@ namespace Gym_App.Application.Services
             //Saving to Database
             _db.Schedules.Update(existingSchedule);
             await _db.SaveChangesAsync();
-            return 3;
+            return new SettersResponse { status = 2, msg = "Schedule updated successfully" };
         }
-        public async Task<int> DeleteSchedule(ClaimsPrincipal User, Guid scheduleID)//0 == faulty scheduleID || 1 == schedule not found || 2 == unauthorized || 3 == success
+        public async Task<SettersResponse> DeleteSchedule(ClaimsPrincipal User, Guid scheduleID)
         {
             //Checking for scheduleID validity
             if (scheduleID == Guid.Empty) 
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid schedule ID" };
 
             //Getting schedule from database
             var schedule = await (from s in _db.Schedules.Include(s=>s.User)
                             where s.ScheduleID == scheduleID
                             select s).FirstOrDefaultAsync();
             if (schedule == null) 
-                return 1;
+                return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to Database
             _db.Schedules.Remove(schedule);
             await _db.SaveChangesAsync();
-            return 3;
+            return new SettersResponse { status = 2, msg = "Schedule deleted successfully" };
         }
-        public async Task<int> AddWorkoutsToSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
-                                                                                                              //3 == no new workouts to add || 4 == workouts not found || 5 == success
+        public async Task<SettersResponse> AddWorkoutsToSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
         {
             //checking DTO
             if (scheduleWorkout == null) 
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid schedule workout data" };
 
             //Getting schedule from database
             var schedule = await(from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
                                  where s.ScheduleID == scheduleID
                             select s).FirstOrDefaultAsync();
             if (schedule == null) 
-                return 1;
+                return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1,msg ="Unauthorized" };
 
             //Adding workouts
             var workoutIDsToAdd = new HashSet<Guid>(schedule.Workouts.Select(i=>i.WorkoutID));
             var workoutIDs = scheduleWorkout.WorkoutsID?.Where(id => !workoutIDsToAdd.Contains(id)).ToList();
             if (workoutIDs == null || workoutIDs.Count == 0) 
-                return 3;
+                return new SettersResponse { status = 0, msg = "No new workouts to add" };
             var workoutsToAdd = await(from w in _db.Workouts
                                where workoutIDs.Contains(w.WorkoutID)
                                select w).ToListAsync();
             if(workoutsToAdd.Count == 0) 
-                return 4;
+                return new SettersResponse { status = 0, msg = "Workouts not found" };
             foreach (var workout in workoutsToAdd)
             {
                 schedule.Workouts.Add(workout);
@@ -144,26 +146,25 @@ namespace Gym_App.Application.Services
             //Saving to Database
             _db.Schedules.Update(schedule);
             await _db.SaveChangesAsync();
-            return 5;
+            return new SettersResponse { status = 2, msg = "Workouts added successfully" };
         }
-        public async Task<int> SetWorkoutsOfSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
-                                                                                                              //3 == no workouts found || 4 == success
+        public async Task<SettersResponse> SetWorkoutsOfSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
         {
             //Checking for DTO validity
             if (scheduleWorkout == null)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid schedule workout data" };
 
             //Getting schedule from database    
             var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s=>s.User)
                                   where s.ScheduleID == scheduleID
                             select s).FirstOrDefaultAsync();
             if (schedule == null)
-                return 1;
+                return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized"};
 
             //Setting workouts
             schedule.Workouts?.Clear();
@@ -172,7 +173,7 @@ namespace Gym_App.Application.Services
                                where workoutsIDs.Contains(w.WorkoutID)
                                select w).ToListAsync();
             if (workoutsToAdd.Count == 0) 
-                return 3;
+                return new SettersResponse { status = 0, msg = "No workouts found" };
             foreach(var workout in workoutsToAdd)
             {
                 schedule.Workouts.Add(workout);
@@ -181,37 +182,36 @@ namespace Gym_App.Application.Services
             //Saving to Database
             _db.Schedules.Update(schedule);
             await _db.SaveChangesAsync();
-            return 4;
+            return new SettersResponse { status = 2, msg = "Workouts added successfully" };
         }
-        public async Task<int> DeleteWorkoutsFromSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)//0 == faulty DTO || 1 == schedule not found || 2 == unauthorized ||
-                                                                                                                   //3 == no workouts to remove || 4 == workouts not found || 5 == success
+        public async Task<SettersResponse> DeleteWorkoutsFromSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
         {
             //Checking for DTO validity
             if (scheduleWorkout == null)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid schedule workout data" };
 
             //Getting schedule from database
             var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
                             where s.ScheduleID == scheduleID
                             select s).FirstOrDefaultAsync();
             if (schedule == null) 
-                return 1;
+                return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Checking if schedule has workouts
             var existingWorkoutsIDs = new HashSet<Guid>(schedule.Workouts.Select(w => w.WorkoutID));
             var workoutIDsToRemove = scheduleWorkout.WorkoutsID?.Where(id => existingWorkoutsIDs.Contains(id)).ToList();
             if (workoutIDsToRemove == null || workoutIDsToRemove.Count == 0) 
-                return 3;
+                return new SettersResponse { status = 0, msg = "No workouts to remove" };
             var workoutsToRemove = await (from w in _db.Workouts
                                           where workoutIDsToRemove.Contains(w.WorkoutID)
                                           select w).ToListAsync();
             if (workoutsToRemove.Count == 0) 
-                return 4;
+                return new SettersResponse { status = 0, msg = "Workouts not found" };
             foreach (var workout in workoutsToRemove)
             {
                 schedule.Workouts.Remove(workout);
@@ -220,7 +220,7 @@ namespace Gym_App.Application.Services
             //Saving to Database
             _db.Schedules.Update(schedule);
             await _db.SaveChangesAsync();
-            return 5;
+            return new SettersResponse { status = 2, msg = "Workouts removed successfully" };
         }
 
         //I am thinking of letting the Schedules be public so everyone can access eachother's workout schedules

@@ -3,7 +3,9 @@ using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Muscle;
+using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Gym_App.Application.Services
 {
@@ -16,13 +18,16 @@ namespace Gym_App.Application.Services
         }
 
         //        *********** Setters ***********
-        public async Task<int> CreateMuscle(MuscleCreationAndEditDTO muscle)// 0 == faulty DTO || 1 == muscle alr exists || 2 == success
+
+        //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
+
+        public async Task<SettersResponse> CreateMuscle(MuscleCreationAndEditDTO muscle)
         {
             if(muscle == null || string.IsNullOrEmpty(muscle.Name))
-                return 0;
+                return new SettersResponse { status = 0, msg = "Faulty DTO" };
 
             if(await isMuscleExist(muscle.Name))
-                return 1;
+                return new SettersResponse { status = 0, msg = "Muscle name already used" };
 
             var newMuscle = new Muscles
             {
@@ -33,13 +38,13 @@ namespace Gym_App.Application.Services
 
             await _db.Muscles.AddAsync(newMuscle);
             await _db.SaveChangesAsync();
-            return 2;
+            return new SettersResponse { status = 2, msg = "Success" };
         }
-        public async Task<int> UpdateMuscle(Guid muscleID,MuscleCreationAndEditDTO muscle)//0 == faulty DTO || 1 == muscle not found || 2 == success
+        public async Task<SettersResponse> UpdateMuscle(Guid muscleID,MuscleCreationAndEditDTO muscle)
         {
             //Validating DTO
             if (muscle == null || muscleID == Guid.Empty)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Faulty DTO" };
             //Getting muscle from database
             var toBeUpdated = await (from M in _db.Muscles
                                      where M.MusclesID == muscleID
@@ -47,7 +52,7 @@ namespace Gym_App.Application.Services
 
             //If muscle doesn't exist
             if (toBeUpdated == null)
-                return 1;
+                return new SettersResponse { status = 0, msg = "Muscle not found" };
 
              //Updating muscle
             if (!string.IsNullOrEmpty(muscle.Name))
@@ -58,23 +63,23 @@ namespace Gym_App.Application.Services
 
             _db.Muscles.Update(toBeUpdated);
             await _db.SaveChangesAsync();
-            return 2;
+            return new SettersResponse { status = 2, msg = "Success" };
                 
         }
-        public async Task<int> DeleteMuscle(Guid muscleID)//0 == faulty GUID || 1 == muscle not found || 2 == success
+        public async Task<SettersResponse> DeleteMuscle(Guid muscleID)
         {
             if(muscleID == Guid.Empty) 
-                return 0;
+                return new SettersResponse { status = 0, msg = "Faulty GUID" };
             var isMuscleExists = (from M in _db.Muscles
                                   where M.MusclesID == muscleID
                                   select M).FirstOrDefault();
 
             if (isMuscleExists == null) 
-                return 1;
+                return new SettersResponse { status = 0,msg = "Muscle not found" };
 
             _db.Muscles.Remove(isMuscleExists);
             await _db.SaveChangesAsync();
-            return 2;
+            return new SettersResponse { status = 2, msg = "Success" };
         }
         //-----------------------------------------------------------------------
 

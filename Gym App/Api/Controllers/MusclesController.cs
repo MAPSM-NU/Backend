@@ -18,35 +18,32 @@ namespace Gym_App.Api.Controllers
         public async Task<IActionResult> AddMuscle([FromBody] MuscleCreationAndEditDTO muscle)
         {
             var result = await _muscleService.CreateMuscle(muscle);
-            if (result == 2) 
-                return Ok(new { Message = "Muscle added successfully"});
-            else if (result == 1)
-                return BadRequest(new { Message = "Muscle already exists" });
-            else 
-                return BadRequest(new { Message = "Faulty DTO given" });
+            
+            if(result.status == 0)
+                return BadRequest(new {message = result.msg});
+            else
+                return Ok(new {message = result.msg});
         }
         
         [HttpPut("UpdateMuscle")]
         public async Task<IActionResult> UpdateMuscle([FromQuery]Guid muscleID,[FromBody] MuscleCreationAndEditDTO muscle)
         {
             var result = await _muscleService.UpdateMuscle(muscleID,muscle);
-            if (result == 2)
-                return Ok(new { Message = "Muscle updated successfully" });
-            else if (result == 1)
-                return BadRequest(new { Message = "Muscle not found" });
-            else 
-                return BadRequest(new { Message = "Faulty DTO given" });
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else
+                return Ok(new { message = result.msg });
         }
         [HttpDelete("DeleteMuscle")]
         public async Task<IActionResult> DeleteMuscle([FromQuery] Guid muscleID)
         {
             var result = await _muscleService.DeleteMuscle(muscleID);
-            if (result == 2)
-                return Ok(new { Message = "Muscle deleted successfully" });
-            else if (result == 1)
-                return BadRequest(new { Message = "Muscle not found" });
-            else 
-                return BadRequest(new { Message = "Faulty DTO given" });
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else
+                return Ok(new { message = result.msg });
         }
         [HttpGet("GetAllMuscles")]
         public async Task<IActionResult> GetAllMuscles(int page, int pageSize)

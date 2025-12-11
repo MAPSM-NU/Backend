@@ -6,6 +6,7 @@ using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Exercise;
 using Gym_App.Infastructure.DTOs.Muscle;
+using Gym_App.Infastructure.Transfer_Classes;
 using MailKit.Search;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -23,12 +24,15 @@ namespace Gym_App.Application.Services
 
         //        *********** Setters ***********
 
-        public async Task<int> CreateExercise(ExerciseCreationDTO exercise)//0 == null exercise or name || 1 == exercise already exists || 2 = success
+        //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
+
+        public async Task<SettersResponse> CreateExercise(ExerciseCreationDTO exercise)
         {
-            if (exercise == null || string.IsNullOrWhiteSpace(exercise.Name)) return 0;
+            if (exercise == null || string.IsNullOrWhiteSpace(exercise.Name)) 
+                return new SettersResponse { status = 0 ,msg = "Invalid exercise data" };
 
             if(await isExerciseExist(exercise.Name))
-                return 1;
+                return new SettersResponse { status = 0 ,msg = "Exercise already exists" };
 
             var newExercise = new Exercise
             {
@@ -42,20 +46,20 @@ namespace Gym_App.Application.Services
             };
             _db.Exercises.Add(newExercise);
             await _db.SaveChangesAsync();
-            return 2;
+            return new SettersResponse { status = 2, msg = "Exercise created successfully" };
         }
-        public async Task<int> UpdateExercise(Guid exerciseID, ExerciseCreationDTO exercise)//0 == null exercise or empty ID || 1 == exercise not found || 2 == new name already exists || 3 == success
+        public async Task<SettersResponse> UpdateExercise(Guid exerciseID, ExerciseCreationDTO exercise)
         {
             if(exercise == null || exerciseID == Guid.Empty)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid exercise data" };
 
             var toBeUpdated = await (from E in _db.Exercises
                                where E.ExerciseID == exerciseID
                                select E).FirstOrDefaultAsync();
             
             if (toBeUpdated == null)
-                return 1;
-            
+                return new SettersResponse { status = 0, msg = "Exercise not found" };
+
             if(!string.IsNullOrEmpty(exercise.Category))
                 toBeUpdated.Category = exercise.Category;
             
@@ -65,7 +69,7 @@ namespace Gym_App.Application.Services
             if(!string.IsNullOrEmpty(exercise.Name))
             {
                 if(await isExerciseExist(exercise.Name))
-                    return 2;
+                    return new SettersResponse { status = 0, msg = "Exercise with this name already exists" };
                 else toBeUpdated.Name = exercise.Name;
             }
             
@@ -77,67 +81,77 @@ namespace Gym_App.Application.Services
             
             _db.Exercises.Update(toBeUpdated);
             await _db.SaveChangesAsync();
-            return 3;
+            return new SettersResponse { status = 2, msg = "Exercise updated successfully" };
         }
-        public async Task<int> DeleteExercise(Guid ExerciseID)
+        public async Task<SettersResponse> DeleteExercise(Guid ExerciseID)
         {
             
             var isExerciseExists = await (from E in _db.Exercises
                                     where E.ExerciseID == ExerciseID
                                     select E).FirstOrDefaultAsync();
-            if (isExerciseExists == null) return 0;
+            if (isExerciseExists == null)
+                return new SettersResponse { status = 0, msg = "Exercise not found" };
             _db.Exercises.Remove(isExerciseExists);
             await _db.SaveChangesAsync();
-            return 1;
+            return new SettersResponse { status = 2, msg = "Exercise deleted successfully" };
         }
-        public async Task<int> AddMusclesToExercise(Guid exerciseID, ExerciseMusclesDTO exerciseMuscles)//0 == Faulty DTO || 1 == exercise not found || 2 == no new muscles added || 3 == muscles to add not found || 4 == success
+        public async Task<SettersResponse> AddMusclesToExercise(Guid exerciseID, ExerciseMusclesDTO exerciseMuscles)
         {
-            if(exerciseMuscles == null || exerciseMuscles.Muscles == null || exerciseMuscles.Muscles.Count == 0) return 0;
+            if(exerciseMuscles == null || exerciseMuscles.Muscles == null || exerciseMuscles.Muscles.Count == 0) 
+                return new SettersResponse { status = 0, msg = "Invalid DTO"};
             var exercise = await(from e in _db.Exercises.Include(m =>m.Muscles)
                             where e.ExerciseID == exerciseID       
                             select e).FirstOrDefaultAsync();
-            if (exercise == null) return 1;
+
+            if (exercise == null) 
+                return new SettersResponse { status = 0, msg = "Exercise not found" };
             var existingMuscleIDs = new HashSet<Guid>(exercise.Muscles.Select(m => m.MusclesID));
             var musclesIDsToAdd = exerciseMuscles.Muscles?.Where(id => !existingMuscleIDs.Contains(id)).ToList();
-            if (musclesIDsToAdd == null || musclesIDsToAdd.Count == 0) return 2;
+            if (musclesIDsToAdd == null || musclesIDsToAdd.Count == 0)
+                return new SettersResponse { status = 0, msg = "No new muscles to add" };
+
             var musclesToAdd = await (from m in _db.Muscles
                                where musclesIDsToAdd.Contains(m.MusclesID)
                                select m).ToListAsync();
-            if (musclesToAdd.Count == 0) return 3;
+            if (musclesToAdd.Count == 0) 
+                return new SettersResponse { status = 0, msg = "Muscles to add not found" };
             foreach (var muscle in musclesToAdd)
             {
                 exercise.Muscles.Add(muscle);
             }
             _db.Exercises.Update(exercise);
             await _db.SaveChangesAsync();
-            return 4;
+            return new SettersResponse { status = 2, msg = "Muscles added successfully" };
         }
-        public async Task<int> RemoveMusclesFromExercise(Guid exerciseID, ExerciseMusclesDTO exerciseMuscles)//0 == Faulty DTO || 1 == exercise not found || 2 == no muscles to remove || 3 == muscles to remove not found || 4 == success
+        public async Task<SettersResponse> RemoveMusclesFromExercise(Guid exerciseID, ExerciseMusclesDTO exerciseMuscles)
         {
-            if(exerciseMuscles == null || exerciseMuscles.Muscles == null || exerciseMuscles.Muscles.Count == 0) return 0;
+            if(exerciseMuscles == null || exerciseMuscles.Muscles == null || exerciseMuscles.Muscles.Count == 0)
+                return new SettersResponse { status = 0,msg = "Invalid DTO"};
             var exercise = await(from e in _db.Exercises.Include(m =>m.Muscles)
                             where e.ExerciseID == exerciseID       
                             select e).FirstOrDefaultAsync();
 
             if (exercise == null) 
-                return 1;
+                return new SettersResponse { status = 0, msg = "Exercise not found" };
 
             var existingMuscleIDs = new HashSet<Guid>(exercise.Muscles.Select(m => m.MusclesID));
             var musclesIDsToRemove = exerciseMuscles.Muscles?.Where(id => existingMuscleIDs.Contains(id)).ToList();
-            if (musclesIDsToRemove == null || musclesIDsToRemove.Count == 0) return 2;
+            if (musclesIDsToRemove == null || musclesIDsToRemove.Count == 0)
+                return new SettersResponse { status = 0, msg = "No muscles to remove" };
+
             var musclesToRemove = await (from m in _db.Muscles
                                where musclesIDsToRemove.Contains(m.MusclesID)
                                select m).ToListAsync();
 
             if (musclesToRemove.Count == 0)
-                return 3;
+                return new SettersResponse { status = 0, msg = "Muscles to remove not found" };
             foreach (var muscle in musclesToRemove)
             {
                 exercise.Muscles.Remove(muscle);
             }
             _db.Exercises.Update(exercise);
             await _db.SaveChangesAsync();
-            return 4;
+            return new SettersResponse { status = 2, msg = "Muscles removed successfully" };
         }
 
         //-----------------------------------------------------------------------

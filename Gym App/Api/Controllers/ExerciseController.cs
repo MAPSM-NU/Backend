@@ -14,73 +14,60 @@ namespace Gym_App.Api.Controllers
         {
             _exerciseService = exerciseService;
         }
-        [Authorize(Policy = "ElevatedPower")]
+        //[Authorize(Policy = "ElevatedPower")]
         [HttpPost("AddExercise")]
         public async Task<IActionResult> AddExercise([FromBody] ExerciseCreationDTO exercise)
         {
             var result = await _exerciseService.CreateExercise(exercise);
-            if (result == 2)
-                return Ok(new { Message = "Exercise Added Succesfully" });
-            else if (result == 1) 
-                return BadRequest(new { Message = "The Exercise already exists" });
+            
+            if(result.status == 0)
+                return BadRequest(new { message = result.msg });
             else
-                return BadRequest(new { Message = "Exercise or Exercise Name cannot be null" });
+                return Ok(new { message = result.msg });
         }
-        [Authorize(Policy = "ElevatedPower")]
+        //[Authorize(Policy = "ElevatedPower")]
         [HttpPut("UpdateExercise")]
         public async Task<IActionResult> UpdateExercise([FromQuery]Guid exerciseID,[FromBody] ExerciseCreationDTO exercise)
         {
             var result = await _exerciseService.UpdateExercise(exerciseID, exercise);
-            if (result == 3)
-                return Ok(new { message = "Exercise Updated Successfully" });
-            else if (result == 2)
-                return BadRequest(new { message = "The Exercise with the given name already exists" });
-            else if (result == 1)
-                return BadRequest(new { message = "Exercise not found" });
+
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
             else
-                return BadRequest(new { message = "Faulty creditentials" });
+                return Ok(new { message = result.msg });
         }
-        [Authorize(Policy = "ElevatedPower")]
+        //[Authorize(Policy = "ElevatedPower")]
         [HttpDelete("DeleteExercise")]
         public async Task<IActionResult> DeleteExercise([FromQuery] Guid exerciseId)
         {
             var result = await _exerciseService.DeleteExercise(exerciseId);
-            if (result > 0)
-                return Ok(new { Message = "Exercise deleted successfully"});
+
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
             else
-                return BadRequest(new { Message = "Exercise does not exist" });
+                return Ok(new { message = result.msg });
         }
 
         [HttpPost("AddMusclesToExercise")]
         public async Task<IActionResult> AddMusclesToExercise([FromQuery]Guid exerciseID,[FromBody] ExerciseMusclesDTO Muscles)
         {
             var result = await _exerciseService.AddMusclesToExercise(exerciseID, Muscles);
-            if(result == 4)
-                return Ok(new { Message = "Muscles added to exercise successfully" });
-            else if(result == 3)
-                return BadRequest(new { Message = "Wrong IDs given for the Muscles" });
-            else if(result == 2)
-                return BadRequest(new { Message = "Given muscles are already in the Exercise" });
-            else if(result == 1)
-                return BadRequest(new { Message = "Given exercise does not exist" });
+
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
             else
-                return BadRequest(new { Message = "Faulty DTO" });
+                return Ok(new { message = result.msg });
         }
 
         [HttpDelete("RemoveMusclesFromExercise")]
         public async Task<IActionResult> RemoveMusclesFromExercise([FromQuery] Guid exerciseID, [FromBody] ExerciseMusclesDTO Muscles)//fe 8alta hena
         {
             var result = await _exerciseService.RemoveMusclesFromExercise(exerciseID,Muscles);
-            if(result == 4)
-                return Ok(new { Message = "Muscles removed from exercise successfully" });
-            else if(result == 3) 
-                return BadRequest(new { Message = "Wrong IDs given for the Muscles" });
-            else if(result == 2) 
-                return BadRequest(new { Message = "Given muscles are not in the Exercise" });
-            else if(result == 1)
-                return BadRequest(new { Message = "Given exercise does not exist" });
-            else 
-                return BadRequest(new { Message = "Faulty DTO" });
+
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else
+                return Ok(new { message = result.msg });
         }
         [HttpGet("GetExerciseByName")]
         public async Task<IActionResult> GetExerciseByName([FromQuery] string name)

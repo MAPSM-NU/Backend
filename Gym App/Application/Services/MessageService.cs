@@ -3,6 +3,7 @@ using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Message;
+using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -22,12 +23,12 @@ namespace Gym_App.Application.Services
 
         //        *********** Setters ***********
 
-        public async Task<int> AddMessage(ClaimsPrincipal User,Guid senderID, MessageCreationDTO message)//0 == Invalid DTO || 1 == User not found || 2 == Unauthorized ||
-                                                                                                         //3 == Session not found || 4 == User not in session || 5 == Success
+        //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
+        public async Task<SettersResponse> AddMessage(ClaimsPrincipal User,Guid senderID, MessageCreationDTO message)
         {
             //checking for DTO validity
             if (message == null)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
             //Getting user from Database
             var user = await (from u in _db.Users
@@ -35,12 +36,12 @@ namespace Gym_App.Application.Services
                               select u).FirstOrDefaultAsync();
             //if user not found return 
             if (user == null)
-                return 1;
+                return new SettersResponse { status =  0, msg = "User not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Getting session from Database
             var session = await (from s in _db.Sessions.Include(s => s.Users)
@@ -48,10 +49,10 @@ namespace Gym_App.Application.Services
                                  select s).FirstOrDefaultAsync();
             //if session not found return
             if (session == null)
-                return 3;
+                return new SettersResponse { status = 0, msg = "Session not found" };
             //Checking if user is part of the session
             if (!session.Users.Contains(user))
-                return 4;
+                return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
             //Creating new message
             var newMessage = new Message
@@ -67,13 +68,13 @@ namespace Gym_App.Application.Services
             //Saving to Database
             await _db.Messages.AddAsync(newMessage);
             await _db.SaveChangesAsync();
-            return 5;
+            return new SettersResponse { status = 2, msg = "Success" };
         }
-        public async Task<int> UpdateMessage(ClaimsPrincipal User,Guid messageID, MessageUpdateDTO message)//0 == Invalid DTO || 1 == Message not found || 2 == Unauthorized || 3 == Success
+        public async Task<SettersResponse> UpdateMessage(ClaimsPrincipal User,Guid messageID, MessageUpdateDTO message)
         {
             //checking for DTO validity
             if (message == null)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
             //Getting message from Database
             var Message = await (from u in _db.Messages.Include(m=>m.Sender)
@@ -81,12 +82,12 @@ namespace Gym_App.Application.Services
                                  select u).FirstOrDefaultAsync();
             //if message not found return
             if (Message == null) 
-                return 1;
+                return new SettersResponse { status = 0, msg = "Message not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.UserID, "SameUserPolicy");
             if(!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Updating message
             Message.Content = message.Content;
@@ -94,30 +95,30 @@ namespace Gym_App.Application.Services
 
             //Saving to Database
             await _db.SaveChangesAsync();
-            return 3;
+            return new SettersResponse { status = 2, msg = "Success" };
         }
-        public async Task<int> DeleteMessage(ClaimsPrincipal User, Guid messageID)//0 == Invalid messageID || 1 == Message not found || 2 == Unauthorized || 3 == Success
+        public async Task<SettersResponse> DeleteMessage(ClaimsPrincipal User, Guid messageID)
         {
             //checking for messageID validity
             if (messageID == Guid.Empty)
-                return 0;
+                return new SettersResponse { status = 0, msg = "Invalid messageID" };
 
             var Message = await (from u in _db.Messages.Include(m=>m.Sender)
                           where u.MessageID == messageID
                           select u).FirstOrDefaultAsync();
             //if message not found return
             if (Message == null)
-                return 1;
+                return new SettersResponse { status = 0, msg = "Message not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.UserID, "SameUserPolicy");
             if(!authResult.Succeeded)
-                return 2;
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to Database
             _db.Messages.Remove(Message);
             await _db.SaveChangesAsync();
-            return 3;
+            return new SettersResponse { status = 2, msg = "Success" };
         }
 
         //-----------------------------------------------------------------------

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Api.Controllers
 {
-    [Route("[controller]")]
+    [Route("api/v1/user")]
     public class UserController : Controller
     {
         private readonly IUserServise _user;
@@ -15,7 +15,7 @@ namespace Gym_App.Api.Controllers
             _user = user;
             _authenticationService = authorizationService;
         }
-        [HttpPut("UpdateUser")]
+        [HttpPut("update")]
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateDTO user)
         {
             //Authentication
@@ -36,7 +36,7 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
         [Authorize(Policy ="ElevatedPower")]
-        [HttpPut("ChangeUserType")]
+        [HttpPut("change-user-type")]
         public async Task<IActionResult> ChangeUserType([FromBody] UserChangeTypeDTO user)
         {
             var result = await _user.ChangeUserType(user);
@@ -46,24 +46,24 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpDelete("DeleteUser")]
-        public async Task<IActionResult> DeleteUser([FromQuery] Guid UserID)
+        [HttpDelete("delete/{userID}")]
+        public async Task<IActionResult> DeleteUser([FromRoute] Guid userID)
         {
             //Authentication
 
-            var authResult = await _authenticationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
+            var authResult = await _authenticationService.AuthorizeAsync(User, userID, "SameUserPolicy");
             if(!authResult.Succeeded)
                 return Forbid();
 
             //Talking to Database
 
-            var result = await _user.DeleteUser(UserID);
+            var result = await _user.DeleteUser(userID);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpGet("GetUserByID")]
+        [HttpGet("get/{userID}")]
         public async Task<IActionResult> GetUserByID([FromQuery] Guid UserID)
         {
             var result = await _user.GetUserByID(UserID);
@@ -71,13 +71,19 @@ namespace Gym_App.Api.Controllers
                 return BadRequest(new { message = "User not found" });
             return Ok(result);
         }
-        [HttpGet("GetUsersByFilter")]
-        public async Task<IActionResult> GetUsersByFilter([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        [HttpGet("get-mini-users")]
+        public async Task<IActionResult> GetUsers([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {
-            var users = await _user.GetUsersByFilter(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            var users = await _user.GetMiniUsers(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
             return Ok(users);
         }
-        [HttpGet("GetAllUsers")]
+        [HttpGet("get-users")]
+        public async Task<IActionResult> GetUsersBasicInfo([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        {
+            var users = await _user.GetUsers(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            return Ok(users);
+        }
+        [HttpGet("get")]
         public async Task<IActionResult> GetAllUsers([FromQuery] int page, int pageSize)
         {
             var users = await _user.GetAllUsers(page,pageSize);

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Gym_App.Api.Controllers
 {
     //[Authorize(Policy = "ElevatedPower")]
-    [Route("[controller]")]
+    [Route("api/v1/muscle")]
     public class MusclesController : Controller
     {
         private readonly IMuscleService _muscleService;
@@ -14,7 +14,7 @@ namespace Gym_App.Api.Controllers
         {
             _muscleService = muscleService;
         }
-        [HttpPost("AddMuscle")]
+        [HttpPost("create")]
         public async Task<IActionResult> AddMuscle([FromBody] MuscleCreationAndEditDTO muscle)
         {
             var result = await _muscleService.CreateMuscle(muscle);
@@ -25,8 +25,8 @@ namespace Gym_App.Api.Controllers
                 return Ok(new {message = result.msg});
         }
         
-        [HttpPut("UpdateMuscle")]
-        public async Task<IActionResult> UpdateMuscle([FromQuery]Guid muscleID,[FromBody] MuscleCreationAndEditDTO muscle)
+        [HttpPut("update/{muscleID}")]
+        public async Task<IActionResult> UpdateMuscle([FromRoute]Guid muscleID,[FromBody] MuscleCreationAndEditDTO muscle)
         {
             var result = await _muscleService.UpdateMuscle(muscleID,muscle);
             
@@ -35,8 +35,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpDelete("DeleteMuscle")]
-        public async Task<IActionResult> DeleteMuscle([FromQuery] Guid muscleID)
+        [HttpDelete("delete/{muscleID}")]
+        public async Task<IActionResult> DeleteMuscle([FromRoute] Guid muscleID)
         {
             var result = await _muscleService.DeleteMuscle(muscleID);
             
@@ -45,7 +45,7 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpGet("GetAllMuscles")]
+        [HttpGet("get")]
         public async Task<IActionResult> GetAllMuscles(int page, int pageSize)
         {
             var result = await _muscleService.GetAllMuscles(page, pageSize);

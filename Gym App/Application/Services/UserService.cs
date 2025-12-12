@@ -385,7 +385,7 @@ namespace Gym_App.Application.Services
             if (user is null) return null;
             return user;
         }
-        public async Task<PagedList<UserMiniViewDTO>?> GetUsersByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<PagedList<UserMiniViewDTO>?> GetMiniUsers(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             if (page == 0) page = 1;
             if (pageSize == 0) pageSize = 10;
@@ -426,6 +426,60 @@ namespace Gym_App.Application.Services
                                     ProfilePictureUrl = u.ProfilePictureUrl
                                 });
             var users = await PagedList<UserMiniViewDTO>.CreateAsync(userResponse, page, pageSize);
+            return users;
+        }
+        public async Task<PagedList<UserViewDTO>?> GetUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        {
+            if (page == 0) page = 1;
+            if (pageSize == 0) pageSize = 10;
+            IQueryable<User> userQuery = _db.Users;
+            DateTime validStartDate, validEndDate;
+            if (DateTime.TryParse(startDate, out validStartDate))
+            {
+                userQuery = userQuery.Where(u => u.CreatedAt > validStartDate);
+            }
+            if (DateTime.TryParse(endDate, out validEndDate))
+            {
+                userQuery = userQuery.Where(u => u.CreatedAt < validEndDate);
+            }
+            if (!string.IsNullOrEmpty(searchTerm)) userQuery = userQuery.Where(u => u.Name.Contains(searchTerm) || u.Email.Contains(searchTerm) || u.Specialty.Contains(searchTerm));
+
+            if (!string.IsNullOrEmpty(sortColumn))
+            {
+                Expression<Func<User, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
+                {
+                    "name" or "n" => User => User.Name,
+                    "email" or "e" => User => User.Email,
+                    "country" or "co" => User => User.Country,
+                    "state" or "s" => User => User.State,
+                    "city" or "ci" => User => User.City,
+                    "height" or "h" => User => User.HeightCm,
+                    "weight" or "w" => User => User.WeightKg,
+                    _ => User => User.UserID,
+                };
+                if (!string.IsNullOrEmpty(OrderBy)) userQuery = userQuery.OrderBy(keySelector);
+                else userQuery = userQuery.OrderBy(keySelector);
+            }
+            var userResponse = userQuery
+                                .Select(u => new UserViewDTO
+                                {
+                                    UserID = u.UserID,
+                                    Name = u.Name,
+                                    Email = u.Email,
+                                    Bio = u.Bio,
+                                    CreatedAt = u.CreatedAt,
+                                    DOB = u.DOB,
+                                    State = u.State,
+                                    City = u.City,
+                                    Country = u.Country,
+                                    PhoneNumber = u.PhoneNumber,
+                                    ProfilePictureUrl = u.ProfilePictureUrl,
+                                    subscriptionPlan = u.subscriptionPlan,
+                                    HeightCm = u.HeightCm,
+                                    WeightKg = u.WeightKg,
+                                    UserType = u.UserType
+                                });
+            var users = await PagedList<UserViewDTO>.CreateAsync(userResponse, page, pageSize);
             return users;
         }
         public async Task<PagedList<UserViewDTO>?> GetAllUsers(int page, int pageSize)

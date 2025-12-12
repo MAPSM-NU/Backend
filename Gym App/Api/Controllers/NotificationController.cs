@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Gym_App.Api.Controllers
 {
     [Authorize(Policy = "NormalUsage")]
-    [Route("[controller]")]
+    [Route("api/v1/notif")]
     public class NotificationController : Controller
     {
         private readonly INotificationService _notificationService;
@@ -16,8 +16,8 @@ namespace Gym_App.Api.Controllers
             _notificationService = notificationService;
         }
         //[Authorize(Policy = "ElevatedPower")]//Only Admins can create notifications 
-        [HttpPost("CreateNotification")]
-        public async Task<IActionResult> CreateNotification([FromQuery]Guid userID,[FromBody] NotificationCreationDTO notification)
+        [HttpPost("create/{userID}")]
+        public async Task<IActionResult> CreateNotification([FromRoute]Guid userID,[FromBody] NotificationCreationDTO notification)
         {
 
             var result = await _notificationService.CreateNotification(User, userID, notification);
@@ -29,8 +29,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpDelete("DeleteNotification")]
-        public async Task<IActionResult> DeleteNotification([FromQuery]Guid notificationID)//As in deleting the whole notif. there should be one were we delete the notif from the user's list
+        [HttpDelete("delete/{notificationID}")]
+        public async Task<IActionResult> DeleteNotification([FromRoute]Guid notificationID)//As in deleting the whole notif. there should be one were we delete the notif from the user's list
         {
             var result = await _notificationService.DeleteNotification(User, notificationID);
 
@@ -41,8 +41,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpDelete("DeleteAllUsersNotifications")]//Note to self. Dont put unnecassary space in the route. Will result in error
-        public async Task<IActionResult> DeleteAllNotifications([FromQuery] Guid userID)
+        [HttpDelete("delete-all/{userID}")]//Note to self. Dont put unnecassary space in the route. Will result in error
+        public async Task<IActionResult> DeleteAllNotifications([FromRoute] Guid userID)
         {
             var result = await _notificationService.DeleteAllNotifications(User, userID);
 
@@ -53,15 +53,15 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpGet("GetUsersNotifications")]
-        public async Task<IActionResult> GetNotifications([FromQuery]Guid userID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
+        [HttpGet("user-notifs/{userID}")]
+        public async Task<IActionResult> GetNotifications([FromRoute]Guid userID,[FromQuery] string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
         {
             var notifications = await _notificationService.GetNotifications(User,userID,startDate,endDate,page,sortColumn,OrderBy,searchTerm,pageSize);
             if (notifications == null) 
                 return BadRequest(new { message = "Unauthorized access,User has no notifications or User doesn't exist" });
             return Ok(notifications);
         }
-        [HttpGet("GetAllNotifications")]
+        [HttpGet("get")]
         public async Task<IActionResult> GetAllNotifications([FromQuery]int page,int pageSize)
         {
             var notifications = await _notificationService.GetAllNotifications(page,pageSize);

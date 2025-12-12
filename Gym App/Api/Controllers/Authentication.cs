@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Api.Controllers
 {
-    [Route("[controller]")]
+    [Route("api/v1/auth")]
     public class Authentication : Controller
     {
         private readonly IUserServise _userServiceService;
@@ -18,7 +18,7 @@ namespace Gym_App.Api.Controllers
             _tokenHandler = tokenHandler;
         }
         [Authorize(Policy = "ElevatedPower")]
-        [HttpPost("CreateAdmin")]
+        [HttpPost("create-admin")]
         public async Task<IActionResult> CreateAdmin([FromBody] UserCreationDTO user)
         {
             var result = await _userServiceService.CreateAdmin(user);
@@ -27,7 +27,7 @@ namespace Gym_App.Api.Controllers
             return 
                 Ok(result);
         }
-        [HttpPost("SignUp")]
+        [HttpPost("sign-up")]
         public async Task<IActionResult> NewUser([FromBody] UserCreationDTO user)
         {
             var result = await _userServiceService.SignUpUser(user);
@@ -36,7 +36,7 @@ namespace Gym_App.Api.Controllers
             return
                 Ok(result);
         }
-        [HttpPost("SignIn")]
+        [HttpPost("sign-in")]
         public async Task<IActionResult> SigninUser([FromQuery]string email,string password)
         {
             var result = await _userServiceService.SigninUser(email,password);
@@ -45,7 +45,7 @@ namespace Gym_App.Api.Controllers
             return
                 Ok(result);
         }
-        [HttpPost("LoginbyToken")]
+        [HttpPost("token-login")]
         public async Task<IActionResult> LoginByToken([FromQuery] string Refreshtoken)
         {
             var result = await _tokenHandler.ValidateAccessToken(Refreshtoken);
@@ -54,7 +54,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(result);
         }
-        [HttpGet("GetTokens")]
+        [Authorize(Policy = "ElevatedPower")]
+        [HttpGet("get-tokens")]
         public async Task<IActionResult> GetTokens([FromQuery]int page,int pageSize)
         {
             var result = await _tokenHandler.GetAllRefreshTokens(page,pageSize);

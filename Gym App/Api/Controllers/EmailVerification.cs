@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Gym_App.Api.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/v1/email-verification")]
     public class EmailVerification : Controller
     {
         private readonly DbBase _db;
@@ -15,7 +15,7 @@ namespace Gym_App.Api.Controllers
             _db = db;
             _emailSender = emailSender;
         }
-        [HttpPost("EmailVerification")]
+        [HttpPost("verify")]
         public async Task<IActionResult> VerifyEmail([FromBody] string email)
         {
             //var user = await _db.Users.FindAsync(email);

@@ -3,6 +3,7 @@ using CsvHelper.Configuration;
 using DocumentFormat.OpenXml.Office2019.Presentation;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Gym_App.Application.Interfaces;
+using Gym_App.Domain;
 using Gym_App.Domain.DTOs;
 using Gym_App.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ using System.Globalization;
 
 namespace Gym_App.Api.Controllers
 {
+    [Route("api/v1/exercise-data")]
     public class AddCsvToDatabase : Controller // This controller is used to add the data from the csv file to the database. It is not applicable to the runtime of the app
                                                //connected to the WorkoutData class
                                                //Pls do make sure you don't run this when the data is already in the database
@@ -22,7 +24,7 @@ namespace Gym_App.Api.Controllers
             _workoutData = workoutData;
         }
         [HttpGet]
-        [Route("/Adding Workout and Muscles Data")]
+        [Route("add-exercises-data")]
         public IActionResult AddingDataset()
         {
             if(_workoutData.AddingExerciseAndMuscles()) return View("Complete");
@@ -30,7 +32,7 @@ namespace Gym_App.Api.Controllers
 
         }
         [HttpGet]
-        [Route("/Merging Exercises and Muscles")]
+        [Route("merging-exercises-and-muscles")]
         public IActionResult MergingExercisesAndMuscles()
         {
             if(_workoutData.LinkingMusclesAndExercises()) return View("Complete");

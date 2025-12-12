@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Gym_App.Api.Controllers
 {
     [Authorize(Policy ="NormalUsage")]
-    [Route("[controller]")]
+    [Route("api/v1/session")]
     public class SessionController : Controller
     {
         private readonly ISessionService _sessionService;
@@ -16,8 +16,8 @@ namespace Gym_App.Api.Controllers
         {
             _sessionService = sessionService;
         }
-        [HttpPost("CreateSession")]
-        public async Task<IActionResult> CreateSession([FromQuery] Guid user1,Guid user2)
+        [HttpPost("create/{user1}/{user2}")]
+        public async Task<IActionResult> CreateSession([FromRoute] Guid user1,[FromRoute] Guid user2)
         {
             var result = await _sessionService.CreateSession(User,user1,user2);
 
@@ -29,8 +29,8 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
         [Authorize(Policy = "ElevatedPower")]//Only for admins to delete a session
-        [HttpDelete("DeleteSession")]
-        public async Task<IActionResult> DeleteSession([FromQuery] Guid sessionID)
+        [HttpDelete("delete/{sessionID}")]
+        public async Task<IActionResult> DeleteSession([FromRoute] Guid sessionID)
         {
             var result = await _sessionService.DeleteSession(User,sessionID);
             
@@ -41,8 +41,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpPost("AddMessages")]
-        public async Task<IActionResult> AddMessages([FromQuery] Guid sessionID, [FromBody] SessionMessagesDTO sessionMessages)
+        [HttpPost("add-messages/{sessionID}")]
+        public async Task<IActionResult> AddMessages([FromRoute] Guid sessionID, [FromBody] SessionMessagesDTO sessionMessages)
         {
             var result = await _sessionService.AddMessages(User, sessionID, sessionMessages);
             
@@ -54,8 +54,8 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
 
         }
-        [HttpDelete("DeleteMessages")]
-        public async Task<IActionResult> DeleteMessages([FromQuery] Guid sessionID, [FromBody] SessionMessagesDTO sessionMessages)
+        [HttpDelete("delete-messages/{sessionID}")]
+        public async Task<IActionResult> DeleteMessages([FromRoute] Guid sessionID, [FromBody] SessionMessagesDTO sessionMessages)
         {
             var result = await _sessionService.DeleteMessages(User, sessionID, sessionMessages);
             
@@ -67,8 +67,8 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
 
         }
-        [HttpGet("GetSessionMessages")]
-        public async Task<IActionResult> GetSessionMessages([FromQuery] Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        [HttpGet("session-messages/{sessionID}")]
+        public async Task<IActionResult> GetSessionMessages([FromRoute] Guid sessionID,[FromQuery] string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             var messages = await _sessionService.GetSessionMessages(User,sessionID,startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
             if (messages == null) 
@@ -77,8 +77,8 @@ namespace Gym_App.Api.Controllers
             return Ok(messages);
         }
         [Authorize(Policy = "ElevatedPower")]//Only for admins to get all users of a session
-        [HttpGet("GetUsersOfSession")]
-        public async Task<IActionResult> GetUsersOfSession([FromQuery] Guid sessionID,int page,int pageSize)
+        [HttpGet("users/{sessionID}")]
+        public async Task<IActionResult> GetUsersOfSession([FromRoute] Guid sessionID,[FromQuery] int page,int pageSize)
         {
             var users = await _sessionService.GetUsersOfSession(User,sessionID,page,pageSize);
             if (users == null) 
@@ -86,7 +86,7 @@ namespace Gym_App.Api.Controllers
             return Ok(users);
         }
         //[Authorize(Policy ="ElevatedPower")]//Only for admins to get all sessions
-        [HttpGet("GetAllSessions")]
+        [HttpGet("get")]
         public async Task<IActionResult> GetAllSessions([FromQuery] int page,int pageSize)
         {
             var sessions = await _sessionService.GetAllSessions(page,pageSize);

@@ -1,5 +1,4 @@
 ﻿using Gym_App.Application.Interfaces;
-using Gym_App.Domain.Entities;
 using Gym_App.Infastructure.DTOs.Schedule;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Gym_App.Api.Controllers
 {
     [Authorize(Policy ="NormalUsage")]
-    [Route("[controller]")]
+    [Route("api/v1/schedule")]
     public class ScheduleController : Controller
     {
         private readonly IScheduleService _scheduleService;
@@ -16,8 +15,8 @@ namespace Gym_App.Api.Controllers
             _scheduleService = scheduleService;
         }
 
-        [HttpPost("AddSchedule")]
-        public async Task<IActionResult> AddSchedule([FromQuery]Guid userID,[FromBody] ScheduleCreationAndEditDTO schedule)
+        [HttpPost("create/{userID}")]
+        public async Task<IActionResult> AddSchedule([FromRoute]Guid userID,[FromBody] ScheduleCreationAndEditDTO schedule)
         {
             var result = await _scheduleService.AddSchedule(User, userID, schedule);
             
@@ -28,8 +27,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpPut("UpdateSchedule")]
-        public async Task<IActionResult> UpdateSchedule([FromQuery] Guid scheduleID,[FromBody] ScheduleCreationAndEditDTO schedule)
+        [HttpPut("update/{scheduleID}")]
+        public async Task<IActionResult> UpdateSchedule([FromRoute] Guid scheduleID,[FromBody] ScheduleCreationAndEditDTO schedule)
         {
             var result = await _scheduleService.UpdateSchedule(User, scheduleID, schedule);
 
@@ -40,8 +39,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpDelete("DeleteSchedule")]
-        public async Task<IActionResult> DeleteSchedule([FromQuery] Guid scheduleID)
+        [HttpDelete("delete/{scheduleID}")]
+        public async Task<IActionResult> DeleteSchedule([FromRoute] Guid scheduleID)
         {
             var result = await _scheduleService.DeleteSchedule(User, scheduleID);
 
@@ -52,8 +51,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpPost("AddWorkoutsToSchedule")]
-        public async Task<IActionResult> AddWorkoutsToSchedule([FromQuery] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
+        [HttpPost("add-workouts/{scheduleID}")]
+        public async Task<IActionResult> AddWorkoutsToSchedule([FromRoute] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
             var result = await _scheduleService.AddWorkoutsToSchedule(User, scheduleID, scheduleWorkout);
 
@@ -64,8 +63,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpPost("SetWorkoutsOfSchedule")]
-        public async Task<IActionResult> SetWorkoutsOfSchedule([FromQuery] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
+        [HttpPost("set-workouts/{scheduleID}")]
+        public async Task<IActionResult> SetWorkoutsOfSchedule([FromRoute] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
             var result = await _scheduleService.SetWorkoutsOfSchedule(User, scheduleID, scheduleWorkout);
 
@@ -76,8 +75,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpDelete("DeleteWorkoutsFromSchedule")]
-        public async Task<IActionResult> DeleteWorkoutsFromSchedule([FromQuery] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
+        [HttpDelete("delete-workouts/{scheduleID}")]
+        public async Task<IActionResult> DeleteWorkoutsFromSchedule([FromRoute] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
             var result = await _scheduleService.DeleteWorkoutsFromSchedule(User, scheduleID, scheduleWorkout);
 
@@ -88,8 +87,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpGet("GetScheduleByID")]
-        public async Task<IActionResult> GetScheduleById([FromQuery] Guid scheduleID)
+        [HttpGet("get/{scheduleID}")]
+        public async Task<IActionResult> GetScheduleById([FromRoute] Guid scheduleID)
         {
             var schedule = await _scheduleService.GetScheduleById(scheduleID);
             if (schedule == null)
@@ -97,8 +96,8 @@ namespace Gym_App.Api.Controllers
             else 
                 return Ok(schedule);
         }
-        [HttpGet("GetWorkoutsOfSchedule")]
-        public async Task<IActionResult> GetWorkoutsOfSchedule([FromQuery] Guid scheduleID)
+        [HttpGet("get-workouts/{scheduleID}")]
+        public async Task<IActionResult> GetWorkoutsOfSchedule([FromRoute] Guid scheduleID)
         {
             var workouts = await _scheduleService.GetScheduleWorkouts(scheduleID);
             if (workouts == null)
@@ -107,13 +106,13 @@ namespace Gym_App.Api.Controllers
                 return Ok(workouts);
         }
 
-        [HttpGet("GetSchedulesOfUser")]
-        public async Task<IActionResult> GetSchedulesByOfUser([FromQuery] Guid userID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
+        [HttpGet("get-user-schedule/{userID}")]
+        public async Task<IActionResult> GetSchedulesByOfUser([FromRoute] Guid userID,[FromQuery] string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
         {
             var schedules = await _scheduleService.GetSchedulesByOfUser(userID,startDate,endDate,page,sortColumn, OrderBy,searchTerm,pageSize);
             return Ok(schedules);
         }
-        [HttpGet("GetAllSchedules")]
+        [HttpGet("get")]
         public async Task<IActionResult> GetAllSchedules([FromQuery] int page,int pageSize)
         {
             var schedules = await _scheduleService.GetAllSchedules(page,pageSize);

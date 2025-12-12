@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Gym_App.Api.Controllers
 {
     [Authorize(Policy ="NormalUsage")]
-    [Route("[controller]")]
+    [Route("api/v1/exercise")]
     public class ExerciseController : Controller
     {
         private readonly IExerciseService _exerciseService;
@@ -14,8 +14,8 @@ namespace Gym_App.Api.Controllers
         {
             _exerciseService = exerciseService;
         }
-        //[Authorize(Policy = "ElevatedPower")]
-        [HttpPost("AddExercise")]
+        [Authorize(Policy = "ElevatedPower")]
+        [HttpPost("create")]
         public async Task<IActionResult> AddExercise([FromBody] ExerciseCreationDTO exercise)
         {
             var result = await _exerciseService.CreateExercise(exercise);
@@ -25,9 +25,9 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        //[Authorize(Policy = "ElevatedPower")]
-        [HttpPut("UpdateExercise")]
-        public async Task<IActionResult> UpdateExercise([FromQuery]Guid exerciseID,[FromBody] ExerciseCreationDTO exercise)
+        [Authorize(Policy = "ElevatedPower")]
+        [HttpPut("update/{exerciseID}")]
+        public async Task<IActionResult> UpdateExercise([FromRoute]Guid exerciseID,[FromBody] ExerciseCreationDTO exercise)
         {
             var result = await _exerciseService.UpdateExercise(exerciseID, exercise);
 
@@ -36,11 +36,11 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        //[Authorize(Policy = "ElevatedPower")]
-        [HttpDelete("DeleteExercise")]
-        public async Task<IActionResult> DeleteExercise([FromQuery] Guid exerciseId)
+        [Authorize(Policy = "ElevatedPower")]
+        [HttpDelete("delete/{exerciseID}")]
+        public async Task<IActionResult> DeleteExercise([FromRoute] Guid exerciseID)
         {
-            var result = await _exerciseService.DeleteExercise(exerciseId);
+            var result = await _exerciseService.DeleteExercise(exerciseID);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -48,8 +48,8 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
 
-        [HttpPost("AddMusclesToExercise")]
-        public async Task<IActionResult> AddMusclesToExercise([FromQuery]Guid exerciseID,[FromBody] ExerciseMusclesDTO Muscles)
+        [HttpPost("add-muscles/{exerciseID}")]
+        public async Task<IActionResult> AddMusclesToExercise([FromRoute]Guid exerciseID,[FromBody] ExerciseMusclesDTO Muscles)
         {
             var result = await _exerciseService.AddMusclesToExercise(exerciseID, Muscles);
 
@@ -59,8 +59,8 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
 
-        [HttpDelete("RemoveMusclesFromExercise")]
-        public async Task<IActionResult> RemoveMusclesFromExercise([FromQuery] Guid exerciseID, [FromBody] ExerciseMusclesDTO Muscles)//fe 8alta hena
+        [HttpDelete("remove-muscles/{exerciseID}")]
+        public async Task<IActionResult> RemoveMusclesFromExercise([FromRoute] Guid exerciseID, [FromBody] ExerciseMusclesDTO Muscles)
         {
             var result = await _exerciseService.RemoveMusclesFromExercise(exerciseID,Muscles);
 
@@ -69,24 +69,15 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpGet("GetExerciseByName")]
-        public async Task<IActionResult> GetExerciseByName([FromQuery] string name)
-        {
-            var result = await _exerciseService.GetExerciseByName(name);
-            if (result == null) 
-                return BadRequest(new { Message = "Exercise not found" });
-            else
-                return Ok(result);
-        }
-        [HttpGet("GetExerciseByID")]
-        public async Task<IActionResult> GetExerciseByID([FromQuery] Guid id)
+        [HttpGet("get/{id}")]
+        public async Task<IActionResult> GetExerciseByID([FromRoute] Guid id)
         {
             var result = await _exerciseService.GetExerciseByID(id);
             if (result == null) return BadRequest(new { Message = "Exercise not found" });
             return Ok(result);
         }
-        [HttpGet("GetExerciseMuscles")]
-        public async Task<IActionResult> GetExerciseMuscles([FromQuery] Guid exerciseID)
+        [HttpGet("get-muscles/{exerciseID}")]
+        public async Task<IActionResult> GetExerciseMuscles([FromRoute] Guid exerciseID)
         {
             var result = await _exerciseService.GetExerciseMuscles(exerciseID);
             if (result == null) 
@@ -94,7 +85,7 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(result);
         }
-        [HttpPost("GetExerciseByMuscle")]
+        [HttpPost("get-by-muscle")]
         public async Task<IActionResult> GetWorkoutsByMuscle([FromQuery] int page, int pageSize,[FromBody] ExerciseListDTO muscles)
         {
             var result = await _exerciseService.GetExercisesByMuscle(muscles,page,pageSize);
@@ -103,13 +94,13 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(result);
         }
-        [HttpGet("GetExercisesByFilter")]
+        [HttpGet("get-by-filter")]
         public async Task<IActionResult> GetAllExercisesByFilter([FromQuery] string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {
             var result = await _exerciseService.GetExercisesByFilter(page, sortColumn, OrderBy, SearchTerm, pageSize);
             return Ok(result);
         }
-        [HttpGet("GetAllExercises")]
+        [HttpGet("get")]
         public async Task<IActionResult> GetAllExercises([FromQuery] int page, int pageSize)
         {
             var result = await _exerciseService.GetAllExercises(page,pageSize);

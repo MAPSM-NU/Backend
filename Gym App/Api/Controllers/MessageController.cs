@@ -1,5 +1,7 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Gym_App.Application.Interfaces;
+using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.Message;
 using MailKit.Search;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Gym_App.Api.Controllers
 {
     [Authorize(Policy ="NormalUsage")]
-    [Route("[controller]")]
+    [Route("api/v1/message")]
     public class MessageController : Controller
     {
         private readonly IMessageService _messageService;
@@ -16,8 +18,8 @@ namespace Gym_App.Api.Controllers
         {
             _messageService = messageService;
         }
-        [HttpPost("AddMessage")]
-        public async Task<IActionResult> AddMessage([FromQuery]Guid userID,[FromBody] MessageCreationDTO message)
+        [HttpPost("send/{userID}")]
+        public async Task<IActionResult> AddMessage([FromRoute]Guid userID,[FromBody] MessageCreationDTO message)
         {
             var result = await _messageService.AddMessage(User,userID, message);
 
@@ -28,8 +30,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpPut("UpdateMessage")]
-        public async Task<IActionResult> UpdateMessage([FromQuery] Guid messageID, [FromBody] MessageUpdateDTO message)
+        [HttpPut("update/{messageID}")]
+        public async Task<IActionResult> UpdateMessage([FromRoute] Guid messageID, [FromBody] MessageUpdateDTO message)
         {
             var result = await _messageService.UpdateMessage(User, messageID, message);
 
@@ -40,8 +42,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpDelete("DeleteMessage")]
-        public async Task<IActionResult> DeleteMessage([FromQuery] Guid messageID)
+        [HttpDelete("delete/{messageID}")]
+        public async Task<IActionResult> DeleteMessage([FromRoute] Guid messageID)
         {
             var result = await _messageService.DeleteMessage(User, messageID);
 
@@ -52,8 +54,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpGet("GetSessionMessages")]
-        public async Task<IActionResult> GetSessionMessages([FromQuery] Guid sessionID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
+        [HttpGet("session-messages/{sessionID}")]
+        public async Task<IActionResult> GetSessionMessages([FromRoute] Guid sessionID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
         {
             var messages = await _messageService.GetSessionMessages(User,sessionID, startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
             if (messages == null)
@@ -61,7 +63,7 @@ namespace Gym_App.Api.Controllers
             return Ok(messages);
         }
         //[Authorize(Policy = "ElevatedPower")]
-        [HttpGet("GetMessagesByFilter")]
+        [HttpGet("messages-filter")]
         public async Task<IActionResult> GetMessagesByFilter([FromQuery]string startDate,string endDate, string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {
             var messages = await _messageService.GetMessagesByFilter(startDate,endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
@@ -70,7 +72,7 @@ namespace Gym_App.Api.Controllers
             return Ok(messages);
         }
         //[Authorize(Policy = "ElevatedPower")]
-        [HttpGet("GetAllMessages")]
+        [HttpGet("get")]
         public async Task<IActionResult> GetAllMessages([FromQuery]int page, int pageSize)
         {
             var messages = await _messageService.GetMessages(page,pageSize);

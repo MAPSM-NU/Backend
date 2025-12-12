@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Gym_App.Api.Controllers
 {
     [Authorize(Policy = "NormalUsage")]
-    [Route("[controller]")]
+    [Route("api/v1/feedback")]
     public class FeedbackController : Controller
     {
         private readonly IFeedbackService _feedbackService;
@@ -14,8 +14,8 @@ namespace Gym_App.Api.Controllers
         {
             _feedbackService = feedbackService;
         }
-        [HttpPost("CreateFeedback")]
-        public async Task<IActionResult> CreateFeedback([FromQuery]Guid userID,[FromBody] FeedbackCreationDTO feedbackDTO)
+        [HttpPost("create/{userID}")]
+        public async Task<IActionResult> CreateFeedback([FromRoute]Guid userID,[FromBody] FeedbackCreationDTO feedbackDTO)
         {
             var result = await _feedbackService.CreateFeedback(User,userID, feedbackDTO);
 
@@ -26,8 +26,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpPut("UpdateFeedback")]
-        public async Task<IActionResult> UpdateFeedback([FromQuery]Guid feedbackID,[FromBody] FeedbackUpdateDTO feedbackDTO)
+        [HttpPut("update/{feedbackID}")]
+        public async Task<IActionResult> UpdateFeedback([FromRoute]Guid feedbackID,[FromBody] FeedbackUpdateDTO feedbackDTO)
         {
             var result = await _feedbackService.UpdateFeedback(User,feedbackID, feedbackDTO);
 
@@ -38,8 +38,8 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpDelete("DeleteFeedback")]
-        public async Task<IActionResult> DeleteFeedback([FromQuery]Guid feedbackID)
+        [HttpDelete("delete/{feedbackID}")]
+        public async Task<IActionResult> DeleteFeedback([FromRoute]Guid feedbackID)
         {
             var result = await _feedbackService.DeleteFeedback(User, feedbackID);
 
@@ -50,35 +50,35 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpGet("GetFeedbackByID")]
-        public async Task<IActionResult> GetFeedbackByID([FromQuery]Guid feedbackId)
+        [HttpGet("get/{feedbackID}")]
+        public async Task<IActionResult> GetFeedbackByID([FromRoute]Guid feedbackID)
         {
             //Talking to Database
 
-            var feedback = await _feedbackService.GetFeedbackByID(User,feedbackId);
+            var feedback = await _feedbackService.GetFeedbackByID(User,feedbackID);
             if (feedback == null) 
                 return BadRequest("Feedback not found or not authorized");
 
             return Ok(feedback);
         }
-        [HttpGet("GetFeedbackOfWorkout")]
-        public async Task<IActionResult> GetFeedbackOfWorkout([FromQuery]Guid workoutID)
+        [HttpGet("get-workout-feedback/{workoutID}")]
+        public async Task<IActionResult> GetFeedbackOfWorkout([FromRoute]Guid workoutID)
         {
             var feedback = await _feedbackService.GetFeedbackOfWorkout(User, workoutID);
             if (feedback == null)
                 return BadRequest("Feedback not found or not authorized");
             return Ok(feedback);
         }
-        [HttpGet("GetUserFeedbacks")]
-        public async Task<IActionResult> GetUserFeedbacks([FromQuery]Guid UserID, string startDate,string endDate,string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        [HttpGet("get-user-feedbacks/{userID}")]
+        public async Task<IActionResult> GetUserFeedbacks([FromRoute]Guid userID,[FromQuery] string startDate,string endDate,string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
         {//startDate and endDate are string so I can parse and check them
-            var feedbacks = await _feedbackService.GetUserFeedbacks(User, UserID,startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            var feedbacks = await _feedbackService.GetUserFeedbacks(User, userID,startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
             if (feedbacks == null)
                 return BadRequest("No feedbacks found or not authorized");
             return Ok(feedbacks);
         }
         //[Authorize(Policy = "ElevatedPower")]
-        [HttpGet("GetAllFeedbacks")]
+        [HttpGet("get")]
         public async Task<IActionResult> GetAllFeedbacks([FromQuery] int page,int pageSize)
         {
             var feedbacks = await _feedbackService.GetAllFeedbacks(page,pageSize);

@@ -16,7 +16,7 @@ namespace Gym_App.Application.Services
     {
         private readonly DbBase _db;
         private readonly IAuthorizationService _authorizationService;
-        public ScheduleService(DbBase db,IAuthorizationService authorizationService)
+        public ScheduleService(DbBase db, IAuthorizationService authorizationService)
         {
             _db = db;
             _authorizationService = authorizationService;
@@ -24,23 +24,23 @@ namespace Gym_App.Application.Services
 
         //        *********** Setters ***********
 
-        //0 == Error(Bad Request) || 1 ==Unauthorized (Forbid) || 2 == Success (Ok)
+        //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
 
-        public async Task<SettersResponse> AddSchedule(ClaimsPrincipal User,Guid userID, ScheduleCreationAndEditDTO schedule)
+        public async Task<SettersResponse> AddSchedule(ClaimsPrincipal User, Guid userID, ScheduleCreationAndEditDTO schedule)
         {
             //Checking for DTO validity
-            if (schedule == null) 
+            if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Invalid schedule data" };
 
             //Checking if user exists
             var user = await (from u in _db.Users
-                       where u.UserID == userID
-                       select u).FirstOrDefaultAsync();
-            if (user == null) 
+                              where u.UserID == userID
+                              select u).FirstOrDefaultAsync();
+            if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
-            
+
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User,user.UserID,"SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -48,8 +48,8 @@ namespace Gym_App.Application.Services
             var newSchedule = new Schedule
             {
                 ScheduleID = Guid.NewGuid(),
-                Name = schedule.Name,
-                Type = schedule.Type,
+                Name = schedule.Name!,
+                Type = schedule.Type!,
                 CreatedAt = DateTime.UtcNow,
                 //Description = schedule.Description, //Could add a description why not
                 User = user
@@ -60,17 +60,17 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Schedule created successfully" };
         }
-        public async Task<SettersResponse> UpdateSchedule(ClaimsPrincipal User,Guid scheduleID, ScheduleCreationAndEditDTO schedule)
+        public async Task<SettersResponse> UpdateSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleCreationAndEditDTO schedule)
         {
             //Checking for DTO validity
-            if (schedule == null) 
+            if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Invalid schedule data" };
 
             //Getting schedule from database
-            var existingSchedule = await (from s in _db.Schedules.Include(s=>s.User)
-                                    where s.ScheduleID == scheduleID
-                                    select s).FirstOrDefaultAsync();
-            if (existingSchedule == null) 
+            var existingSchedule = await (from s in _db.Schedules.Include(s => s.User)
+                                          where s.ScheduleID == scheduleID
+                                          select s).FirstOrDefaultAsync();
+            if (existingSchedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
@@ -80,7 +80,7 @@ namespace Gym_App.Application.Services
 
             //Updating fields
             if (!string.IsNullOrEmpty(schedule.Name)) existingSchedule.Name = schedule.Name;
-            if(!string.IsNullOrEmpty(schedule.Type)) existingSchedule.Type = schedule.Type;
+            if (!string.IsNullOrEmpty(schedule.Type)) existingSchedule.Type = schedule.Type;
 
             //Saving to Database
             _db.Schedules.Update(existingSchedule);
@@ -90,14 +90,14 @@ namespace Gym_App.Application.Services
         public async Task<SettersResponse> DeleteSchedule(ClaimsPrincipal User, Guid scheduleID)
         {
             //Checking for scheduleID validity
-            if (scheduleID == Guid.Empty) 
+            if (scheduleID == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid schedule ID" };
 
             //Getting schedule from database
-            var schedule = await (from s in _db.Schedules.Include(s=>s.User)
-                            where s.ScheduleID == scheduleID
-                            select s).FirstOrDefaultAsync();
-            if (schedule == null) 
+            var schedule = await (from s in _db.Schedules.Include(s => s.User)
+                                  where s.ScheduleID == scheduleID
+                                  select s).FirstOrDefaultAsync();
+            if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
@@ -113,36 +113,36 @@ namespace Gym_App.Application.Services
         public async Task<SettersResponse> AddWorkoutsToSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
         {
             //checking DTO
-            if (scheduleWorkout == null) 
+            if (scheduleWorkout == null)
                 return new SettersResponse { status = 0, msg = "Invalid schedule workout data" };
 
             //Getting schedule from database
-            var schedule = await(from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
-                                 where s.ScheduleID == scheduleID
-                            select s).FirstOrDefaultAsync();
-            if (schedule == null) 
+            var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
+                                  where s.ScheduleID == scheduleID
+                                  select s).FirstOrDefaultAsync();
+            if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return new SettersResponse { status = 1,msg ="Unauthorized" };
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Adding workouts
-            var workoutIDsToAdd = new HashSet<Guid>(schedule.Workouts.Select(i=>i.WorkoutID));
+            var workoutIDsToAdd = new HashSet<Guid>(schedule.Workouts!.Select(i => i.WorkoutID));
             var workoutIDs = scheduleWorkout.WorkoutsID?.Where(id => !workoutIDsToAdd.Contains(id)).ToList();
-            if (workoutIDs == null || workoutIDs.Count == 0) 
+            if (workoutIDs == null || workoutIDs.Count == 0)
                 return new SettersResponse { status = 0, msg = "No new workouts to add" };
-            var workoutsToAdd = await(from w in _db.Workouts
-                               where workoutIDs.Contains(w.WorkoutID)
-                               select w).ToListAsync();
-            if(workoutsToAdd.Count == 0) 
+            var workoutsToAdd = await (from w in _db.Workouts
+                                       where workoutIDs.Contains(w.WorkoutID)
+                                       select w).ToListAsync();
+            if (workoutsToAdd.Count == 0)
                 return new SettersResponse { status = 0, msg = "Workouts not found" };
             foreach (var workout in workoutsToAdd)
             {
-                schedule.Workouts.Add(workout);
+                schedule.Workouts!.Add(workout);
             }
-            
+
             //Saving to Database
             _db.Schedules.Update(schedule);
             await _db.SaveChangesAsync();
@@ -155,28 +155,28 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid schedule workout data" };
 
             //Getting schedule from database    
-            var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s=>s.User)
+            var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
                                   where s.ScheduleID == scheduleID
-                            select s).FirstOrDefaultAsync();
+                                  select s).FirstOrDefaultAsync();
             if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return new SettersResponse { status = 1, msg = "Unauthorized"};
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Setting workouts
             schedule.Workouts?.Clear();
             var workoutsIDs = scheduleWorkout.WorkoutsID.ToList();
-            var workoutsToAdd = await(from w in _db.Workouts
-                               where workoutsIDs.Contains(w.WorkoutID)
-                               select w).ToListAsync();
-            if (workoutsToAdd.Count == 0) 
+            var workoutsToAdd = await (from w in _db.Workouts
+                                       where workoutsIDs.Contains(w.WorkoutID)
+                                       select w).ToListAsync();
+            if (workoutsToAdd.Count == 0)
                 return new SettersResponse { status = 0, msg = "No workouts found" };
-            foreach(var workout in workoutsToAdd)
+            foreach (var workout in workoutsToAdd)
             {
-                schedule.Workouts.Add(workout);
+                schedule.Workouts!.Add(workout);
             }
 
             //Saving to Database
@@ -192,9 +192,9 @@ namespace Gym_App.Application.Services
 
             //Getting schedule from database
             var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
-                            where s.ScheduleID == scheduleID
-                            select s).FirstOrDefaultAsync();
-            if (schedule == null) 
+                                  where s.ScheduleID == scheduleID
+                                  select s).FirstOrDefaultAsync();
+            if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
@@ -203,18 +203,18 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Checking if schedule has workouts
-            var existingWorkoutsIDs = new HashSet<Guid>(schedule.Workouts.Select(w => w.WorkoutID));
+            var existingWorkoutsIDs = new HashSet<Guid>(schedule.Workouts!.Select(w => w.WorkoutID));
             var workoutIDsToRemove = scheduleWorkout.WorkoutsID?.Where(id => existingWorkoutsIDs.Contains(id)).ToList();
-            if (workoutIDsToRemove == null || workoutIDsToRemove.Count == 0) 
+            if (workoutIDsToRemove == null || workoutIDsToRemove.Count == 0)
                 return new SettersResponse { status = 0, msg = "No workouts to remove" };
             var workoutsToRemove = await (from w in _db.Workouts
                                           where workoutIDsToRemove.Contains(w.WorkoutID)
                                           select w).ToListAsync();
-            if (workoutsToRemove.Count == 0) 
+            if (workoutsToRemove.Count == 0)
                 return new SettersResponse { status = 0, msg = "Workouts not found" };
             foreach (var workout in workoutsToRemove)
             {
-                schedule.Workouts.Remove(workout);
+                schedule.Workouts!.Remove(workout);
             }
 
             //Saving to Database
@@ -233,15 +233,15 @@ namespace Gym_App.Application.Services
         public async Task<ScheduleViewDTO?> GetScheduleById(Guid scheduleID)//AHHHHHHHHHHHHHHHHH
         {
             //Getting schedule from database and projecting to DTO
-            var schedule = await(from s in _db.Schedules
-                            where s.ScheduleID == scheduleID
-                            select new ScheduleViewDTO
-                            {
-                                ScheduleID = s.ScheduleID,
-                                Name = s.Name,
-                                Type = s.Type,
-                                UserID = s.User.UserID,
-                            }).FirstOrDefaultAsync();
+            var schedule = await (from s in _db.Schedules
+                                  where s.ScheduleID == scheduleID
+                                  select new ScheduleViewDTO
+                                  {
+                                      ScheduleID = s.ScheduleID,
+                                      Name = s.Name,
+                                      Type = s.Type,
+                                      UserID = s.User.UserID,
+                                  }).FirstOrDefaultAsync();
 
             //Returning null if schedule not found
             if (schedule == null) return null;
@@ -252,28 +252,29 @@ namespace Gym_App.Application.Services
         {
             //Getting the schedule's workouts from database and projecting to DTO
             var schedule = await (from s in _db.Schedules
-                            where s.ScheduleID == scheduleID
-                            select new ScheduleWorkoutDTO
-                            {
-                                WorkoutsID = s.Workouts.Select(w => w.WorkoutID).ToList()
-                            }).FirstOrDefaultAsync();
+                                  where s.ScheduleID == scheduleID
+                                  select new ScheduleWorkoutDTO
+                                  {
+                                      WorkoutsID = s.Workouts!.Select(w => w.WorkoutID).ToList()
+                                  }).FirstOrDefaultAsync();
             //Returning null if schedule not found
             if (schedule == null) return null;
 
             return schedule;
         }
-        public async Task<PagedList<ScheduleViewDTO>?> GetSchedulesByOfUser(Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<GettersResponse<ScheduleViewDTO>> GetSchedulesByOfUser(Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            //if page and pageSize are 0, set default values
-            if (page == 0) page = 1;
-            if(pageSize == 0) pageSize = 10;
-
             //Getting schedules from database
             var schedulesQuery = from s in _db.Schedules
-                                  where s.User.UserID == UserID
-                                  select s;
+                                 where s.User.UserID == UserID
+                                 select s;
             //if no schedules found, return null
-            if (schedulesQuery == null) return null;
+            if (schedulesQuery == null || schedulesQuery.Count() == 0)
+                return new GettersResponse<ScheduleViewDTO>
+                {
+                    status = 0,
+                    msg = "Schedule(s) not found"
+                };
 
             //filtering by start date and end date
             DateTime validStartDate, validEndDate;
@@ -283,11 +284,11 @@ namespace Gym_App.Application.Services
             }
             if (DateTime.TryParse(endDate, out validEndDate))
             {
-                schedulesQuery = schedulesQuery.Where(s=>s.CreatedAt < validEndDate);
+                schedulesQuery = schedulesQuery.Where(s => s.CreatedAt < validEndDate);
             }
 
             //filtering by search term
-            if (!string.IsNullOrEmpty(searchTerm))schedulesQuery = schedulesQuery.Where(s=>s.Name.Contains(searchTerm));
+            if (!string.IsNullOrEmpty(searchTerm)) schedulesQuery = schedulesQuery.Where(s => s.Name.Contains(searchTerm));
 
             //Order by given column
             if (!string.IsNullOrEmpty(sortColumn))
@@ -307,41 +308,52 @@ namespace Gym_App.Application.Services
             }
             //Projecting the resultant message queries to messageDTO
             var schedulesResponse = schedulesQuery.Select(s => new ScheduleViewDTO
-                                    {
-                                        UserID = s.User.UserID,
-                                        ScheduleID = s.ScheduleID,
-                                        Name = s.Name,
-                                        Type = s.Type,
-                                        CreatedAt = s.CreatedAt,
-                                    });
+            {
+                UserID = s.User.UserID,
+                ScheduleID = s.ScheduleID,
+                Name = s.Name,
+                Type = s.Type,
+                CreatedAt = s.CreatedAt,
+            });
 
             //Making the result as a paged list
-            var schedules = await PagedList<ScheduleViewDTO>.CreateAsync(schedulesResponse,page,pageSize);
-            return schedules;
+            var schedules = await PagedList<ScheduleViewDTO>.CreateAsync(schedulesResponse, page, pageSize);
+            return new GettersResponse<ScheduleViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = schedules
+            };
         }
-        public async Task<PagedList<ScheduleViewDTO>?> GetAllSchedules(int page,int pageSize)
+        public async Task<GettersResponse<ScheduleViewDTO>> GetAllSchedules(int page, int pageSize)
         {
-            //if page and pageSize are 0, set default values
-            if (page == 0)page = 1;
-            if (pageSize == 0)pageSize = 10;
-
             //Getting schedules from database and projecting to DTO
             var schedulesQuery = from s in _db.Schedules
-                            select new ScheduleViewDTO
-                            {
-                                UserID = s.User.UserID,
-                                ScheduleID = s.ScheduleID,
-                                Name = s.Name,
-                                Type = s.Type,
-                                CreatedAt = s.CreatedAt
-                            };
+                                 select new ScheduleViewDTO
+                                 {
+                                     UserID = s.User.UserID,
+                                     ScheduleID = s.ScheduleID,
+                                     Name = s.Name,
+                                     Type = s.Type,
+                                     CreatedAt = s.CreatedAt
+                                 };
 
             //If there are no schedules, return null
-            if (schedulesQuery == null) return null;
+            if (schedulesQuery == null || schedulesQuery.Count() == 0)
+                return new GettersResponse<ScheduleViewDTO>
+                {
+                    status = 0,
+                    msg = "no Schedules in Database"
+                };
 
             //Making the result as a paged list
             var schedules = await PagedList<ScheduleViewDTO>.CreateAsync(schedulesQuery, page, pageSize);
-            return schedules;
+            return new GettersResponse<ScheduleViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = schedules
+            };
         }
         public async Task<Guid> GetScheduleUserID(Guid scheduleID) 
         {

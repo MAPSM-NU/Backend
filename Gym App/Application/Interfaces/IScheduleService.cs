@@ -16,8 +16,8 @@ namespace Gym_App.Application.Interfaces
         public Task<SettersResponse> DeleteWorkoutsFromSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout);
         public Task<ScheduleViewDTO?> GetScheduleById(Guid scheduleID);
         public Task<ScheduleWorkoutDTO?> GetScheduleWorkouts(Guid scheduleID);
-        public Task<PagedList<ScheduleViewDTO>?> GetSchedulesByOfUser(Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm,int pageSize);
-        public Task<PagedList<ScheduleViewDTO>?> GetAllSchedules(int page,int pageSize);
+        public Task<GettersResponse<ScheduleViewDTO>> GetSchedulesByOfUser(Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm,int pageSize);
+        public Task<GettersResponse<ScheduleViewDTO>> GetAllSchedules(int page,int pageSize);
         public Task<Guid> GetScheduleUserID(Guid scheduleID);
     }
 }

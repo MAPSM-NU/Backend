@@ -99,24 +99,34 @@ namespace Gym_App.Api.Controllers
         [HttpGet("get-workouts/{scheduleID}")]
         public async Task<IActionResult> GetWorkoutsOfSchedule([FromRoute] Guid scheduleID)
         {
-            var workouts = await _scheduleService.GetScheduleWorkouts(scheduleID);
-            if (workouts == null)
+            var result = await _scheduleService.GetScheduleWorkouts(scheduleID);
+            if (result == null)
                 return BadRequest(new { message = "Schedule not found" });
             else 
-                return Ok(workouts);
+                return Ok(result);
         }
 
         [HttpGet("get-user-schedule/{userID}")]
-        public async Task<IActionResult> GetSchedulesByOfUser([FromRoute] Guid userID,[FromQuery] string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
+        public async Task<IActionResult> GetSchedulesByOfUser([FromRoute] Guid userID,[FromQuery] string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page = 1, int pageSize = 10)
         {
-            var schedules = await _scheduleService.GetSchedulesByOfUser(userID,startDate,endDate,page,sortColumn, OrderBy,searchTerm,pageSize);
-            return Ok(schedules);
+            var result = await _scheduleService.GetSchedulesByOfUser(userID,startDate,endDate,page,sortColumn, OrderBy,searchTerm,pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
         [HttpGet("get")]
-        public async Task<IActionResult> GetAllSchedules([FromQuery] int page,int pageSize)
+        public async Task<IActionResult> GetAllSchedules([FromQuery] int page = 1,int pageSize = 10)
         {
-            var schedules = await _scheduleService.GetAllSchedules(page,pageSize);
-            return Ok(schedules);
+            var result = await _scheduleService.GetAllSchedules(page,pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
 
     }

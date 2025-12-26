@@ -116,8 +116,8 @@ namespace Gym_App.Application.Services
                 Role = role
             };
 
-            //Setting UserType to Coach
-            if (u.UserType.ToLower() == "coach" || u.UserType.ToLower() == "c")
+            //Setting UseeType to Coach
+            if (u.UserType!.ToLower() == "coach" || u.UserType.ToLower() == "c")
                 user.UserType = "Coach";
             //Setting UserType to Doctor
             else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d")
@@ -402,7 +402,7 @@ namespace Gym_App.Application.Services
             {
                 userQuery = userQuery.Where(u=>u.CreatedAt < validEndDate);
             }
-            if (!string.IsNullOrEmpty(searchTerm)) userQuery = userQuery.Where(u => u.Name.Contains(searchTerm) || u.Email.Contains(searchTerm) || u.Specialty.Contains(searchTerm));
+            if (!string.IsNullOrEmpty(searchTerm)) userQuery = userQuery.Where(u => u.Name.Contains(searchTerm) || u.Email.Contains(searchTerm) || u.Specialty!.Contains(searchTerm));
             
             if (!string.IsNullOrEmpty(sortColumn))
             {
@@ -501,7 +501,7 @@ namespace Gym_App.Application.Services
                 Data = users
             };
         }
-        public async Task<GettersResponse<UserViewDTO>?> GetAllUsers(int page, int pageSize)
+        public async Task<GettersResponse<UserViewDTO>> GetAllUsers(int page, int pageSize)
         {
             var userQuery =   from u in _db.Users
                                select new UserViewDTO

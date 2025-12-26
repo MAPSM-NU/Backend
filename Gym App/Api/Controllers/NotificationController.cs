@@ -54,18 +54,26 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
         [HttpGet("user-notifs/{userID}")]
-        public async Task<IActionResult> GetNotifications([FromRoute]Guid userID,[FromQuery] string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
+        public async Task<IActionResult> GetNotifications([FromRoute]Guid userID,[FromQuery] string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page = 1, int pageSize = 10)
         {
-            var notifications = await _notificationService.GetNotifications(User,userID,startDate,endDate,page,sortColumn,OrderBy,searchTerm,pageSize);
-            if (notifications == null) 
-                return BadRequest(new { message = "Unauthorized access,User has no notifications or User doesn't exist" });
-            return Ok(notifications);
+            var result = await _notificationService.GetNotifications(User,userID,startDate,endDate,page,sortColumn,OrderBy,searchTerm,pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
         [HttpGet("get")]
-        public async Task<IActionResult> GetAllNotifications([FromQuery]int page,int pageSize)
+        public async Task<IActionResult> GetAllNotifications([FromQuery]int page = 1,int pageSize = 10)
         {
-            var notifications = await _notificationService.GetAllNotifications(page,pageSize);
-            return Ok(notifications);
+            var result = await _notificationService.GetAllNotifications(page,pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
 
     }

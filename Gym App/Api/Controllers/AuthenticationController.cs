@@ -6,12 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace Gym_App.Api.Controllers
 {
     [Route("api/v1/auth")]
-    public class Authentication : Controller
+    public class AuthenticationController : Controller
     {
         private readonly IUserServise _userServiceService;
         private readonly IEmailSender _emailSender;//Still have not made the email verification service
         private readonly ITokenHandler _tokenHandler;
-        public Authentication(IUserServise userService , IEmailSender emailSender,ITokenHandler tokenHandler)
+        public AuthenticationController(IUserServise userService , IEmailSender emailSender,ITokenHandler tokenHandler)
         {
             _userServiceService = userService;
             _emailSender = emailSender;

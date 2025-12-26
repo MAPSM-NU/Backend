@@ -1,6 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office2016.Excel;
-using DocumentFormat.OpenXml.Spreadsheet;
-using Gym_App.Application.Interfaces;
+﻿using Gym_App.Application.Interfaces;
 using Gym_App.Domain;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
@@ -11,7 +9,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
-using System.Runtime.InteropServices;
 
 namespace Gym_App.Application.Services
 {

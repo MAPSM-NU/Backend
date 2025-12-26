@@ -73,7 +73,7 @@ builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();
 
 builder.Services.AddDbContext<DbBase>(options =>
 {
-    options.UseSqlServer("Data Source=DESKTOP-OR6CO4J\\SQLEXPRESS;Initial Catalog=Gym App;Integrated Security=True;Trust Server Certificate=True");//depends on your server!!!
+    options.UseSqlServer(builder.Configuration["ConnectionStrings:ModyConnection"]);
 });
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
     AddJwtBearer(options =>
@@ -92,6 +92,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
 
         };
     });
+
+Console.WriteLine("Connection String = " + builder.Configuration["ConnectionStrings:VpsConnection"]);
+Console.WriteLine("Issuer = " + builder.Configuration["JwtSettings:Issuer"]);
+Console.WriteLine("Audience = " + builder.Configuration["JwtSettings:Audience"]);
+Console.WriteLine("Token = " + (builder.Configuration["JwtSettings:Token"] != null));
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("NormalUsage",
@@ -123,11 +129,10 @@ builder.Services.ConfigureHttpJsonOptions(x=>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
 //app.UseHttpLogging();
 
 app.UseHttpsRedirection();

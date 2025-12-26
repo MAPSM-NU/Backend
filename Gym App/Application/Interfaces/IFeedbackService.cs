@@ -12,9 +12,9 @@ namespace Gym_App.Application.Interfaces
         Task<SettersResponse> UpdateFeedback(ClaimsPrincipal User,Guid feedbackID, FeedbackUpdateDTO feedbackDTO);
         Task<SettersResponse> DeleteFeedback(ClaimsPrincipal User, Guid feedbackId);
         Task<Guid> GetFeedbackUserID(ClaimsPrincipal User, Guid feedbackId);
-        Task<FeedbackViewDTO?> GetFeedbackByID(ClaimsPrincipal User, Guid feedbackId);
-        Task<FeedbackMiniViewDTO?> GetFeedbackOfWorkout(ClaimsPrincipal User, Guid workoutID);
-        Task<PagedList<FeedbackMiniViewDTO>?> GetUserFeedbacks(ClaimsPrincipal User, Guid UserID, string startDate,string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
-        Task<PagedList<FeedbackViewDTO>?> GetAllFeedbacks(int page, int pageSize=5);
+        Task<GettersResponse<FeedbackViewDTO>> GetFeedbackByID(ClaimsPrincipal User, Guid feedbackId);
+        Task<GettersResponse<FeedbackMiniViewDTO>> GetFeedbackOfWorkout(ClaimsPrincipal User, Guid workoutID);
+        Task<GettersResponse<FeedbackMiniViewDTO>> GetUserFeedbacks(ClaimsPrincipal User, Guid UserID, string startDate,string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
+        Task<GettersResponse<FeedbackViewDTO>> GetAllFeedbacks(int page, int pageSize=5);
     }
 }

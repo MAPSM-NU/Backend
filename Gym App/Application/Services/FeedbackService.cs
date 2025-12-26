@@ -168,11 +168,15 @@ namespace Gym_App.Application.Services
 
             return userID;
         }
-        public async Task<FeedbackViewDTO?> GetFeedbackByID(ClaimsPrincipal User, Guid feedbackID)
+        public async Task<GettersResponse<FeedbackViewDTO>> GetFeedbackByID(ClaimsPrincipal User, Guid feedbackID)
         {
             //Checking feedbackID validity
             if (feedbackID == Guid.Empty)
-                return null;
+                return new GettersResponse<FeedbackViewDTO>
+                {
+                    status = 0,
+                    msg = "Faulty ID"
+                };
 
             //Getting feedback from Database
             var feedback = await (from f in _db.Feedbacks
@@ -189,28 +193,49 @@ namespace Gym_App.Application.Services
                                       FeedbackText = f.FeedbackText,
                                       UserID = f.User.UserID
                                   }).FirstOrDefaultAsync();
-            if (feedback == null) 
-                return feedback;
+            if (feedback == null)
+                return new GettersResponse<FeedbackViewDTO>
+                {
+                    status = 0,
+                    msg = "not found"
+                };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, feedback.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return null;
+                return new GettersResponse<FeedbackViewDTO>
+                {
+                    status = 1,
+                    msg = "Unauthorized"
+                };
 
-            return feedback;
+            return new GettersResponse<FeedbackViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Value = feedback
+            };
         }
-        public async Task<FeedbackMiniViewDTO?> GetFeedbackOfWorkout(ClaimsPrincipal User, Guid workoutID)
+        public async Task<GettersResponse<FeedbackMiniViewDTO>> GetFeedbackOfWorkout(ClaimsPrincipal User, Guid workoutID)
         {
             var user = await (from w in _db.Workouts.Include(w => w.User)
                               where w.WorkoutID == workoutID
                               select w.User).FirstOrDefaultAsync();
 
-            if(user == null)
-                return null;
+            if (user == null)
+                return new GettersResponse<FeedbackMiniViewDTO>
+                {
+                    status = 0,
+                    msg = "User not found"
+                };
 
             var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return null;
+                return new GettersResponse<FeedbackMiniViewDTO>
+                {
+                    status = 1,
+                    msg = "Unauthorized"
+                };
 
             var feedback = await  (from f in _db.Feedbacks.Include(f => f.Workout).Include(f => f.User)
                                    where f.Workout.WorkoutID == workoutID
@@ -225,10 +250,15 @@ namespace Gym_App.Application.Services
                                        CaloriesBurned = f.CaloriesBurned ?? 0,//For testing purposes only
                                        DurationMinutes = f.DurationMinutes ?? 0,
                                    }).FirstOrDefaultAsync();
-            return feedback;
+            return new GettersResponse<FeedbackMiniViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Value = feedback
+            };
 
         }
-        public async Task<PagedList<FeedbackMiniViewDTO>?> GetUserFeedbacks(ClaimsPrincipal User, Guid UserID, string startDate, string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<GettersResponse<FeedbackMiniViewDTO>> GetUserFeedbacks(ClaimsPrincipal User, Guid UserID, string startDate, string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Getting User from Database
             var user = await (from u in _db.Users
@@ -236,20 +266,32 @@ namespace Gym_App.Application.Services
                               select u).FirstOrDefaultAsync();
             //if user not found return
             if (user == null)
-                return null;
+                return new GettersResponse<FeedbackMiniViewDTO>
+                {
+                    status = 0,
+                    msg = "User not found"
+                };
             
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return null;
+                return new GettersResponse<FeedbackMiniViewDTO>
+                {
+                    status = 1,
+                    msg = "Unauthorized"
+                };
 
-            //if page or pageSize are 0 set default values
-            if (page == 0) page = 1;
-            if(pageSize == 0)pageSize = 10;
             IQueryable<Feedback> feedbackQuery = from f in _db.Feedbacks
                                                   where f.User.UserID == UserID
                                                   select f;
-            
+
+            if (feedbackQuery == null || feedbackQuery.Count() == 0)
+                return new GettersResponse<FeedbackMiniViewDTO>
+                {
+                    status = 0,
+                    msg = "User has no feedbacks"
+                };
+
             //Filtering by start date and end date
             DateTime validStartDate,validEndDate;
             if (DateTime.TryParse(startDate, out validStartDate))//Takes Dates after the start Date
@@ -270,8 +312,8 @@ namespace Gym_App.Application.Services
                 Expression<Func<Feedback, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
                 {
                     "title" => Feedback => Feedback.Title, //order by Title
-                    "calories" => Feedback => Feedback.CaloriesBurned, // order by CaloriesBurned
-                    "duration" => Feedback => Feedback.DurationMinutes, // order by DurationMinutes
+                    "calories" => Feedback => Feedback.CaloriesBurned!, // order by CaloriesBurned
+                    "duration" => Feedback => Feedback.DurationMinutes!, // order by DurationMinutes
                     _ => Feedback => Feedback.FeedbackID//failsafe: order by FeedbackID
                 };
                 //If no orderby was inputed, then we sort ascending
@@ -297,21 +339,26 @@ namespace Gym_App.Application.Services
 
             //Making the result as a paged list
             var feedbacks = await PagedList<FeedbackMiniViewDTO>.CreateAsync(feedbackResponse, page, pageSize);
-            return feedbacks;
+            return new GettersResponse<FeedbackMiniViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = feedbacks
+            };
         }
-        public async Task<PagedList<FeedbackViewDTO>?> GetAllFeedbacks(int page,int pageSize)
-        {                                                                                   //Dont FORGET to include entities bru
-            //if page or pageSize are 0 set default values
-            if (page == 0) page = 1;
-            if(pageSize == 0) pageSize = 10;
-
+        public async Task<GettersResponse<FeedbackViewDTO>> GetAllFeedbacks(int page,int pageSize)
+        {                                         
             //Getting all feedbacks from Database
             var feedbacks = from f in _db.Feedbacks.Include(f => f.User).Include(f => f.Workout)
                             select f;
 
             //if no feedbacks found return
             if (feedbacks == null)
-                return null;
+                return new GettersResponse<FeedbackViewDTO>
+                {
+                    status = 0,
+                    msg = "No Feedbacks in Database"
+                };
 
             //Projecting the resultant feedbacks queries to FeedbackDTO
             var feedbackQuery = feedbacks.Select(f => new FeedbackViewDTO
@@ -329,7 +376,12 @@ namespace Gym_App.Application.Services
 
             //Making the result as a paged list
             var Feedbacks = await PagedList<FeedbackViewDTO>.CreateAsync(feedbackQuery, page, pageSize);
-            return Feedbacks;
+            return new GettersResponse<FeedbackViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = Feedbacks
+            };
         }
 
     }

@@ -55,34 +55,47 @@ namespace Gym_App.Api.Controllers
         {
             //Talking to Database
 
-            var feedback = await _feedbackService.GetFeedbackByID(User,feedbackID);
-            if (feedback == null) 
-                return BadRequest("Feedback not found or not authorized");
-
-            return Ok(feedback);
+            var result = await _feedbackService.GetFeedbackByID(User,feedbackID);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Value);
         }
         [HttpGet("get-workout-feedback/{workoutID}")]
         public async Task<IActionResult> GetFeedbackOfWorkout([FromRoute]Guid workoutID)
         {
-            var feedback = await _feedbackService.GetFeedbackOfWorkout(User, workoutID);
-            if (feedback == null)
-                return BadRequest("Feedback not found or not authorized");
-            return Ok(feedback);
+            var result = await _feedbackService.GetFeedbackOfWorkout(User, workoutID);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Value);
         }
         [HttpGet("get-user-feedbacks/{userID}")]
-        public async Task<IActionResult> GetUserFeedbacks([FromRoute]Guid userID,[FromQuery] string startDate,string endDate,string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        public async Task<IActionResult> GetUserFeedbacks([FromRoute]Guid userID,[FromQuery] string startDate,string endDate,string sortColumn, string OrderBy, string SearchTerm, int page = 1, int pageSize = 10)
         {//startDate and endDate are string so I can parse and check them
-            var feedbacks = await _feedbackService.GetUserFeedbacks(User, userID,startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
-            if (feedbacks == null)
-                return BadRequest("No feedbacks found or not authorized");
-            return Ok(feedbacks);
+            var result = await _feedbackService.GetUserFeedbacks(User, userID,startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
         //[Authorize(Policy = "ElevatedPower")]
         [HttpGet("get")]
-        public async Task<IActionResult> GetAllFeedbacks([FromQuery] int page,int pageSize)
+        public async Task<IActionResult> GetAllFeedbacks([FromQuery] int page = 1,int pageSize = 10)
         {
-            var feedbacks = await _feedbackService.GetAllFeedbacks(page,pageSize);
-            return Ok(feedbacks);
+            var result = await _feedbackService.GetAllFeedbacks(page,pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
     }
 }

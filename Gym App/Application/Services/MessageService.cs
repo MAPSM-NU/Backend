@@ -15,7 +15,7 @@ namespace Gym_App.Application.Services
     {
         private readonly DbBase _db;
         private readonly IAuthorizationService _authorizationService;
-        public MessageService(DbBase db,IAuthorizationService authorizationService)
+        public MessageService(DbBase db, IAuthorizationService authorizationService)
         {
             _db = db;
             _authorizationService = authorizationService;
@@ -24,7 +24,7 @@ namespace Gym_App.Application.Services
         //        *********** Setters ***********
 
         //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
-        public async Task<SettersResponse> AddMessage(ClaimsPrincipal User,Guid senderID, MessageCreationDTO message)
+        public async Task<SettersResponse> AddMessage(ClaimsPrincipal User, Guid senderID, MessageCreationDTO message)
         {
             //checking for DTO validity
             if (message == null)
@@ -36,7 +36,7 @@ namespace Gym_App.Application.Services
                               select u).FirstOrDefaultAsync();
             //if user not found return 
             if (user == null)
-                return new SettersResponse { status =  0, msg = "User not found" };
+                return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
@@ -70,23 +70,23 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Success" };
         }
-        public async Task<SettersResponse> UpdateMessage(ClaimsPrincipal User,Guid messageID, MessageUpdateDTO message)
+        public async Task<SettersResponse> UpdateMessage(ClaimsPrincipal User, Guid messageID, MessageUpdateDTO message)
         {
             //checking for DTO validity
             if (message == null)
                 return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
             //Getting message from Database
-            var Message = await (from u in _db.Messages.Include(m=>m.Sender)
+            var Message = await (from u in _db.Messages.Include(m => m.Sender)
                                  where u.MessageID == messageID
                                  select u).FirstOrDefaultAsync();
             //if message not found return
-            if (Message == null) 
+            if (Message == null)
                 return new SettersResponse { status = 0, msg = "Message not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.UserID, "SameUserPolicy");
-            if(!authResult.Succeeded)
+            if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Updating message
@@ -103,16 +103,16 @@ namespace Gym_App.Application.Services
             if (messageID == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid messageID" };
 
-            var Message = await (from u in _db.Messages.Include(m=>m.Sender)
-                          where u.MessageID == messageID
-                          select u).FirstOrDefaultAsync();
+            var Message = await (from u in _db.Messages.Include(m => m.Sender)
+                                 where u.MessageID == messageID
+                                 select u).FirstOrDefaultAsync();
             //if message not found return
             if (Message == null)
                 return new SettersResponse { status = 0, msg = "Message not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.UserID, "SameUserPolicy");
-            if(!authResult.Succeeded)
+            if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to Database
@@ -140,8 +140,8 @@ namespace Gym_App.Application.Services
 
             //Getting users from Database
             var Users = await (from s in _db.Sessions
-                                 where s.SessionID == sessionID
-                                 select s.Users).FirstOrDefaultAsync();
+                               where s.SessionID == sessionID
+                               select s.Users).FirstOrDefaultAsync();
 
             //if session not found return
             if (Users == null)
@@ -157,30 +157,34 @@ namespace Gym_App.Application.Services
 
             return UserIDs;
         }
-        public async Task<PagedList<MessageMiniViewDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<GettersResponse<MessageMiniViewDTO>> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             var session = await (from s in _db.Sessions.Include(s => s.Users)
                                  where s.SessionID == sessionID
                                  select s).FirstOrDefaultAsync();
             //if session not found return
             if (session == null)
-                return null;
+                return new GettersResponse<MessageMiniViewDTO>
+                {
+                    status = 0,
+                    msg = "Session not found"
+                };
+
             var UserIDs = (from u in session.Users
                            select u.UserID).ToList();
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
             if (!authResult.Succeeded)
-                return null;
-
-            //if page or pageSize are 0 set default values
-            if (page == 0) page = 1;
-            if (pageSize == 0) pageSize = 10;
-
+                return new GettersResponse<MessageMiniViewDTO>
+                {
+                    status = 1,
+                    msg = "Unauthorized"
+                };
 
             //Getting messages from Database
             var messageQuery = from s in _db.Sessions
                                from m in _db.Messages
-                               where s.SessionID == sessionID && s.Messages.Contains(m)
+                               where s.SessionID == sessionID && s.Messages!.Contains(m)
                                select m;
 
             //filtering by start date and end date
@@ -230,27 +234,36 @@ namespace Gym_App.Application.Services
 
             //Making the result as a paged list
             var messages = await PagedList<MessageMiniViewDTO>.CreateAsync(messageResponse, page, pageSize);
-            return messages;
+            return new GettersResponse<MessageMiniViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = messages
+            };
         }
-        public async Task<PagedList<MessageViewDTO>> GetMessagesByFilter(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)//will be accessed by admin only
-                                                                                                                                                                                  //so there is no need for authorization
+        public async Task<GettersResponse<MessageViewDTO>> GetMessagesByFilter(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)//will be accessed by admin only
+                                                                                                                                                                                              //so there is no need for authorization
         {
-            //if page or pageSize are 0 set default values
-            if (page == 0) page = 1;
-            if(pageSize == 0)pageSize = 10;
 
             //Getting messages from Database
             IQueryable<Message> messageQuery = _db.Messages;
+            
+            if (messageQuery == null || messageQuery.Count() == 0)
+                return new GettersResponse<MessageViewDTO>
+                {
+                    status = 0,
+                    msg = "No messages in Database"
+                };
 
             //filtering by start date and end date
             DateTime validStartDate, validEndDate;
-            if(DateTime.TryParse(startDate, out validStartDate))
+            if (DateTime.TryParse(startDate, out validStartDate))
             {
                 messageQuery = messageQuery.Where(m => m.Timestamp > validStartDate);
             }
             if (DateTime.TryParse(endDate, out validEndDate))
             {
-                messageQuery = messageQuery.Where(m=>m.Timestamp < validEndDate);
+                messageQuery = messageQuery.Where(m => m.Timestamp < validEndDate);
             }
 
             //filtering by search term
@@ -265,7 +278,7 @@ namespace Gym_App.Application.Services
                     _ => Message => Message.MessageID,//failsafe: ordering by message ID
                 };
                 //If no orderby was inputed, then we sort ascending
-                if (!string.IsNullOrEmpty(OrderBy))messageQuery = messageQuery.OrderBy(keySelector);
+                if (!string.IsNullOrEmpty(OrderBy)) messageQuery = messageQuery.OrderBy(keySelector);
 
                 //else if anything was inputted we sort descending
                 else messageQuery = messageQuery.OrderByDescending(keySelector);
@@ -284,30 +297,44 @@ namespace Gym_App.Application.Services
                                     });
 
             //Making the result as a paged list
-            var messages = await PagedList<MessageViewDTO>.CreateAsync(messageResponse,page,pageSize);
-            return messages;
+            var messages = await PagedList<MessageViewDTO>.CreateAsync(messageResponse, page, pageSize);
+            return new GettersResponse<MessageViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = messages
+            };
         }
-        public async Task<PagedList<MessageViewDTO>> GetMessages(int page, int pageSize)
+        public async Task<GettersResponse<MessageViewDTO>> GetMessages(int page, int pageSize)
         {
-            //if page or pageSize are 0 set default values
-            if (page == 0) page = 1;
-            if (pageSize == 0) pageSize = 10;
 
             //Getting messages from Database
             var messagesQuery = from m in _db.Messages
-                                  select new MessageViewDTO
-                           {
-                               SenderID = m.Sender.UserID,
-                               SessionID = m.Session.SessionID,
-                               MessageID = m.MessageID,
-                               Content = m.Content,
-                               IsRead = m.IsRead,
-                               Timestamp = m.Timestamp
-                           };
+                                select new MessageViewDTO
+                                {
+                                    SenderID = m.Sender.UserID,
+                                    SessionID = m.Session.SessionID,
+                                    MessageID = m.MessageID,
+                                    Content = m.Content,
+                                    IsRead = m.IsRead,
+                                    Timestamp = m.Timestamp
+                                };
+
+            if (messagesQuery == null || messagesQuery.Count() == 0)
+                return new GettersResponse<MessageViewDTO>
+                {
+                    status = 0,
+                    msg = "No messages in Database"
+                };
 
             //Making the result as a paged list
             var messages = await PagedList<MessageViewDTO>.CreateAsync(messagesQuery, page, pageSize);
-            return messages;
+            return new GettersResponse<MessageViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = messages
+            };
         }
 
     }

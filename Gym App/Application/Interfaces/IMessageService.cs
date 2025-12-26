@@ -13,8 +13,8 @@ namespace Gym_App.Application.Interfaces
         public Task<SettersResponse> DeleteMessage(ClaimsPrincipal User, Guid messageID);
         public Task<Guid> GetMessageUserID(Guid messageID);
         public Task<List<Guid>?> GetSessionUsersIDs(ClaimsPrincipal User, Guid sessionID);
-        public Task<PagedList<MessageMiniViewDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
-        public Task<PagedList<MessageViewDTO>> GetMessagesByFilter(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
-        public Task<PagedList<MessageViewDTO>> GetMessages(int page, int pageSize);
+        public Task<GettersResponse<MessageMiniViewDTO>> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
+        public Task<GettersResponse<MessageViewDTO>> GetMessagesByFilter(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
+        public Task<GettersResponse<MessageViewDTO>> GetMessages(int page, int pageSize);
     }
 }

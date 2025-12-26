@@ -73,7 +73,7 @@ builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();
 
 builder.Services.AddDbContext<DbBase>(options =>
 {
-    options.UseSqlServer(builder.Configuration["ConnectionStrings:VpsConnection"]);
+    options.UseSqlServer(builder.Configuration["ConnectionStrings:ModyConnection"]);
 });
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
     AddJwtBearer(options =>

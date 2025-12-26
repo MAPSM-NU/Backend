@@ -94,19 +94,28 @@ namespace Gym_App.Api.Controllers
             return Ok(result);
         }
         [HttpGet("get-exercises/{workoutID}")]
-        public async Task<IActionResult> GetExercisesOfWorkout([FromRoute] Guid workoutID,[FromQuery] int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<IActionResult> GetExercisesOfWorkout([FromRoute] Guid workoutID,[FromQuery] string sortColumn, string OrderBy, string searchTerm, int page = 1, int pageSize = 10)
         {
 
             var result = await _workoutService.GetExercisesOfWorkout(workoutID,page,sortColumn,OrderBy,searchTerm,pageSize);
-            if(result==null) return BadRequest(new { message = "Workout not found." });
-            return Ok(result);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
         //[Authorize(Policy = "ElevatedPower")]
         [HttpGet("get")]
-        public async Task<IActionResult> GetAllWorkouts(int page,int pageSize)
+        public async Task<IActionResult> GetAllWorkouts(int page=1,int pageSize = 10)
         {
             var result = await _workoutService.GetAllWorkouts(page,pageSize);
-            return Ok(result);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
     }
 }

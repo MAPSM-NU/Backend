@@ -18,8 +18,8 @@ namespace Gym_App.Application.Interfaces
         public Task<SettersResponse> DeleteExercisesFromWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises);
         public Task<WorkoutViewDTO?> GetWorkoutByName(string name);
         public Task<WorkoutViewDTO?> GetWorkoutByID(Guid ID);
-        public Task<PagedList<ExerciseViewDTO>?> GetExercisesOfWorkout(Guid WorkoutID,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
-        public Task<PagedList<WorkoutViewDTO>?> GetAllWorkouts(int page,int pageSize);
+        public Task<GetterResponses<ExerciseViewDTO>> GetExercisesOfWorkout(Guid WorkoutID,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
+        public Task<GetterResponses<WorkoutViewDTO>> GetAllWorkouts(int page,int pageSize);
         public Task<Guid> GetWorkoutUserID(Guid WorkoutID);
     }
 }

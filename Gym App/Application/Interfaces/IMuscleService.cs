@@ -10,6 +10,6 @@ namespace Gym_App.Application.Interfaces
         public Task<SettersResponse> CreateMuscle(MuscleCreationAndEditDTO muscle);
         public Task<SettersResponse> UpdateMuscle(Guid muscleID, MuscleCreationAndEditDTO muscle);
         public Task<SettersResponse> DeleteMuscle(Guid muscleID);
-        public Task<PagedList<MuscleViewDTO>> GetAllMuscles(int page=1, int pageSize=32);
+        public Task<GettersResponse<MuscleViewDTO>> GetAllMuscles(int page=1, int pageSize=32);
     }
 }

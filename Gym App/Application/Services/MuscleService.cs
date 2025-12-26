@@ -96,10 +96,8 @@ namespace Gym_App.Application.Services
 
         //        *********** Getters ***********
 
-        public async Task<PagedList<MuscleViewDTO>> GetAllMuscles(int page,int pageSize)
+        public async Task<GettersResponse<MuscleViewDTO>> GetAllMuscles(int page,int pageSize)
         {
-            if (page == 0) page = 1;
-            if (pageSize == 0) pageSize = 15;//Returning all the muscles in the database
             var musclesQuery = from m in _db.Muscles
                           select new MuscleViewDTO
                           {
@@ -108,7 +106,12 @@ namespace Gym_App.Application.Services
                                 Description = m.Description
                           };
             var muscles = await PagedList<MuscleViewDTO>.CreateAsync(musclesQuery, page, pageSize);
-            return muscles;
+            return new GettersResponse<MuscleViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = muscles
+            };
         }
     }
 }

@@ -68,31 +68,39 @@ namespace Gym_App.Api.Controllers
 
         }
         [HttpGet("session-messages/{sessionID}")]
-        public async Task<IActionResult> GetSessionMessages([FromRoute] Guid sessionID,[FromQuery] string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<IActionResult> GetSessionMessages([FromRoute] Guid sessionID,[FromQuery] string startDate, string endDate,string sortColumn, string OrderBy, string searchTerm,int page = 1, int pageSize = 10)
         {
-            var messages = await _sessionService.GetSessionMessages(User,sessionID,startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
-            if (messages == null) 
-                return NotFound(new { message = "either you are not permitted to view the messages of this session or this" +
-                    " session has no messages" });
-            return Ok(messages);
+            var result = await _sessionService.GetSessionMessages(User,sessionID,startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
         [Authorize(Policy = "ElevatedPower")]//Only for admins to get all users of a session
         [HttpGet("users/{sessionID}")]
-        public async Task<IActionResult> GetUsersOfSession([FromRoute] Guid sessionID,[FromQuery] int page,int pageSize)
+        public async Task<IActionResult> GetUsersOfSession([FromRoute] Guid sessionID,[FromQuery] int page = 1,int pageSize = 10)
         {
-            var users = await _sessionService.GetUsersOfSession(User,sessionID,page,pageSize);
-            if (users == null) 
-                return NotFound(new { message = "No users found for this session" });
-            return Ok(users);
+            var result = await _sessionService.GetUsersOfSession(User,sessionID,page,pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
         //[Authorize(Policy ="ElevatedPower")]//Only for admins to get all sessions
         [HttpGet("get")]
-        public async Task<IActionResult> GetAllSessions([FromQuery] int page,int pageSize)
+        public async Task<IActionResult> GetAllSessions([FromQuery] int page = 1 ,int pageSize = 10)
         {
-            var sessions = await _sessionService.GetAllSessions(page,pageSize);
-            if (sessions == null) 
-                return NotFound(new { message = "No sessions found" });
-            return Ok(sessions);
+            var result = await _sessionService.GetAllSessions(page,pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
     }
 }

@@ -14,9 +14,9 @@ namespace Gym_App.Application.Interfaces
         Task<SettersResponse> ChangeUserType(UserChangeTypeDTO user);
         Task<SettersResponse> DeleteUser(Guid userID);
         Task<UserViewDTO?> GetUserByID(Guid userID);
-        Task<PagedList<UserMiniViewDTO>?> GetMiniUsers(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
-        Task<PagedList<UserViewDTO>?> GetUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
-        Task<PagedList<UserViewDTO>?> GetAllUsers(int page, int pageSize);
+        Task<GettersResponse<UserMiniViewDTO>> GetMiniUsers(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
+        Task<GettersResponse<UserViewDTO>> GetUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
+        Task<GettersResponse<UserViewDTO>> GetAllUsers(int page, int pageSize);
 
     }
 }

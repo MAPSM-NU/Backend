@@ -72,22 +72,37 @@ namespace Gym_App.Api.Controllers
             return Ok(result);
         }
         [HttpGet("get-mini-users")]
-        public async Task<IActionResult> GetUsers([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        public async Task<IActionResult> GetUsers([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page = 1, int pageSize = 10)
         {
-            var users = await _user.GetMiniUsers(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
-            return Ok(users);
+            var result = await _user.GetMiniUsers(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
         [HttpGet("get-users")]
-        public async Task<IActionResult> GetUsersBasicInfo([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        public async Task<IActionResult> GetUsersBasicInfo([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page = 1, int pageSize = 10)
         {
-            var users = await _user.GetUsers(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
-            return Ok(users);
+            var result = await _user.GetUsers(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
         [HttpGet("get")]
-        public async Task<IActionResult> GetAllUsers([FromQuery] int page, int pageSize)
+        public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, int pageSize = 10)
         {
-            var users = await _user.GetAllUsers(page,pageSize);
-            return Ok(users);
+            var result = await _user.GetAllUsers(page,pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
     }
 }

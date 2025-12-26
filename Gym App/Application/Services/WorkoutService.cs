@@ -308,7 +308,7 @@ namespace Gym_App.Application.Services
                           }).FirstOrDefaultAsync();
             return Workout;
         }
-        public async Task<GetterResponses<ExerciseViewDTO>> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<GettersResponse<ExerciseViewDTO>> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Getting the exercises in the given workout by workoutID
             var exercisesQuery = from w in _db.Workouts
@@ -317,7 +317,7 @@ namespace Gym_App.Application.Services
                             select e;
 
             if (exercisesQuery == null || exercisesQuery.Count() == 0)
-                return new GetterResponses<ExerciseViewDTO>
+                return new GettersResponse<ExerciseViewDTO>
                 {
                     status = 0,
                     msg = "No Exercises in given workout"
@@ -361,14 +361,14 @@ namespace Gym_App.Application.Services
 
             //Making the result as a paged list
             var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exerciseResult, page, pageSize);
-            return new GetterResponses<ExerciseViewDTO>
+            return new GettersResponse<ExerciseViewDTO>
             {
                 status = 2,
                 msg = "Successful",
                 Data = exercises
             };
         }
-        public async Task<GetterResponses<WorkoutViewDTO>> GetAllWorkouts(int page, int pageSize)
+        public async Task<GettersResponse<WorkoutViewDTO>> GetAllWorkouts(int page, int pageSize)
         {
 
             //Getting all workouts and projecting them as WorkoutDTO
@@ -385,7 +385,7 @@ namespace Gym_App.Application.Services
                            };
 
             if (workoutsQuery == null || workoutsQuery.Count() == 0)
-                return new GetterResponses<WorkoutViewDTO>
+                return new GettersResponse<WorkoutViewDTO>
                 {
                     status = 0,
                     msg = "No workouts in Database"
@@ -393,7 +393,7 @@ namespace Gym_App.Application.Services
 
             //turning the result into a paged list
             var workouts = await PagedList<WorkoutViewDTO>.CreateAsync(workoutsQuery, page, pageSize);
-            return new GetterResponses<WorkoutViewDTO>
+            return new GettersResponse<WorkoutViewDTO>
             {
                 status = 2,
                 msg = "Successful",

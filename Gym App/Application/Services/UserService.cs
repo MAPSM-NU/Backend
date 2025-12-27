@@ -24,6 +24,8 @@ namespace Gym_App.Application.Services
 
         //        *********** Setters ***********
 
+        //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
+
         public async Task<ResponseToken> CreateAdmin(UserCreationDTO u)
         {
             //Creating an admin user
@@ -357,7 +359,7 @@ namespace Gym_App.Application.Services
 
         //        *********** Getters ***********
 
-        public async Task<UserViewDTO?> GetUserByID(Guid userID)
+        public async Task<GettersResponse<UserViewDTO>> GetUserByID(Guid userID)
         {
             var user = await (from u in _db.Users
                               where u.UserID == userID
@@ -379,8 +381,19 @@ namespace Gym_App.Application.Services
                                   WeightKg = u.WeightKg,
                                   UserType = u.UserType
                               }).FirstOrDefaultAsync();
-            if (user is null) return null;
-            return user;
+            if (user == null)
+                return new GettersResponse<UserViewDTO>
+                {
+                    status = 0,
+                    msg = "User not found"
+                };
+            else
+                return new GettersResponse<UserViewDTO>
+                {
+                    status = 2,
+                    msg = "Successful",
+                    Value = user
+                }; ;
         }
         public async Task<GettersResponse<UserMiniViewDTO>> GetMiniUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {

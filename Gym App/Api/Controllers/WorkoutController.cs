@@ -87,11 +87,15 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
         [HttpGet("get/{workoutID}")]
-        public async Task<IActionResult> GetWorkoutByID([FromQuery] Guid workoutID)
+        public async Task<IActionResult> GetWorkoutByID([FromRoute] Guid workoutID)
         {
             var result = await _workoutService.GetWorkoutByID(workoutID);
-            if(result==null) return BadRequest(new { message = "Workout not found." });
-            return Ok(result);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Value);
         }
         [HttpGet("get-exercises/{workoutID}")]
         public async Task<IActionResult> GetExercisesOfWorkout([FromRoute] Guid workoutID,[FromQuery] string sortColumn, string OrderBy, string searchTerm, int page = 1, int pageSize = 10)

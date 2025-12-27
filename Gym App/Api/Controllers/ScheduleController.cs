@@ -90,20 +90,24 @@ namespace Gym_App.Api.Controllers
         [HttpGet("get/{scheduleID}")]
         public async Task<IActionResult> GetScheduleById([FromRoute] Guid scheduleID)
         {
-            var schedule = await _scheduleService.GetScheduleById(scheduleID);
-            if (schedule == null)
-                return BadRequest(new { message = "Schedule not found" });
-            else 
-                return Ok(schedule);
+            var result = await _scheduleService.GetScheduleById(scheduleID);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Value);
         }
         [HttpGet("get-workouts/{scheduleID}")]
         public async Task<IActionResult> GetWorkoutsOfSchedule([FromRoute] Guid scheduleID)
         {
             var result = await _scheduleService.GetScheduleWorkouts(scheduleID);
-            if (result == null)
-                return BadRequest(new { message = "Schedule not found" });
-            else 
-                return Ok(result);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Value);
         }
 
         [HttpGet("get-user-schedule/{userID}")]

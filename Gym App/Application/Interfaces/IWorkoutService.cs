@@ -16,8 +16,8 @@ namespace Gym_App.Application.Interfaces
         public Task<SettersResponse> AddExercisesToWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises);
         public Task<SettersResponse> SetExercisesOfWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises);
         public Task<SettersResponse> DeleteExercisesFromWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises);
-        public Task<WorkoutViewDTO?> GetWorkoutByName(string name);
-        public Task<WorkoutViewDTO?> GetWorkoutByID(Guid ID);
+        public Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByName(string name);//not used
+        public Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByID(Guid ID);
         public Task<GettersResponse<ExerciseViewDTO>> GetExercisesOfWorkout(Guid WorkoutID,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
         public Task<GettersResponse<WorkoutViewDTO>> GetAllWorkouts(int page,int pageSize);
         public Task<Guid> GetWorkoutUserID(Guid WorkoutID);

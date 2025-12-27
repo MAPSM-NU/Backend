@@ -1,7 +1,6 @@
 ﻿using Gym_App.Domain;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.DTOs.UserDTOs;
 
 namespace Gym_App.Application.Interfaces
 {

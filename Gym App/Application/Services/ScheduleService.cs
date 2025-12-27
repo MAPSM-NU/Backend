@@ -230,7 +230,7 @@ namespace Gym_App.Application.Services
 
         //        *********** Getters ***********
 
-        public async Task<ScheduleViewDTO?> GetScheduleById(Guid scheduleID)//AHHHHHHHHHHHHHHHHH
+        public async Task<GettersResponse<ScheduleViewDTO>> GetScheduleById(Guid scheduleID)//AHHHHHHHHHHHHHHHHH
         {
             //Getting schedule from database and projecting to DTO
             var schedule = await (from s in _db.Schedules
@@ -244,11 +244,21 @@ namespace Gym_App.Application.Services
                                   }).FirstOrDefaultAsync();
 
             //Returning null if schedule not found
-            if (schedule == null) return null;
+            if (schedule == null)
+                return new GettersResponse<ScheduleViewDTO>
+                {
+                    status = 0,
+                    msg = "Schedule not found"
+                };
 
-            return schedule;
+            return new GettersResponse<ScheduleViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Value = schedule
+            };
         }
-        public async Task<ScheduleWorkoutDTO?> GetScheduleWorkouts(Guid scheduleID)
+        public async Task<GettersResponse<ScheduleWorkoutDTO>> GetScheduleWorkouts(Guid scheduleID)
         {
             //Getting the schedule's workouts from database and projecting to DTO
             var schedule = await (from s in _db.Schedules
@@ -258,9 +268,19 @@ namespace Gym_App.Application.Services
                                       WorkoutsID = s.Workouts!.Select(w => w.WorkoutID).ToList()
                                   }).FirstOrDefaultAsync();
             //Returning null if schedule not found
-            if (schedule == null) return null;
+            if (schedule == null)
+                return new GettersResponse<ScheduleWorkoutDTO>
+                {
+                    status = 0,
+                    msg = "Schedule not found"
+                };
 
-            return schedule;
+            return new GettersResponse<ScheduleWorkoutDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Value = schedule
+            };
         }
         public async Task<GettersResponse<ScheduleViewDTO>> GetSchedulesByOfUser(Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {

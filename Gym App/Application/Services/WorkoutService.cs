@@ -276,10 +276,10 @@ namespace Gym_App.Application.Services
                                select w.User.UserID).FirstOrDefaultAsync();
             return UserID; 
         }
-        public async Task<WorkoutViewDTO?> GetWorkoutByName(string name)
+        public async Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByName(string name)
         {
             //Getting workout by name
-            var Workout = await(from w in _db.Workouts
+            var workout = await(from w in _db.Workouts
                           where w.Name == name
                           select new WorkoutViewDTO
                           {
@@ -290,12 +290,25 @@ namespace Gym_App.Application.Services
                                 Difficulty = w.Difficulty,
                                 Day = w.Day,
                           }).FirstOrDefaultAsync();
-            return Workout;
+
+            if (workout == null)
+                return new GettersResponse<WorkoutViewDTO>
+                {
+                    status = 0,
+                    msg = "Not Found"
+                };
+            else
+                return new GettersResponse<WorkoutViewDTO>
+                {
+                    status = 2,
+                    msg = "Successful",
+                    Value = workout
+                };
         }
-        public async Task<WorkoutViewDTO?> GetWorkoutByID(Guid ID)
+        public async Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByID(Guid ID)
         {
             //Getting the Workout by ID
-            var Workout = await(from w in _db.Workouts
+            var workout = await(from w in _db.Workouts
                           where w.WorkoutID == ID
                           select new WorkoutViewDTO
                           {
@@ -306,7 +319,20 @@ namespace Gym_App.Application.Services
                               Difficulty = w.Difficulty,
                               Day = w.Day,
                           }).FirstOrDefaultAsync();
-            return Workout;
+
+            if (workout == null)
+                return new GettersResponse<WorkoutViewDTO>
+                {
+                    status = 0,
+                    msg = "Not Found"
+                };
+            else
+                return new GettersResponse<WorkoutViewDTO>
+                {
+                    status = 2,
+                    msg = "Successful",
+                    Value = workout
+                };
         }
         public async Task<GettersResponse<ExerciseViewDTO>> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {

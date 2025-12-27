@@ -1,6 +1,4 @@
-﻿using Gym_App.Domain.Entities;
-using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.DTOs.Message;
+﻿using Gym_App.Infastructure.DTOs.Message;
 using Gym_App.Infastructure.DTOs.Session;
 using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Transfer_Classes;

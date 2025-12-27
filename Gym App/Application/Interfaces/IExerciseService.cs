@@ -13,11 +13,11 @@ namespace Gym_App.Application.Interfaces
         public Task<SettersResponse> DeleteExercise(Guid exerciseId);
         public Task<SettersResponse> AddMusclesToExercise(Guid exerciseID, ExerciseMusclesDTO exerciseMuscles);
         public Task<SettersResponse> RemoveMusclesFromExercise(Guid exerciseID, ExerciseMusclesDTO exerciseMuscles);
-        public Task<ExerciseViewDTO?> GetExerciseByName(string name);
-        public Task<ExerciseMiniViewDTO?> GetExerciseByID(Guid id);
-        public Task<List<MuscleViewDTO>?> GetExerciseMuscles(Guid exerciseID);
-        public Task<PagedList<ExerciseViewDTO>>? GetExercisesByMuscle(ExerciseListDTO muscles,int page,int pageSize);
-        public Task<PagedList<ExerciseViewDTO>?> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
-        public Task<PagedList<ExerciseViewDTO>?> GetAllExercises(int page,int pageSize = 5);
+        public Task<GettersResponse<ExerciseViewDTO>> GetExerciseByName(string name);
+        public Task<GettersResponse<ExerciseMiniViewDTO>> GetExerciseByID(Guid id);
+        public Task<GettersResponse<List<MuscleViewDTO>>> GetExerciseMuscles(Guid exerciseID);
+        public Task<GettersResponse<ExerciseViewDTO>> GetExercisesByMuscle(ExerciseListDTO muscles,int page,int pageSize);
+        public Task<GettersResponse<ExerciseViewDTO>> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
+        public Task<GettersResponse<ExerciseViewDTO>> GetAllExercises(int page,int pageSize = 5);
     }
 }

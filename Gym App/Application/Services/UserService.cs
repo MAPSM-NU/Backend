@@ -361,6 +361,13 @@ namespace Gym_App.Application.Services
 
         public async Task<GettersResponse<UserViewDTO>> GetUserByID(Guid userID)
         {
+            if(userID == Guid.Empty)
+                return new GettersResponse<UserViewDTO>
+                {
+                    status = 0,
+                    msg = "Faulty ID"
+                };
+
             var user = await (from u in _db.Users
                               where u.UserID == userID
                               select new UserViewDTO
@@ -381,6 +388,7 @@ namespace Gym_App.Application.Services
                                   WeightKg = u.WeightKg,
                                   UserType = u.UserType
                               }).FirstOrDefaultAsync();
+
             if (user == null)
                 return new GettersResponse<UserViewDTO>
                 {

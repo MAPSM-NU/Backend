@@ -64,9 +64,9 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
         [HttpGet("get/{userID}")]
-        public async Task<IActionResult> GetUserByID([FromRoute] Guid UserID)
+        public async Task<IActionResult> GetUserByID([FromRoute] Guid userID)
         {
-            var result = await _user.GetUserByID(UserID);
+            var result = await _user.GetUserByID(userID);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)

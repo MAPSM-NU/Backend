@@ -11,12 +11,12 @@ using System.Security.Claims;
 
 namespace Gym_App.Application.Services
 {
-    
+
     public class NotificationService : INotificationService // Fuck this class. Needs a change again. relationship with users should not be many to many GRAAAAAA
     {
         private readonly DbBase _db;
         private readonly IAuthorizationService _authorizationService;
-        public NotificationService(DbBase db,IAuthorizationService authorizationService)
+        public NotificationService(DbBase db, IAuthorizationService authorizationService)
         {
             _db = db;
             _authorizationService = authorizationService;
@@ -24,13 +24,13 @@ namespace Gym_App.Application.Services
 
         //        *********** Setters ***********
 
-        //0 == Error(Bad Request) || 1 ==Unauthorized (Forbid) || 2 == Success (Ok)
+        //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
 
         public Task<SettersResponse> SendNotificationAsync(NotificationViewDTO notification)
         {
             throw new NotImplementedException();
         }
-        public async Task<SettersResponse> CreateNotification(ClaimsPrincipal User,Guid userID, NotificationCreationDTO notification)
+        public async Task<SettersResponse> CreateNotification(ClaimsPrincipal User, Guid userID, NotificationCreationDTO notification)
         {
             //Checking for DTO validity
             if (notification == null)
@@ -38,15 +38,15 @@ namespace Gym_App.Application.Services
 
             //Getting User from Database
             var user = await (from u in _db.Users
-                         where u.UserID == userID
-                         select u).FirstOrDefaultAsync();
+                              where u.UserID == userID
+                              select u).FirstOrDefaultAsync();
             //If user not found return 
-            if (user == null) 
+            if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User,user.UserID,"SameUserPolicy");
-            if(!authResult.Succeeded)
+            var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Faulty DTO" };
 
             //Creating Notification
@@ -66,23 +66,23 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Successful" };
 
         }
-        public async Task<SettersResponse> DeleteNotification(ClaimsPrincipal User,Guid NotificationID)//0 == Invalid NotificationID || 1 == Notification not found || 2 == Unauthorized || 3 == Successful
+        public async Task<SettersResponse> DeleteNotification(ClaimsPrincipal User, Guid NotificationID)//0 == Invalid NotificationID || 1 == Notification not found || 2 == Unauthorized || 3 == Successful
         {
             //Checking for NotificationID validty
-            if (NotificationID == Guid.Empty) 
+            if (NotificationID == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid NotificationID" };
 
             //Getting notification from Database
-            var Notification =  await (from n in _db.Notifications.Include(n=>n.User)
-                                       where n.NotificationID == NotificationID
-                                       select n).FirstOrDefaultAsync();
+            var Notification = await (from n in _db.Notifications.Include(n => n.User)
+                                      where n.NotificationID == NotificationID
+                                      select n).FirstOrDefaultAsync();
             //If notification not found return
-            if (Notification == null) 
+            if (Notification == null)
                 return new SettersResponse { status = 0, msg = "Notification not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User,Notification.User.UserID,"SameUserPolicy");
-            if(!authResult.Succeeded)
+            var authResult = await _authorizationService.AuthorizeAsync(User, Notification.User.UserID, "SameUserPolicy");
+            if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to the Database
@@ -91,7 +91,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Successful" };
         }
         public async Task<SettersResponse> DeleteAllNotifications(ClaimsPrincipal User, Guid UserID)//0 == Invalid UserID || 1 == User not found || 2 == Unauthorized || 3 == Successful
-                                                                                        //This leaves the notification with no user!
+                                                                                                    //This leaves the notification with no user!
         {
             //Checking for UserID validty
             if (UserID == Guid.Empty)
@@ -106,8 +106,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User,user.UserID,"SameUserPolicy");
-            if(!authResult.Succeeded)
+            var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Faulty DTO" };
 
             //Saving to the Database
@@ -132,44 +132,48 @@ namespace Gym_App.Application.Services
         {
             //Getting UserID from Database
             var userID = await (from n in _db.Notifications
-                          where n.NotificationID == NotificationID
-                          select n.User.UserID).FirstOrDefaultAsync();
+                                where n.NotificationID == NotificationID
+                                select n.User.UserID).FirstOrDefaultAsync();
             return userID;
         }
-        public async Task<PagedList<NotificationMiniViewDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<GettersResponse<NotificationMiniViewDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User,UserID,"SameUserPolicy");
-            if(!authResult.Succeeded)
-                return null;
-
-            //if page or pageSize are 0 set to default values
-            if (page == 0) page = 1;
-            if (pageSize == 0) pageSize = 10;
+            var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
+            if (!authResult.Succeeded)
+                return new GettersResponse<NotificationMiniViewDTO>
+                {
+                    status = 1,
+                    msg = "Unauthorized",
+                };
 
             //Getting notifications from Database and projecting to DTO
             var notificationsQuery = from n in _db.Notifications
-                                      where n.User.UserID == UserID
-                                      select new NotificationMiniViewDTO
-                                      {
+                                     where n.User.UserID == UserID
+                                     select new NotificationMiniViewDTO
+                                     {
                                          NotificationID = n.NotificationID,
                                          Date = n.Date,
                                          Title = n.Title,
                                          Content = n.Content
-                                      };
+                                     };
             //if no notifications found return null
-            if (notificationsQuery == null) 
-                    return null;
+            if (notificationsQuery == null || notificationsQuery.Count() == 0)
+                return new GettersResponse<NotificationMiniViewDTO>
+                {
+                    status = 0,
+                    msg = "No Notifications"
+                };
 
             //Filtering by start date and end date
             DateTime validStartDate, validEndDate;
-            if(DateTime.TryParse(startDate,out validStartDate))
+            if (DateTime.TryParse(startDate, out validStartDate))
             {
-                notificationsQuery = notificationsQuery.Where(n=>n.Date >  validStartDate);
+                notificationsQuery = notificationsQuery.Where(n => n.Date > validStartDate);
             }
-            if (DateTime.TryParse(endDate,out validEndDate))
+            if (DateTime.TryParse(endDate, out validEndDate))
             {
-                notificationsQuery = notificationsQuery.Where(n=>n.Date < validEndDate);
+                notificationsQuery = notificationsQuery.Where(n => n.Date < validEndDate);
             }
 
             //Filtering by search term in title or content
@@ -180,7 +184,7 @@ namespace Gym_App.Application.Services
             {
                 Expression<Func<NotificationMiniViewDTO, object>> keySelector = sortColumn.ToLower() switch
                 {
-                    "content" or "c" => Notification => Notification.Content,// ordering by content
+                    "content" or "c" => Notification => Notification.Content!,// ordering by content
                     "title" or "t" => Notification => Notification.Title, // ordering by title
                     _ => Notification => Notification.NotificationID//failsafe: ordering by NotificationID
                 };
@@ -198,31 +202,43 @@ namespace Gym_App.Application.Services
 
             //Making Paged list from resultant query
             var notifications = await PagedList<NotificationMiniViewDTO>.CreateAsync(notificationsQuery, page, pageSize);
-            return notifications;
+            return new GettersResponse<NotificationMiniViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = notifications
+            };
         }
-        public async Task<PagedList<NotificationViewDTO>> GetAllNotifications(int page, int pageSize)
+        public async Task<GettersResponse<NotificationViewDTO>> GetAllNotifications(int page, int pageSize)
         {
-            //if page or pageSize are 0 set to default values
-            if (page == 0) page = 1;
-            if(pageSize == 0) pageSize = 10;
-
             //Getting notifications from Database and projecting to DTO
-            var notificationsQuery =from n in _db.Notifications
-                                select new NotificationViewDTO
-                                {
-                                    NotificationID = n.NotificationID,
-                                    UserID = n.User.UserID,
-                                    Date = n.Date,
-                                    Title = n.Title,
-                                    Content = n.Content
-                                };
+            var notificationsQuery = from n in _db.Notifications
+                                     select new NotificationViewDTO
+                                     {
+                                         NotificationID = n.NotificationID,
+                                         UserID = n.User.UserID,
+                                         Date = n.Date,
+                                         Title = n.Title,
+                                         Content = n.Content
+                                     };
 
+            if (notificationsQuery == null || notificationsQuery.Count() == 0)
+                return new GettersResponse<NotificationViewDTO>
+                {
+                    status = 0,
+                    msg = "No Notifications in Database"
+                };
             //Ordering by date descending
             notificationsQuery = notificationsQuery.OrderByDescending(n => n.Date);
 
             //Making Paged list from resultant query
             var notifications = await PagedList<NotificationViewDTO>.CreateAsync(notificationsQuery,page, pageSize);
-            return notifications;
+            return new GettersResponse<NotificationViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = notifications
+            };
         }
 
     }

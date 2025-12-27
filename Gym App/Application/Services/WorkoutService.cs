@@ -276,10 +276,10 @@ namespace Gym_App.Application.Services
                                select w.User.UserID).FirstOrDefaultAsync();
             return UserID; 
         }
-        public async Task<WorkoutViewDTO?> GetWorkoutByName(string name)
+        public async Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByName(string name)
         {
             //Getting workout by name
-            var Workout = await(from w in _db.Workouts
+            var workout = await(from w in _db.Workouts
                           where w.Name == name
                           select new WorkoutViewDTO
                           {
@@ -290,12 +290,25 @@ namespace Gym_App.Application.Services
                                 Difficulty = w.Difficulty,
                                 Day = w.Day,
                           }).FirstOrDefaultAsync();
-            return Workout;
+
+            if (workout == null)
+                return new GettersResponse<WorkoutViewDTO>
+                {
+                    status = 0,
+                    msg = "Not Found"
+                };
+            else
+                return new GettersResponse<WorkoutViewDTO>
+                {
+                    status = 2,
+                    msg = "Successful",
+                    Value = workout
+                };
         }
-        public async Task<WorkoutViewDTO?> GetWorkoutByID(Guid ID)
+        public async Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByID(Guid ID)
         {
             //Getting the Workout by ID
-            var Workout = await(from w in _db.Workouts
+            var workout = await(from w in _db.Workouts
                           where w.WorkoutID == ID
                           select new WorkoutViewDTO
                           {
@@ -306,23 +319,39 @@ namespace Gym_App.Application.Services
                               Difficulty = w.Difficulty,
                               Day = w.Day,
                           }).FirstOrDefaultAsync();
-            return Workout;
-        }
-        public async Task<PagedList<ExerciseViewDTO>?> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
-        {
-            //checking if page and Pagesize are 0 or not entered
-            if (page == 0) page = 1;
-            if(pageSize == 0)pageSize = 10;
 
+            if (workout == null)
+                return new GettersResponse<WorkoutViewDTO>
+                {
+                    status = 0,
+                    msg = "Not Found"
+                };
+            else
+                return new GettersResponse<WorkoutViewDTO>
+                {
+                    status = 2,
+                    msg = "Successful",
+                    Value = workout
+                };
+        }
+        public async Task<GettersResponse<ExerciseViewDTO>> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        {
             //Getting the exercises in the given workout by workoutID
             var exercisesQuery = from w in _db.Workouts
-                            from e in w.Exercises
-                            where w.WorkoutID == WorkoutID && w.Exercises.Contains(e)
+                            from e in w.Exercises!
+                            where w.WorkoutID == WorkoutID && w.Exercises!.Contains(e)
                             select e;
 
+            if (exercisesQuery == null || exercisesQuery.Count() == 0)
+                return new GettersResponse<ExerciseViewDTO>
+                {
+                    status = 0,
+                    msg = "No Exercises in given workout"
+                };
+
             //If the searchTerm is not null, we gonna return all the exercises that contains the searchTerm in the name, description Difficulty
-            if(!string.IsNullOrEmpty(searchTerm))exercisesQuery = exercisesQuery.Where(e=>e.Name.Contains(searchTerm) || e.Description.Contains(searchTerm)
-            || e.Difficulty.Contains(searchTerm));
+            if(!string.IsNullOrEmpty(searchTerm))exercisesQuery = exercisesQuery.Where(e=>e.Name.Contains(searchTerm) || e.Description!.Contains(searchTerm)
+            || e.Difficulty!.Contains(searchTerm));
 
             //If the sortColumn not null, we gonna order the data by the specified sortColumn
             if (!string.IsNullOrEmpty(sortColumn))
@@ -330,9 +359,9 @@ namespace Gym_App.Application.Services
                 Expression<Func<Exercise, object>> keySelector = searchTerm.ToLower() switch
                 {
                     "name" or "n" => Exercise => Exercise.Name, // Sort by name
-                    "difficulty" or "dif" => Exercise => Exercise.Difficulty, // sort by difficulty
-                    "description" or "desc" => Exercise => Exercise.Description, // sort by description
-                    "category" or "c" => Exercise => Exercise.Category, // sort by category
+                    "difficulty" or "dif" => Exercise => Exercise.Difficulty!, // sort by difficulty
+                    "description" or "desc" => Exercise => Exercise.Description!, // sort by description
+                    "category" or "c" => Exercise => Exercise.Category!, // sort by category
                     _ => Exercise => Exercise.ExerciseID // failsafe: sort by ID
                 };
 
@@ -358,13 +387,15 @@ namespace Gym_App.Application.Services
 
             //Making the result as a paged list
             var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exerciseResult, page, pageSize);
-            return exercises;
+            return new GettersResponse<ExerciseViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = exercises
+            };
         }
-        public async Task<PagedList<WorkoutViewDTO>?> GetAllWorkouts(int page, int pageSize)
+        public async Task<GettersResponse<WorkoutViewDTO>> GetAllWorkouts(int page, int pageSize)
         {
-            //checking if page and Pagesize are 0 or not entered
-            if (page == 0) page = 1;
-            if(pageSize == 0) pageSize = 10;
 
             //Getting all workouts and projecting them as WorkoutDTO
             var workoutsQuery = from w in _db.Workouts
@@ -379,9 +410,21 @@ namespace Gym_App.Application.Services
                                Day = w.Day,
                            };
 
+            if (workoutsQuery == null || workoutsQuery.Count() == 0)
+                return new GettersResponse<WorkoutViewDTO>
+                {
+                    status = 0,
+                    msg = "No workouts in Database"
+                };
+
             //turning the result into a paged list
             var workouts = await PagedList<WorkoutViewDTO>.CreateAsync(workoutsQuery, page, pageSize);
-            return workouts;
+            return new GettersResponse<WorkoutViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = workouts
+            };
         }
     }
 }

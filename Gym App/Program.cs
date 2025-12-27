@@ -128,6 +128,19 @@ builder.Services.ConfigureHttpJsonOptions(x=>
 });
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<DbBase>();
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        // Log but don’t crash startup
+        Console.WriteLine($"Migration failed: {ex.Message}");
+    }
+}
 // Configure the HTTP request pipeline.
 
 app.UseSwagger();

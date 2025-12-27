@@ -15,9 +15,9 @@ namespace Gym_App.Application.Interfaces
         Task<SettersResponse> MarkAllAsRead(Guid UserID);// Not implemented yet
         Task<SettersResponse> DeleteAllNotifications(ClaimsPrincipal User, Guid UserID);
         Task<Guid> GetNotificationUserID( Guid NotificationID);
-        Task<PagedList<NotificationMiniViewDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm,int pageSize);
+        Task<GettersResponse<NotificationMiniViewDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm,int pageSize);
         //Task<PagedList<NotificationDTO>> GetNotificationsByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
-        Task<PagedList<NotificationViewDTO>> GetAllNotifications(int page, int pageSize);
+        Task<GettersResponse<NotificationViewDTO>> GetAllNotifications(int page, int pageSize);
 
     }
 }

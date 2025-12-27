@@ -105,7 +105,7 @@ namespace Gym_App.Application.Services
 
             if (exercise == null) 
                 return new SettersResponse { status = 0, msg = "Exercise not found" };
-            var existingMuscleIDs = new HashSet<Guid>(exercise.Muscles.Select(m => m.MusclesID));
+            var existingMuscleIDs = new HashSet<Guid>(exercise.Muscles!.Select(m => m.MusclesID));
             var musclesIDsToAdd = exerciseMuscles.Muscles?.Where(id => !existingMuscleIDs.Contains(id)).ToList();
             if (musclesIDsToAdd == null || musclesIDsToAdd.Count == 0)
                 return new SettersResponse { status = 0, msg = "No new muscles to add" };
@@ -117,7 +117,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Muscles to add not found" };
             foreach (var muscle in musclesToAdd)
             {
-                exercise.Muscles.Add(muscle);
+                exercise.Muscles!.Add(muscle);
             }
             _db.Exercises.Update(exercise);
             await _db.SaveChangesAsync();
@@ -168,7 +168,7 @@ namespace Gym_App.Application.Services
         //-----------------------------------------------------------------------
 
         //        *********** Getters ***********
-        public async Task<ExerciseViewDTO?> GetExerciseByName(string name)
+        public async Task<GettersResponse<ExerciseViewDTO>> GetExerciseByName(string name)
         {
             var Exercise = await (from e in _db.Exercises
                             where e.Name == name
@@ -182,10 +182,20 @@ namespace Gym_App.Application.Services
                                 Category = e.Category,
                                 Grip = e.Grip,
                             }).FirstOrDefaultAsync();
-            if (Exercise == null) return Exercise;
-            return Exercise;
+            if (Exercise == null) 
+                return new GettersResponse<ExerciseViewDTO>
+                {
+                    status = 0,
+                    msg = "Exercise not found"
+                };
+            return new GettersResponse<ExerciseViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Value = Exercise
+            };
         }
-        public async Task<ExerciseMiniViewDTO?> GetExerciseByID(Guid id)
+        public async Task<GettersResponse<ExerciseMiniViewDTO>> GetExerciseByID(Guid id)
         {
             var Exercise = await (from e in _db.Exercises
                             where e.ExerciseID == id
@@ -198,15 +208,31 @@ namespace Gym_App.Application.Services
                                 Category = e.Category ?? "",
                                 Grip = e.Grip ?? "",
                             }).FirstOrDefaultAsync();
-            if (Exercise == null) return Exercise;
-            return Exercise;
+            if (Exercise == null)
+                return new GettersResponse<ExerciseMiniViewDTO>
+                {
+                    status = 0,
+                    msg = "Exercise not found"
+                };
+            return new GettersResponse<ExerciseMiniViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Value = Exercise
+            };
         }
-        public async Task<List<MuscleViewDTO>?> GetExerciseMuscles(Guid exerciseID)
+        public async Task<GettersResponse<List<MuscleViewDTO>>> GetExerciseMuscles(Guid exerciseID)
         {
             var exercise = await (from e in _db.Exercises.Include(e=>e.Muscles)
                                  where e.ExerciseID == exerciseID
                                  select e).FirstOrDefaultAsync();
-            if (exercise == null) return null;
+            if (exercise == null) 
+                return new GettersResponse<List<MuscleViewDTO>>
+                {
+                    status = 0,
+                    msg = "Exercise not found"
+                };
+
             var muscleDTOs = (from m in exercise.Muscles
                               select new MuscleViewDTO
                               {
@@ -214,15 +240,18 @@ namespace Gym_App.Application.Services
                                 Name = m.Name,
                                 Description = m.Description
                               }).ToList();
-            return muscleDTOs;
+            return new GettersResponse<List<MuscleViewDTO>>
+            {
+                status = 2,
+                msg = "Successful",
+                Value = muscleDTOs
+            };
         }
-        public async Task<PagedList<ExerciseViewDTO>>? GetExercisesByMuscle(ExerciseListDTO muscles,int page,int pageSize)
+        public async Task<GettersResponse<ExerciseViewDTO>> GetExercisesByMuscle(ExerciseListDTO muscles,int page,int pageSize)
         {
-            if (page == 0) page = 1;
-            if(pageSize == 0) pageSize = 10;
             var muscleNames = muscles.Muscles;
             var exercisequery = from e in _db.Exercises
-                where muscleNames.All(name => e.Muscles.Any(m => m.Name == name))
+                where muscleNames.All(name => e.Muscles!.Any(m => m.Name.Contains(name)))
                 select new ExerciseViewDTO
                 {
                     ExerciseID = e.ExerciseID,
@@ -233,23 +262,41 @@ namespace Gym_App.Application.Services
                     Category = e.Category,
                     Grip = e.Grip,
                 };
+
+            if (exercisequery.Count() == 0)
+                return new GettersResponse<ExerciseViewDTO>
+                {
+                    status = 0,
+                    msg = "No Exercise has the specified muscles(s)"
+                };
+
             var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exercisequery, page, pageSize);
-            return exercises;
+            return new GettersResponse<ExerciseViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = exercises
+            };
         }
-        public async Task<PagedList<ExerciseViewDTO>?> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
+        public async Task<GettersResponse<ExerciseViewDTO>> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
         {
-            if (page == 0) page = 1;
-            if (pageSize == 0) pageSize = 10;
             IQueryable<Exercise> exerciseQuery = _db.Exercises;
 
-            if(!string.IsNullOrEmpty(searchTerm))exerciseQuery = exerciseQuery.Where(e => e.Name.Contains(searchTerm) || e.Difficulty.Contains(searchTerm));
+            if(!string.IsNullOrEmpty(searchTerm))exerciseQuery = exerciseQuery.Where(e => e.Name.Contains(searchTerm) || e.Difficulty!.Contains(searchTerm));
+
+            if(exerciseQuery.Count() == 0)
+                return new GettersResponse<ExerciseViewDTO>
+                {
+                    status = 0,
+                    msg = "No Exercise found with specified conditions"
+                };
 
             if (!string.IsNullOrEmpty(sortColumn))
             {
                 Expression<Func<Exercise, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
                 {
                     "name" => Exercise => Exercise.Name,
-                    "difficulty" => Exercise => Exercise.Difficulty,
+                    "difficulty" => Exercise => Exercise.Difficulty!,
                     _ => Exercise => Exercise.ExerciseID
                 };
                 if (!string.IsNullOrEmpty(OrderBy))exerciseQuery = exerciseQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
@@ -266,15 +313,17 @@ namespace Gym_App.Application.Services
                                             Category = e.Category,
                                             Grip = e.Grip,
                                         });
-        var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exercisesResponse, page, pageSize);
-            return exercises;
+            var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exercisesResponse, page, pageSize);
+            return new GettersResponse<ExerciseViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = exercises
+            };
         }
-        public async Task<PagedList<ExerciseViewDTO>?> GetAllExercises(int page, int pageSize = 5)
+        public async Task<GettersResponse<ExerciseViewDTO>> GetAllExercises(int page, int pageSize = 5)
         {
             IQueryable<Exercise> exerciseQuery = _db.Exercises;
-
-            if (page == 0) page = 1;
-            if (pageSize == 0) pageSize = 10;
             var exercisesResponse = exerciseQuery
                                         .Select(e=> new ExerciseViewDTO
                                        {
@@ -287,7 +336,12 @@ namespace Gym_App.Application.Services
                                            Grip = e.Grip,
                                        });
             var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exercisesResponse, page, pageSize);
-            return exercises;
+            return new GettersResponse<ExerciseViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = exercises
+            };
         }
     }
 }

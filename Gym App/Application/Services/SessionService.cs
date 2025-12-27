@@ -283,19 +283,19 @@ namespace Gym_App.Application.Services
 
             return UserIDs;
         }
-        public async Task<PagedList<MessageViewDTO>?> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<GettersResponse<MessageViewDTO>> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            //if page or pageSize are 0, set default values
-            if (page == 0) page = 1;
-            if (pageSize == 0) pageSize = 10;
-
             //Getting the messages of the session from the Database
             var Session = await (from s in _db.Sessions.Include(s => s.Users)
-                                from m in _db.Messages
-                                where s.SessionID == sessionID && s.Messages.Contains(m)
-                                select s).FirstOrDefaultAsync();
+                                 where s.SessionID == sessionID
+                                 select s).FirstOrDefaultAsync();
             //Return null if session not found
-            if (Session == null) return null;
+            if (Session == null)
+                return new GettersResponse<MessageViewDTO>
+                {
+                    status = 0,
+                    msg = "Session not found"
+                };
 
             //Creating list of UserIDs for authorization
             List<Guid> UserIDs = new List<Guid>();
@@ -303,8 +303,12 @@ namespace Gym_App.Application.Services
 
             //Authorization check
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
-            if(!authResult.Succeeded) 
-                return null;
+            if (!authResult.Succeeded)
+                return new GettersResponse<MessageViewDTO>
+                {
+                    status = 1,
+                    msg = "Unauthorized"
+                };
 
             //Getting messages from Database
             IQueryable<Message> messageQuery = from m in _db.Messages
@@ -316,13 +320,13 @@ namespace Gym_App.Application.Services
 
             //filter by start and end date
             DateTime validStartDate, validEndDate;
-            if(DateTime.TryParse(startDate,out validStartDate))
+            if (DateTime.TryParse(startDate, out validStartDate))
             {
-                messageQuery = messageQuery.Where(m=>m.Timestamp > validStartDate);
+                messageQuery = messageQuery.Where(m => m.Timestamp > validStartDate);
             }
-            if(DateTime.TryParse(endDate,out validEndDate))
+            if (DateTime.TryParse(endDate, out validEndDate))
             {
-                messageQuery = messageQuery.Where(m=>m.Timestamp < validEndDate);
+                messageQuery = messageQuery.Where(m => m.Timestamp < validEndDate);
             }
             //Order by given column
             if (!string.IsNullOrEmpty(sortColumn))
@@ -358,17 +362,22 @@ namespace Gym_App.Application.Services
 
             //Making the result as a paged list
             var messages = await PagedList<MessageViewDTO>.CreateAsync(messageResponse, page, pageSize);
-            return messages;
+            return new GettersResponse<MessageViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = messages
+            };
         }
-        public async Task<PagedList<UserViewDTO>?> GetUsersOfSession(ClaimsPrincipal User,Guid sessionID, int page, int pageSize)//The sessions tree in itself needs a big change man fr
+        public async Task<GettersResponse<UserViewDTO>> GetUsersOfSession(ClaimsPrincipal User,Guid sessionID, int page, int pageSize)//The sessions tree in itself needs a big change man fr
         {
-            //if page or pageSize are 0, set default values
-            if (page == 0) page = 1;
-            if (pageSize == 0) pageSize = 10;
-
             var session = await _db.Sessions.Include(s => s.Users).FirstOrDefaultAsync(s => s.SessionID == sessionID);
             if (session == null)
-                return null;
+                return new GettersResponse<UserViewDTO>
+                {
+                    status = 0,
+                    msg = "Session not found"
+                };
 
             //Creating list of UserIDs for authorization
             List<Guid> UserIDs = new List<Guid>();
@@ -377,7 +386,11 @@ namespace Gym_App.Application.Services
             //Authroization check
             var auhtResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
             if (!auhtResult.Succeeded)
-                return null;
+                return new GettersResponse<UserViewDTO>
+                {
+                    status = 1,
+                    msg = "Unauthorized"
+                };
 
             //Projecting the users to UserDTO
             var sessionQuery = from s in _db.Sessions
@@ -393,14 +406,15 @@ namespace Gym_App.Application.Services
 
             //Making the result as a paged list
             var sessionUsers = await PagedList<UserViewDTO>.CreateAsync(sessionQuery, page, pageSize);
-            return sessionUsers;
+            return new GettersResponse<UserViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = sessionUsers
+            };
         }
-        public async Task<PagedList<SessionViewDTO>>? GetAllSessions(int page,int pageSize)
+        public async Task<GettersResponse<SessionViewDTO>> GetAllSessions(int page,int pageSize)
         {
-            //if page or pageSize are 0, set default values
-            if (page == 0) page = 1;
-            if (pageSize == 0) pageSize = 10;
-
             //Getting all sessions from Database and projecting them to SessionDTO
             var sessionsQuery = from s in _db.Sessions
                                select new SessionViewDTO
@@ -409,8 +423,20 @@ namespace Gym_App.Application.Services
                                    StartTime = s.StartTime,
                                    UserIDs = s.Users.Select(u => u.UserID).ToList(),
                                };
+
+            if (sessionsQuery == null || sessionsQuery.Count() == 0)
+                return new GettersResponse<SessionViewDTO>
+                {
+                    status = 0,
+                    msg = "No sessions were found"
+                };
             var sessions = await PagedList<SessionViewDTO>.CreateAsync(sessionsQuery, page, pageSize);
-            return sessions;
+            return new GettersResponse<SessionViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = sessions
+            };
         }
     }
 }

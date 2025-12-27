@@ -55,28 +55,39 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
         [HttpGet("session-messages/{sessionID}")]
-        public async Task<IActionResult> GetSessionMessages([FromRoute] Guid sessionID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page, int pageSize)
+        public async Task<IActionResult> GetSessionMessages([FromRoute] Guid sessionID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page = 1, int pageSize = 10)
         {
-            var messages = await _messageService.GetSessionMessages(User,sessionID, startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
-            if (messages == null)
-                return BadRequest(new { message = "No messages where found or you are not authorized" });
-            return Ok(messages);
+            var result = await _messageService.GetSessionMessages(User,sessionID, startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
+            if(result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
         //[Authorize(Policy = "ElevatedPower")]
         [HttpGet("messages-filter")]
-        public async Task<IActionResult> GetMessagesByFilter([FromQuery]string startDate,string endDate, string sortColumn, string OrderBy, string SearchTerm, int page, int pageSize)
+        public async Task<IActionResult> GetMessagesByFilter([FromQuery]string startDate,string endDate, string sortColumn, string OrderBy, string SearchTerm, int page = 1, int pageSize = 10)
         {
-            var messages = await _messageService.GetMessagesByFilter(startDate,endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
-            if (messages == null)
-                return BadRequest(new { message = "No messages where found or you are not authorized" });
-            return Ok(messages);
+            var result = await _messageService.GetMessagesByFilter(startDate,endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
         //[Authorize(Policy = "ElevatedPower")]
         [HttpGet("get")]
-        public async Task<IActionResult> GetAllMessages([FromQuery]int page, int pageSize)
+        public async Task<IActionResult> GetAllMessages([FromQuery]int page = 1, int pageSize = 10)
         {
-            var messages = await _messageService.GetMessages(page,pageSize);
-            return Ok(messages);
+            var result = await _messageService.GetMessages(page,pageSize);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Data);
         }
     }
 }

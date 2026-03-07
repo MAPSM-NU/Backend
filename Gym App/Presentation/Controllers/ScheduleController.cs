@@ -1,5 +1,5 @@
-﻿using Gym_App.Application.Interfaces;
-using Gym_App.Infastructure.DTOs.Schedule;
+﻿using Gym_App.Infastructure.DTOs.Schedule;
+using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

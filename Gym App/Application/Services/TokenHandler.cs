@@ -1,9 +1,9 @@
-﻿using Gym_App.Application.Interfaces;
-using Gym_App.Domain;
+﻿using Gym_App.Domain;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.UserDTOs;
+using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;

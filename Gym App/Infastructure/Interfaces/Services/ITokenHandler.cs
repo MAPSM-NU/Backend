@@ -2,7 +2,7 @@
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 
-namespace Gym_App.Application.Interfaces
+namespace Gym_App.Infastructure.Interfaces.Services
 {
     public interface ITokenHandler
     {

@@ -1,4 +1,4 @@
-﻿namespace Gym_App.Application.Interfaces
+﻿namespace Gym_App.Infastructure.Interfaces.Services
 {
     public interface IExerciseData
     {

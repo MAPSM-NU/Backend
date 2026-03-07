@@ -1,7 +1,7 @@
 using Gym_App.Application.Authorization;
-using Gym_App.Application.Interfaces;
 using Gym_App.Application.Services;
 using Gym_App.Infastructure.Context;
+using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 
@@ -73,7 +73,7 @@ builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();
 
 builder.Services.AddDbContext<DbBase>(options =>
 {
-    options.UseSqlServer(builder.Configuration["ConnectionStrings:VpsConnection"]);
+    options.UseSqlServer(builder.Configuration["ConnectionStrings:ModyConnection"]);
 });
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
     AddJwtBearer(options =>
@@ -89,14 +89,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Token"]!)),
             ValidateIssuerSigningKey = true,
+            
 
         };
+        options.IncludeErrorDetails = true;
     });
 
 Console.WriteLine("Connection String = " + builder.Configuration["ConnectionStrings:VpsConnection"]);
 Console.WriteLine("Issuer = " + builder.Configuration["JwtSettings:Issuer"]);
 Console.WriteLine("Audience = " + builder.Configuration["JwtSettings:Audience"]);
-Console.WriteLine("Token = " + (builder.Configuration["JwtSettings:Token"] != null));
+Console.WriteLine("Token = " + (builder.Configuration["JwtSettings:Token"]));
 
 builder.Services.AddAuthorization(options =>
 {

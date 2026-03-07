@@ -32,6 +32,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Domain\workout-data.csv" CopyToOutputDirectory="Always" />
+    <None Update="Infastructure\Datasets\workout-data.csv" CopyToOutputDirectory="Always" />
   </ItemGroup>
 </Project>

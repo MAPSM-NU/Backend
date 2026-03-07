@@ -1,4 +1,4 @@
-﻿using Gym_App.Application.Interfaces;
+﻿using Gym_App.Infastructure.Interfaces.Services;
 using MimeKit;
 using MimeKit.Text;
 using Org.BouncyCastle.Crypto.Macs;

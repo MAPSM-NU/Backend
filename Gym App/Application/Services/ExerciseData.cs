@@ -1,7 +1,7 @@
 ﻿using CsvHelper;
-using Gym_App.Application.Interfaces;
 using Gym_App.Domain.DTOs;
 using Gym_App.Infastructure.Context;
+using Gym_App.Infastructure.Interfaces.Services;
 using System.Globalization;
 
 namespace Gym_App.Application.Services

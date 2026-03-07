@@ -1,5 +1,5 @@
-﻿using Gym_App.Application.Interfaces;
-using Gym_App.Infastructure.Context;
+﻿using Gym_App.Infastructure.Context;
+using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Api.Controllers

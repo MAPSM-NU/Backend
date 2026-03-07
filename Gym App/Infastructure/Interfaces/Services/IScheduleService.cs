@@ -2,7 +2,7 @@
 using Gym_App.Infastructure.Transfer_Classes;
 using System.Security.Claims;
 
-namespace Gym_App.Application.Interfaces
+namespace Gym_App.Infastructure.Interfaces.Services
 {
     public interface IScheduleService
     {

@@ -64,7 +64,7 @@ namespace Gym_App.Application.Services
                         muscles.Add(muscleName);
                         var muscle = new Domain.Muscles
                         {
-                            MusclesID = Guid.NewGuid(),
+                            Id = Guid.NewGuid(),
                             Name = muscleName
                         };
                         _db.Muscles.Add(muscle);
@@ -73,7 +73,7 @@ namespace Gym_App.Application.Services
             }
             _db.Exercises.AddRange(Exercises.Select(e => new Domain.Exercise
             {
-                ExerciseID = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Name = e.Name,
                 Description = e.Description,
                 Difficulty = e.Difficulty,

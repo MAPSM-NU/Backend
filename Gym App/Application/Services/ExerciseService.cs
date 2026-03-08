@@ -36,7 +36,7 @@ namespace Gym_App.Application.Services
 
             var newExercise = new Exercise
             {
-                ExerciseID = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Name = exercise.Name,
                 Description = exercise.Description,
                 Difficulty = exercise.Difficulty,
@@ -48,13 +48,13 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Exercise created successfully" };
         }
-        public async Task<SettersResponse> UpdateExercise(Guid exerciseID, ExerciseCreationDTO exercise)
+        public async Task<SettersResponse> UpdateExercise(Guid Id, ExerciseCreationDTO exercise)
         {
-            if(exercise == null || exerciseID == Guid.Empty)
+            if(exercise == null || Id == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid exercise data" };
 
             var toBeUpdated = await (from E in _db.Exercises
-                               where E.ExerciseID == exerciseID
+                               where E.Id == Id
                                select E).FirstOrDefaultAsync();
             
             if (toBeUpdated == null)
@@ -87,7 +87,7 @@ namespace Gym_App.Application.Services
         {
             
             var isExerciseExists = await (from E in _db.Exercises
-                                    where E.ExerciseID == ExerciseID
+                                    where E.Id == ExerciseID
                                     select E).FirstOrDefaultAsync();
             if (isExerciseExists == null)
                 return new SettersResponse { status = 0, msg = "Exercise not found" };
@@ -100,18 +100,18 @@ namespace Gym_App.Application.Services
             if(exerciseMuscles == null || exerciseMuscles.Muscles == null || exerciseMuscles.Muscles.Count == 0) 
                 return new SettersResponse { status = 0, msg = "Invalid DTO"};
             var exercise = await(from e in _db.Exercises.Include(m =>m.Muscles)
-                            where e.ExerciseID == exerciseID       
+                            where e.Id == exerciseID       
                             select e).FirstOrDefaultAsync();
 
             if (exercise == null) 
                 return new SettersResponse { status = 0, msg = "Exercise not found" };
-            var existingMuscleIDs = new HashSet<Guid>(exercise.Muscles!.Select(m => m.MusclesID));
+            var existingMuscleIDs = new HashSet<Guid>(exercise.Muscles!.Select(m => m.Id));
             var musclesIDsToAdd = exerciseMuscles.Muscles?.Where(id => !existingMuscleIDs.Contains(id)).ToList();
             if (musclesIDsToAdd == null || musclesIDsToAdd.Count == 0)
                 return new SettersResponse { status = 0, msg = "No new muscles to add" };
 
             var musclesToAdd = await (from m in _db.Muscles
-                               where musclesIDsToAdd.Contains(m.MusclesID)
+                               where musclesIDsToAdd.Contains(m.Id)
                                select m).ToListAsync();
             if (musclesToAdd.Count == 0) 
                 return new SettersResponse { status = 0, msg = "Muscles to add not found" };
@@ -128,19 +128,19 @@ namespace Gym_App.Application.Services
             if(exerciseMuscles == null || exerciseMuscles.Muscles == null || exerciseMuscles.Muscles.Count == 0)
                 return new SettersResponse { status = 0,msg = "Invalid DTO"};
             var exercise = await(from e in _db.Exercises.Include(m =>m.Muscles)
-                            where e.ExerciseID == exerciseID       
+                            where e.Id == exerciseID       
                             select e).FirstOrDefaultAsync();
 
             if (exercise == null) 
                 return new SettersResponse { status = 0, msg = "Exercise not found" };
 
-            var existingMuscleIDs = new HashSet<Guid>(exercise.Muscles.Select(m => m.MusclesID));
+            var existingMuscleIDs = new HashSet<Guid>(exercise.Muscles.Select(m => m.Id));
             var musclesIDsToRemove = exerciseMuscles.Muscles?.Where(id => existingMuscleIDs.Contains(id)).ToList();
             if (musclesIDsToRemove == null || musclesIDsToRemove.Count == 0)
                 return new SettersResponse { status = 0, msg = "No muscles to remove" };
 
             var musclesToRemove = await (from m in _db.Muscles
-                               where musclesIDsToRemove.Contains(m.MusclesID)
+                               where musclesIDsToRemove.Contains(m.Id)
                                select m).ToListAsync();
 
             if (musclesToRemove.Count == 0)
@@ -174,7 +174,7 @@ namespace Gym_App.Application.Services
                             where e.Name == name
                             select new ExerciseViewDTO
                             {
-                                ExerciseID = e.ExerciseID,
+                                ExerciseID = e.Id,
                                 Name = e.Name,
                                 Description = e.Description,
                                 Difficulty = e.Difficulty,
@@ -198,7 +198,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<ExerciseMiniViewDTO>> GetExerciseByID(Guid id)
         {
             var Exercise = await (from e in _db.Exercises
-                            where e.ExerciseID == id
+                            where e.Id == id
                             select new ExerciseMiniViewDTO
                             {
                                 Name = e.Name,
@@ -224,7 +224,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<List<MuscleViewDTO>>> GetExerciseMuscles(Guid exerciseID)
         {
             var exercise = await (from e in _db.Exercises.Include(e=>e.Muscles)
-                                 where e.ExerciseID == exerciseID
+                                 where e.Id == exerciseID
                                  select e).FirstOrDefaultAsync();
             if (exercise == null) 
                 return new GettersResponse<List<MuscleViewDTO>>
@@ -236,7 +236,7 @@ namespace Gym_App.Application.Services
             var muscleDTOs = (from m in exercise.Muscles
                               select new MuscleViewDTO
                               {
-                                MusclesID = m.MusclesID,
+                                MusclesID = m.Id,
                                 Name = m.Name,
                                 Description = m.Description
                               }).ToList();
@@ -254,7 +254,7 @@ namespace Gym_App.Application.Services
                 where muscleNames.All(name => e.Muscles!.Any(m => m.Name.Contains(name)))
                 select new ExerciseViewDTO
                 {
-                    ExerciseID = e.ExerciseID,
+                    ExerciseID = e.Id,
                     Name = e.Name,
                     Description = e.Description,
                     Difficulty = e.Difficulty,
@@ -297,7 +297,7 @@ namespace Gym_App.Application.Services
                 {
                     "name" => Exercise => Exercise.Name,
                     "difficulty" => Exercise => Exercise.Difficulty!,
-                    _ => Exercise => Exercise.ExerciseID
+                    _ => Exercise => Exercise.Id
                 };
                 if (!string.IsNullOrEmpty(OrderBy))exerciseQuery = exerciseQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
                 else exerciseQuery = exerciseQuery.OrderByDescending(keySelector);
@@ -305,7 +305,7 @@ namespace Gym_App.Application.Services
             var exercisesResponse = exerciseQuery
                                         .Select(e => new ExerciseViewDTO
                                         {
-                                            ExerciseID = e.ExerciseID,
+                                            ExerciseID = e.Id,
                                             Name = e.Name,
                                             Description = e.Description,
                                             Difficulty = e.Difficulty,
@@ -327,7 +327,7 @@ namespace Gym_App.Application.Services
             var exercisesResponse = exerciseQuery
                                         .Select(e=> new ExerciseViewDTO
                                        {
-                                           ExerciseID = e.ExerciseID,
+                                           ExerciseID = e.Id,
                                            Name = e.Name,
                                            Description = e.Description,
                                            Difficulty = e.Difficulty,

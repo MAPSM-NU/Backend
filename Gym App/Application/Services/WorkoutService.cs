@@ -46,13 +46,13 @@ namespace Gym_App.Application.Services
             //Creating the new Workout
             var newWorkout = new Workout
             {
-                WorkoutID = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Name = workout.Name,
                 Description = workout.Description,
                 Date = workout.Date,
                 Difficulty = workout.Difficulty,
                 Day = workout.Day,
-                CreatAt = DateTime.Now,
+                CreatedAt = DateTime.Now,
                 User = isUserExist,
                 Schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.User.Id == workout.UserID)
             };
@@ -72,7 +72,7 @@ namespace Gym_App.Application.Services
 
             //Searching for the Workout
             var WorkoutToBeUpdated = await(from w in _db.Workouts.Include(w => w.User)
-                                      where w.WorkoutID == workoutID
+                                      where w.Id == workoutID
                                       select w).FirstOrDefaultAsync();
             if (WorkoutToBeUpdated == null) 
                 return new SettersResponse { status = 0 , msg = "Workout not found" };
@@ -111,7 +111,7 @@ namespace Gym_App.Application.Services
 
             //Searching for the Workout
             var isWorkoutExist = await (from w in _db.Workouts.Include(w => w.User)
-                                        where w.WorkoutID == workoutID
+                                        where w.Id == workoutID
                                   select w).FirstOrDefaultAsync();
             if (isWorkoutExist == null)
                 return new SettersResponse { status = 0 , msg = "Workout not found" };
@@ -138,7 +138,7 @@ namespace Gym_App.Application.Services
             var workout = await _db.Workouts
                 .Include(w => w.Exercises)
                 .Include(w => w.User)
-                .FirstOrDefaultAsync(w => w.WorkoutID == workoutID);
+                .FirstOrDefaultAsync(w => w.Id == workoutID);
             if (workout == null)
                 return new SettersResponse { status = 0 , msg = "Workout not found" };
 
@@ -148,7 +148,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Invalid workout data" };
 
             //Determening if there are new exercises to add
-            var existingExerciseIds = new HashSet<Guid>(workout.Exercises.Select(e => e.ExerciseID));
+            var existingExerciseIds = new HashSet<Guid>(workout.Exercises.Select(e => e.Id));
             var exerciseIdsToAdd = workoutExercises.ExercisesID?.Where(id => !existingExerciseIds.Contains(id)).ToList();
 
             if (exerciseIdsToAdd == null || !exerciseIdsToAdd.Any())
@@ -156,7 +156,7 @@ namespace Gym_App.Application.Services
 
             //Getting the exercises to add from the database
             var exercisesToAdd = await _db.Exercises
-                .Where(e => exerciseIdsToAdd.Contains(e.ExerciseID))
+                .Where(e => exerciseIdsToAdd.Contains(e.Id))
                 .ToListAsync();
             if (exercisesToAdd == null || !exercisesToAdd.Any())
                 return new SettersResponse { status = 0, msg = "No new exercises found" };
@@ -182,7 +182,7 @@ namespace Gym_App.Application.Services
 
             //Searching for the Workout
             var isWorkoutExist = await(from w in _db.Workouts.Include(w => w.Exercises).Include(w => w.User)
-                                       where w.WorkoutID == workoutID
+                                       where w.Id == workoutID
                                   select w).FirstOrDefaultAsync();
             if(isWorkoutExist == null) 
                 return new SettersResponse { status = 0, msg = "Workout not found" };
@@ -202,7 +202,7 @@ namespace Gym_App.Application.Services
 
             //Getting the exercises to add from the database
             var ExercisesToAdd = await _db.Exercises
-                                .Where(e => exerciseIDsToAdd.Contains(e.ExerciseID))
+                                .Where(e => exerciseIDsToAdd.Contains(e.Id))
                                 .ToListAsync();
             if (ExercisesToAdd == null || !ExercisesToAdd.Any())
                 return new SettersResponse { status = 0, msg = "No new exercises found" };
@@ -228,7 +228,7 @@ namespace Gym_App.Application.Services
 
             //Searching for the Workout
             var isWorkoutExist = await(from w in _db.Workouts.Include(w => w.Exercises).Include(w => w.User)
-                                  where w.WorkoutID == workoutID
+                                  where w.Id == workoutID
                                   select w).FirstOrDefaultAsync();
             if (isWorkoutExist == null) 
                 return new SettersResponse { status = 0, msg = "Workout not found" };
@@ -239,14 +239,14 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Determening if there are exercises to Delete
-            var existingExerciseIDs = new HashSet<Guid>(isWorkoutExist.Exercises.Select(i => i.ExerciseID));
+            var existingExerciseIDs = new HashSet<Guid>(isWorkoutExist.Exercises.Select(i => i.Id));
             var exerciseIDsToRemove = workoutExercises.ExercisesID?.Where(id => existingExerciseIDs.Contains(id)).ToList();
             if (exerciseIDsToRemove == null || !exerciseIDsToRemove.Any()) 
                 return new SettersResponse { status = 0, msg = "No exercises to remove" };
 
             //Getting the exercises to delete from the Database
             var ExercisesToRemove = await _db.Exercises
-                                    .Where(e => exerciseIDsToRemove.Contains(e.ExerciseID))
+                                    .Where(e => exerciseIDsToRemove.Contains(e.Id))
                                     .ToListAsync();
             if (ExercisesToRemove == null || !ExercisesToRemove.Any())
                 return new SettersResponse { status = 0, msg = "No exercises found" };
@@ -270,7 +270,7 @@ namespace Gym_App.Application.Services
         {
             //Getting the user by ID
             Guid Id = await(from w in _db.Workouts
-                               where w.WorkoutID == workoutID
+                               where w.Id == workoutID
                                select w.User.Id).FirstOrDefaultAsync();
             return Id; 
         }
@@ -281,7 +281,7 @@ namespace Gym_App.Application.Services
                           where w.Name == name
                           select new WorkoutViewDTO
                           {
-                                WorkoutID = w.WorkoutID,
+                                WorkoutID = w.Id,
                                 Name = w.Name,
                                 Description = w.Description,
                                 Date = w.Date,
@@ -307,10 +307,10 @@ namespace Gym_App.Application.Services
         {
             //Getting the Workout by ID
             var workout = await(from w in _db.Workouts
-                          where w.WorkoutID == ID
+                          where w.Id == ID
                           select new WorkoutViewDTO
                           {
-                              WorkoutID = w.WorkoutID,
+                              WorkoutID = w.Id,
                               Name = w.Name,
                               Description = w.Description,
                               Date = w.Date,
@@ -337,7 +337,7 @@ namespace Gym_App.Application.Services
             //Getting the exercises in the given workout by workoutID
             var exercisesQuery = from w in _db.Workouts
                             from e in w.Exercises!
-                            where w.WorkoutID == WorkoutID && w.Exercises!.Contains(e)
+                            where w.Id == WorkoutID && w.Exercises!.Contains(e)
                             select e;
 
             if (exercisesQuery == null || exercisesQuery.Count() == 0)
@@ -360,7 +360,7 @@ namespace Gym_App.Application.Services
                     "difficulty" or "dif" => Exercise => Exercise.Difficulty!, // sort by difficulty
                     "description" or "desc" => Exercise => Exercise.Description!, // sort by description
                     "category" or "c" => Exercise => Exercise.Category!, // sort by category
-                    _ => Exercise => Exercise.ExerciseID // failsafe: sort by ID
+                    _ => Exercise => Exercise.Id // failsafe: sort by ID
                 };
 
                 //If no orderby was inputed, then we sort ascending
@@ -374,7 +374,7 @@ namespace Gym_App.Application.Services
             var exerciseResult = exercisesQuery
                                 .Select(e => new ExerciseViewDTO
                                 {
-                                    ExerciseID = e.ExerciseID,
+                                    ExerciseID = e.Id,
                                     Name = e.Name,
                                     Description = e.Description,
                                     Difficulty = e.Difficulty,
@@ -400,7 +400,7 @@ namespace Gym_App.Application.Services
                            select new WorkoutViewDTO
                            {
                                UserID = w.User.Id,
-                               WorkoutID = w.WorkoutID,
+                               WorkoutID = w.Id,
                                Name = w.Name,
                                Description = w.Description,
                                Date = w.Date,

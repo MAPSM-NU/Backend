@@ -45,7 +45,7 @@ namespace Gym_App.Application.Services
 
             //Getting session from Database
             var session = await (from s in _db.Sessions.Include(s => s.Users)
-                                 where s.SessionID == message.SessionID
+                                 where s.Id == message.SessionID
                                  select s).FirstOrDefaultAsync();
             //if session not found return
             if (session == null)
@@ -57,11 +57,11 @@ namespace Gym_App.Application.Services
             //Creating new message
             var newMessage = new Message
             {
-                MessageID = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Sender = user,
                 Session = session,
                 Content = message.Content,
-                Timestamp = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
                 IsRead = message.IsRead
             };
 
@@ -78,7 +78,7 @@ namespace Gym_App.Application.Services
 
             //Getting message from Database
             var Message = await (from u in _db.Messages.Include(m => m.Sender)
-                                 where u.MessageID == messageID
+                                 where u.Id == messageID
                                  select u).FirstOrDefaultAsync();
             //if message not found return
             if (Message == null)
@@ -104,7 +104,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid messageID" };
 
             var Message = await (from u in _db.Messages.Include(m => m.Sender)
-                                 where u.MessageID == messageID
+                                 where u.Id == messageID
                                  select u).FirstOrDefaultAsync();
             //if message not found return
             if (Message == null)
@@ -128,7 +128,7 @@ namespace Gym_App.Application.Services
         public async Task<Guid> GetMessageUserID(Guid messageID)//Not used anymore
         {
             var userID = await (from m in _db.Messages
-                                where m.MessageID == messageID
+                                where m.Id == messageID
                                 select m.Sender.Id).FirstOrDefaultAsync();
             return userID;
         }
@@ -140,7 +140,7 @@ namespace Gym_App.Application.Services
 
             //Getting users from Database
             var Users = await (from s in _db.Sessions
-                               where s.SessionID == sessionID
+                               where s.Id == sessionID
                                select s.Users).FirstOrDefaultAsync();
 
             //if session not found return
@@ -160,7 +160,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<MessageMiniViewDTO>> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             var session = await (from s in _db.Sessions.Include(s => s.Users)
-                                 where s.SessionID == sessionID
+                                 where s.Id == sessionID
                                  select s).FirstOrDefaultAsync();
             //if session not found return
             if (session == null)
@@ -184,18 +184,18 @@ namespace Gym_App.Application.Services
             //Getting messages from Database
             var messageQuery = from s in _db.Sessions
                                from m in _db.Messages
-                               where s.SessionID == sessionID && s.Messages!.Contains(m)
+                               where s.Id == sessionID && s.Messages!.Contains(m)
                                select m;
 
             //filtering by start date and end date
             DateTime validStartDate, validEndDate;
             if (DateTime.TryParse(startDate, out validStartDate))
             {
-                messageQuery = messageQuery.Where(m => m.Timestamp > validStartDate);
+                messageQuery = messageQuery.Where(m => m.CreatedAt > validStartDate);
             }
             if (DateTime.TryParse(endDate, out validEndDate))
             {
-                messageQuery = messageQuery.Where(m => m.Timestamp < validEndDate);
+                messageQuery = messageQuery.Where(m => m.CreatedAt < validEndDate);
             }
 
             //filtering by search term
@@ -207,8 +207,8 @@ namespace Gym_App.Application.Services
                 Expression<Func<Message, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
                 {
                     "message" or "m" or "c" or "content" => Message => Message.Content, //ordering by message content
-                    "time" or "t" or "timestamp" => Message => Message.Timestamp, // ordering by timestamp
-                    _ => Message => Message.MessageID, //failsafe: ordering by message ID
+                    "time" or "t" or "timestamp" => Message => Message.CreatedAt, // ordering by timestamp
+                    _ => Message => Message.Id, //failsafe: ordering by message ID
                 };
                 //If no orderby was inputed, then we sort ascending
                 if (!string.IsNullOrEmpty(OrderBy)) messageQuery = messageQuery.OrderBy(keySelector);
@@ -218,7 +218,7 @@ namespace Gym_App.Application.Services
             }
             else
             {
-                messageQuery = messageQuery.OrderByDescending(m => m.Timestamp);// or just order by recent messages
+                messageQuery = messageQuery.OrderByDescending(m => m.CreatedAt);// or just order by recent messages
             }
 
             //Projecting the resultant message queries to messageDTO
@@ -226,10 +226,10 @@ namespace Gym_App.Application.Services
                                     .Select(m => new MessageMiniViewDTO
                                     {
                                         SenderID = m.Sender.Id,
-                                        MessageID = m.MessageID,
+                                        MessageID = m.Id,
                                         Content = m.Content,
                                         IsRead = m.IsRead,
-                                        Timestamp = m.Timestamp
+                                        Timestamp = m.CreatedAt
                                     });
 
             //Making the result as a paged list
@@ -259,11 +259,11 @@ namespace Gym_App.Application.Services
             DateTime validStartDate, validEndDate;
             if (DateTime.TryParse(startDate, out validStartDate))
             {
-                messageQuery = messageQuery.Where(m => m.Timestamp > validStartDate);
+                messageQuery = messageQuery.Where(m => m.CreatedAt > validStartDate);
             }
             if (DateTime.TryParse(endDate, out validEndDate))
             {
-                messageQuery = messageQuery.Where(m => m.Timestamp < validEndDate);
+                messageQuery = messageQuery.Where(m => m.CreatedAt < validEndDate);
             }
 
             //filtering by search term
@@ -275,7 +275,7 @@ namespace Gym_App.Application.Services
                 Expression<Func<Message, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
                 {
                     "message" or "content" => Message => Message.Content,//ordering by message content
-                    _ => Message => Message.MessageID,//failsafe: ordering by message ID
+                    _ => Message => Message.Id,//failsafe: ordering by message ID
                 };
                 //If no orderby was inputed, then we sort ascending
                 if (!string.IsNullOrEmpty(OrderBy)) messageQuery = messageQuery.OrderBy(keySelector);
@@ -289,11 +289,11 @@ namespace Gym_App.Application.Services
                                     .Select(m => new MessageViewDTO
                                     {
                                         SenderID = m.Sender.Id,
-                                        SessionID = m.Session.SessionID,
-                                        MessageID = m.MessageID,
+                                        SessionID = m.Session.Id,
+                                        MessageID = m.Id,
                                         Content = m.Content,
                                         IsRead = m.IsRead,
-                                        Timestamp = m.Timestamp
+                                        Timestamp = m.CreatedAt
                                     });
 
             //Making the result as a paged list
@@ -313,11 +313,11 @@ namespace Gym_App.Application.Services
                                 select new MessageViewDTO
                                 {
                                     SenderID = m.Sender.Id,
-                                    SessionID = m.Session.SessionID,
-                                    MessageID = m.MessageID,
+                                    SessionID = m.Session.Id,
+                                    MessageID = m.Id,
                                     Content = m.Content,
                                     IsRead = m.IsRead,
-                                    Timestamp = m.Timestamp
+                                    Timestamp = m.CreatedAt
                                 };
 
             if (messagesQuery == null || messagesQuery.Count() == 0)

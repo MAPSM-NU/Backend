@@ -47,7 +47,7 @@ namespace Gym_App.Application.Services
 
             //Getting workout from Databse
             var workout = await (from w in _db.Workouts.Include(w => w.Feedback)
-                                 where w.WorkoutID == feedbackDTO.WorkoutID
+                                 where w.Id == feedbackDTO.WorkoutID
                                  select w).FirstOrDefaultAsync(); ;
             //if workout not found return
             if (workout == null)
@@ -64,8 +64,8 @@ namespace Gym_App.Application.Services
             //Creating Feedback
             var feedback = new Feedback
             {
-                FeedbackID = Guid.NewGuid(),
-                Date = DateTime.UtcNow,
+                Id = Guid.NewGuid(),
+                CreatedAt = DateTime.UtcNow,
                 Title = feedbackDTO.Title,
                 Type = feedbackDTO.Type,
                 FeedbackText = feedbackDTO.FeedbackText,
@@ -88,7 +88,7 @@ namespace Gym_App.Application.Services
 
             //Getting Feedback from Database
             var feedback = await (from f in _db.Feedbacks.Include(f => f.User)
-                                  where f.FeedbackID == feedbackID
+                                  where f.Id == feedbackID
                                   select f).FirstOrDefaultAsync();
 
             //if feedback not found return
@@ -129,7 +129,7 @@ namespace Gym_App.Application.Services
 
             //Getting feedback
             var feedback = await (from f in _db.Feedbacks.Include(f => f.User)
-                                  where f.FeedbackID == feedbackID
+                                  where f.Id == feedbackID
                                   select f).FirstOrDefaultAsync();
             //if feedback not found return
             if (feedback == null)
@@ -158,7 +158,7 @@ namespace Gym_App.Application.Services
 
             //Getting Id from Database
             var Id = await (from f in _db.Feedbacks
-                                  where f.FeedbackID == feedbackID
+                                  where f.Id == feedbackID
                                   select f.User.Id).FirstOrDefaultAsync();
 
             //Authorization
@@ -180,12 +180,12 @@ namespace Gym_App.Application.Services
 
             //Getting feedback from Database
             var feedback = await (from f in _db.Feedbacks
-                                  where f.FeedbackID == feedbackID
+                                  where f.Id == feedbackID
                                   select new FeedbackViewDTO
                                   {
                                       WorkoutID = f.WorkoutID,
-                                      FeedbackID = f.FeedbackID,
-                                      Date = f.Date,
+                                      FeedbackID = f.Id,
+                                      Date = f.CreatedAt,
                                       CaloriesBurned = f.CaloriesBurned ?? 0,
                                       DurationMinutes = f.CaloriesBurned ?? 0,
                                       Title = f.Title,
@@ -219,7 +219,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<FeedbackMiniViewDTO>> GetFeedbackOfWorkout(ClaimsPrincipal User, Guid workoutID)
         {
             var user = await (from w in _db.Workouts.Include(w => w.User)
-                              where w.WorkoutID == workoutID
+                              where w.Id == workoutID
                               select w.User).FirstOrDefaultAsync();
 
             if (user == null)
@@ -238,12 +238,12 @@ namespace Gym_App.Application.Services
                 };
 
             var feedback = await  (from f in _db.Feedbacks.Include(f => f.Workout).Include(f => f.User)
-                                   where f.Workout.WorkoutID == workoutID
+                                   where f.Workout.Id == workoutID
                                    select new FeedbackMiniViewDTO
                                    {
                                        WorkoutID = f.WorkoutID,
-                                       FeedbackID = f.FeedbackID,
-                                       Date = f.Date,
+                                       FeedbackID = f.Id,
+                                       Date = f.CreatedAt,
                                        Title = f.Title,
                                        Type = f.Type,
                                        FeedbackText = f.FeedbackText,
@@ -296,11 +296,11 @@ namespace Gym_App.Application.Services
             DateTime validStartDate,validEndDate;
             if (DateTime.TryParse(startDate, out validStartDate))//Takes Dates after the start Date
             {
-                feedbackQuery = feedbackQuery.Where(f=>f.Date > validStartDate);
+                feedbackQuery = feedbackQuery.Where(f=>f.CreatedAt > validStartDate);
             }
             if(DateTime.TryParse(endDate, out validEndDate))//Takes Dates before the end date
             {
-                feedbackQuery = feedbackQuery.Where(f=>f.Date < validEndDate);
+                feedbackQuery = feedbackQuery.Where(f=>f.CreatedAt < validEndDate);
             }
 
             //filtering by search term in title
@@ -314,7 +314,7 @@ namespace Gym_App.Application.Services
                     "title" => Feedback => Feedback.Title, //order by Title
                     "calories" => Feedback => Feedback.CaloriesBurned!, // order by CaloriesBurned
                     "duration" => Feedback => Feedback.DurationMinutes!, // order by DurationMinutes
-                    _ => Feedback => Feedback.FeedbackID//failsafe: order by FeedbackID
+                    _ => Feedback => Feedback.Id//failsafe: order by FeedbackID
                 };
                 //If no orderby was inputed, then we sort ascending
                 if (!string.IsNullOrEmpty(OrderBy)) feedbackQuery = feedbackQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
@@ -328,8 +328,8 @@ namespace Gym_App.Application.Services
                                     .Select(f => new FeedbackMiniViewDTO
                                     {
                                         WorkoutID = f.WorkoutID,
-                                        FeedbackID = f.FeedbackID,
-                                        Date = f.Date,
+                                        FeedbackID = f.Id,
+                                        Date = f.CreatedAt,
                                         Title = f.Title,
                                         Type = f.Type,
                                         FeedbackText = f.FeedbackText,
@@ -363,15 +363,15 @@ namespace Gym_App.Application.Services
             //Projecting the resultant feedbacks queries to FeedbackDTO
             var feedbackQuery = feedbacks.Select(f => new FeedbackViewDTO
             {
-                FeedbackID = f.FeedbackID,
-                Date = f.Date,
+                FeedbackID = f.Id,
+                Date = f.CreatedAt,
                 Title = f.Title,
                 Type = f.Type,
                 FeedbackText = f.FeedbackText,
                 CaloriesBurned = f.CaloriesBurned ?? 0,//For testing purposes only
                 DurationMinutes = f.DurationMinutes ?? 0,
                 UserID = f.User.Id,
-                WorkoutID = f.Workout.WorkoutID
+                WorkoutID = f.Workout.Id
             });
 
             //Making the result as a paged list

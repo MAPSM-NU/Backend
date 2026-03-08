@@ -31,8 +31,26 @@ namespace Gym_App.Infastructure.Context
             //modelBuilder.Entity<User>()
             //    .Property(u => u.Id)
             //    .HasColumnName("Id");
-            //modelBuilder.Entity<User>()
-            //    .HasKey(u => u.Id);
+            modelBuilder.Entity<User>()
+                .HasKey(u => u.Id);
+            modelBuilder.Entity<Workout>()
+                .HasKey(w => w.Id);
+            modelBuilder.Entity<Exercise>()
+                .HasKey(e => e.Id);
+            modelBuilder.Entity<Muscles>()
+                .HasKey(m => m.Id);
+            modelBuilder.Entity<Schedule>()
+                .HasKey(s => s.Id);
+            modelBuilder.Entity<Notification>()
+                .HasKey(n => n.Id);
+            modelBuilder.Entity<Message>()
+                .HasKey(m => m.Id);
+            modelBuilder.Entity<Feedback>()
+                .HasKey(f => f.Id);
+            modelBuilder.Entity<Challenges>()
+                .HasKey(c => c.Id);
+            modelBuilder.Entity<RefreshTokens>()
+                .HasKey(t => t.Id);
 
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Role)
@@ -49,16 +67,8 @@ namespace Gym_App.Infastructure.Context
                 .WithOne(f => f.Workout)
                 .HasForeignKey<Feedback>(f => f.WorkoutID)
                 .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<Exercise>();
-            modelBuilder.Entity<Muscles>();
-            modelBuilder.Entity<Schedule>();
-            modelBuilder.Entity<Notification>();
-            modelBuilder.Entity<Message>();
             modelBuilder.Entity<Role>(); 
-            modelBuilder.Entity<Feedback>();
             modelBuilder.Entity<LiveFeedback>();
-            modelBuilder.Entity<Challenges>();
             modelBuilder.Entity<Transaction>();
             modelBuilder.Entity<Transaction>()
                 .Property(t => t.Amount)
@@ -66,7 +76,7 @@ namespace Gym_App.Infastructure.Context
             modelBuilder.Entity<RefreshTokens>()
                 .HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
-                .HasForeignKey(rt => rt.Id);
+                .HasForeignKey(rt => rt.UserID);
             modelBuilder.Entity<RefreshTokens>();
         }
     }

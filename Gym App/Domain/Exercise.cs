@@ -3,10 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain
 {
-    public class Exercise
+    public class Exercise : BaseEntity
     {
-        [Key]
-        public Guid ExerciseID { get; set; }
         [Column(TypeName = "varchar(100)")]
         public required string Name { get; set; }
         [Column(TypeName = "varchar(8000)")]

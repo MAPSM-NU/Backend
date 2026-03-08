@@ -47,7 +47,7 @@ namespace Gym_App.Application.Services
             //Creating schedule
             var newSchedule = new Schedule
             {
-                ScheduleID = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Name = schedule.Name!,
                 Type = schedule.Type!,
                 CreatedAt = DateTime.UtcNow,
@@ -68,7 +68,7 @@ namespace Gym_App.Application.Services
 
             //Getting schedule from database
             var existingSchedule = await (from s in _db.Schedules.Include(s => s.User)
-                                          where s.ScheduleID == scheduleID
+                                          where s.Id == scheduleID
                                           select s).FirstOrDefaultAsync();
             if (existingSchedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
@@ -95,7 +95,7 @@ namespace Gym_App.Application.Services
 
             //Getting schedule from database
             var schedule = await (from s in _db.Schedules.Include(s => s.User)
-                                  where s.ScheduleID == scheduleID
+                                  where s.Id == scheduleID
                                   select s).FirstOrDefaultAsync();
             if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
@@ -118,7 +118,7 @@ namespace Gym_App.Application.Services
 
             //Getting schedule from database
             var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
-                                  where s.ScheduleID == scheduleID
+                                  where s.Id == scheduleID
                                   select s).FirstOrDefaultAsync();
             if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
@@ -129,12 +129,12 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Adding workouts
-            var workoutIDsToAdd = new HashSet<Guid>(schedule.Workouts!.Select(i => i.WorkoutID));
+            var workoutIDsToAdd = new HashSet<Guid>(schedule.Workouts!.Select(i => i.Id));
             var workoutIDs = scheduleWorkout.WorkoutsID?.Where(id => !workoutIDsToAdd.Contains(id)).ToList();
             if (workoutIDs == null || workoutIDs.Count == 0)
                 return new SettersResponse { status = 0, msg = "No new workouts to add" };
             var workoutsToAdd = await (from w in _db.Workouts
-                                       where workoutIDs.Contains(w.WorkoutID)
+                                       where workoutIDs.Contains(w.Id)
                                        select w).ToListAsync();
             if (workoutsToAdd.Count == 0)
                 return new SettersResponse { status = 0, msg = "Workouts not found" };
@@ -156,7 +156,7 @@ namespace Gym_App.Application.Services
 
             //Getting schedule from database    
             var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
-                                  where s.ScheduleID == scheduleID
+                                  where s.Id == scheduleID
                                   select s).FirstOrDefaultAsync();
             if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
@@ -170,7 +170,7 @@ namespace Gym_App.Application.Services
             schedule.Workouts?.Clear();
             var workoutsIDs = scheduleWorkout.WorkoutsID.ToList();
             var workoutsToAdd = await (from w in _db.Workouts
-                                       where workoutsIDs.Contains(w.WorkoutID)
+                                       where workoutsIDs.Contains(w.Id)
                                        select w).ToListAsync();
             if (workoutsToAdd.Count == 0)
                 return new SettersResponse { status = 0, msg = "No workouts found" };
@@ -192,7 +192,7 @@ namespace Gym_App.Application.Services
 
             //Getting schedule from database
             var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
-                                  where s.ScheduleID == scheduleID
+                                  where s.Id == scheduleID
                                   select s).FirstOrDefaultAsync();
             if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
@@ -203,12 +203,12 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Checking if schedule has workouts
-            var existingWorkoutsIDs = new HashSet<Guid>(schedule.Workouts!.Select(w => w.WorkoutID));
+            var existingWorkoutsIDs = new HashSet<Guid>(schedule.Workouts!.Select(w => w.Id));
             var workoutIDsToRemove = scheduleWorkout.WorkoutsID?.Where(id => existingWorkoutsIDs.Contains(id)).ToList();
             if (workoutIDsToRemove == null || workoutIDsToRemove.Count == 0)
                 return new SettersResponse { status = 0, msg = "No workouts to remove" };
             var workoutsToRemove = await (from w in _db.Workouts
-                                          where workoutIDsToRemove.Contains(w.WorkoutID)
+                                          where workoutIDsToRemove.Contains(w.Id)
                                           select w).ToListAsync();
             if (workoutsToRemove.Count == 0)
                 return new SettersResponse { status = 0, msg = "Workouts not found" };
@@ -234,10 +234,10 @@ namespace Gym_App.Application.Services
         {
             //Getting schedule from database and projecting to DTO
             var schedule = await (from s in _db.Schedules
-                                  where s.ScheduleID == scheduleID
+                                  where s.Id == scheduleID
                                   select new ScheduleViewDTO
                                   {
-                                      ScheduleID = s.ScheduleID,
+                                      ScheduleID = s.Id,
                                       Name = s.Name,
                                       Type = s.Type,
                                       UserID = s.User.Id,
@@ -262,10 +262,10 @@ namespace Gym_App.Application.Services
         {
             //Getting the schedule's workouts from database and projecting to DTO
             var schedule = await (from s in _db.Schedules
-                                  where s.ScheduleID == scheduleID
+                                  where s.Id == scheduleID
                                   select new ScheduleWorkoutDTO
                                   {
-                                      WorkoutsID = s.Workouts!.Select(w => w.WorkoutID).ToList()
+                                      WorkoutsID = s.Workouts!.Select(w => w.Id).ToList()
                                   }).FirstOrDefaultAsync();
             //Returning null if schedule not found
             if (schedule == null)
@@ -318,7 +318,7 @@ namespace Gym_App.Application.Services
                     "date" or "d" => Schedule => Schedule.CreatedAt, // order by date
                     "name" or "n" => Schedule => Schedule.Name, // order by name
                     "type" or "t" => Schedule => Schedule.Type, // order by type
-                    _ => Schedule => Schedule.ScheduleID //failsafe: order by ScheduleID
+                    _ => Schedule => Schedule.Id //failsafe: order by Id
                 };
                 //If no orderby was inputed, then we sort ascending
                 if (!string.IsNullOrEmpty(OrderBy)) schedulesQuery = schedulesQuery.OrderBy(keySelector);
@@ -330,7 +330,7 @@ namespace Gym_App.Application.Services
             var schedulesResponse = schedulesQuery.Select(s => new ScheduleViewDTO
             {
                 UserID = s.User.Id,
-                ScheduleID = s.ScheduleID,
+                ScheduleID = s.Id,
                 Name = s.Name,
                 Type = s.Type,
                 CreatedAt = s.CreatedAt,
@@ -352,7 +352,7 @@ namespace Gym_App.Application.Services
                                  select new ScheduleViewDTO
                                  {
                                      UserID = s.User.Id,
-                                     ScheduleID = s.ScheduleID,
+                                     ScheduleID = s.Id,
                                      Name = s.Name,
                                      Type = s.Type,
                                      CreatedAt = s.CreatedAt
@@ -379,7 +379,7 @@ namespace Gym_App.Application.Services
         {
             //Getting userID from database
             var userID = await(from s in _db.Schedules
-                          where s.ScheduleID == scheduleID
+                          where s.Id == scheduleID
                           select s.User.Id).FirstOrDefaultAsync();
             return userID;
         }

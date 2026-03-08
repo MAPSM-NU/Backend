@@ -3,11 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain
 {
-    public class RefreshTokens
+    public class RefreshTokens : BaseEntity
     {
-        [Key]
-        public Guid RefreshTokenID { get; set; }
-        public Guid Id { get; set; }
+        public Guid UserID { get; set; }
         [Column(TypeName = "varchar(500)")]
         public required string RefreshToken { get; set; }
         public DateTime Expires { get; set; }

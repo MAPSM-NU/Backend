@@ -52,8 +52,8 @@ namespace Gym_App.Application.Services
             //Creating Notification
             Notification newNotification = new Notification
             {
-                NotificationID = Guid.NewGuid(),
-                Date = DateTime.UtcNow,
+                Id = Guid.NewGuid(),
+                CreatedAt = DateTime.UtcNow,
                 Title = notification.Title,
                 Content = notification.Content,
                 User = user,
@@ -74,7 +74,7 @@ namespace Gym_App.Application.Services
 
             //Getting notification from Database
             var Notification = await (from n in _db.Notifications.Include(n => n.User)
-                                      where n.NotificationID == NotificationID
+                                      where n.Id == NotificationID
                                       select n).FirstOrDefaultAsync();
             //If notification not found return
             if (Notification == null)
@@ -132,7 +132,7 @@ namespace Gym_App.Application.Services
         {
             //Getting UserID from Database
             var userID = await (from n in _db.Notifications
-                                where n.NotificationID == NotificationID
+                                where n.Id == NotificationID
                                 select n.User.Id).FirstOrDefaultAsync();
             return userID;
         }
@@ -152,8 +152,8 @@ namespace Gym_App.Application.Services
                                      where n.User.Id == UserID
                                      select new NotificationMiniViewDTO
                                      {
-                                         NotificationID = n.NotificationID,
-                                         Date = n.Date,
+                                         NotificationID = n.Id,
+                                         Date = n.CreatedAt,
                                          Title = n.Title,
                                          Content = n.Content
                                      };
@@ -215,9 +215,9 @@ namespace Gym_App.Application.Services
             var notificationsQuery = from n in _db.Notifications
                                      select new NotificationViewDTO
                                      {
-                                         NotificationID = n.NotificationID,
+                                         NotificationID = n.Id,
                                          UserID = n.User.Id,
-                                         Date = n.Date,
+                                         Date = n.CreatedAt,
                                          Title = n.Title,
                                          Content = n.Content
                                      };

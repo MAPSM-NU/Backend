@@ -3,13 +3,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain
 {
-    public class Message
+    public class Message : BaseEntity
     {
-        [Key]
-        public Guid MessageID { get; set; }
         [Column(TypeName = "varchar(5000)")]
         public required string Content { get; set; }
-        public DateTime Timestamp { get; set; }
         public bool IsRead { get; set; } = false;
 
         // Relationships

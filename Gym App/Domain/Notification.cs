@@ -3,11 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain
 {
-    public class Notification
+    public class Notification : BaseEntity
     {
-        [Key]
-        public Guid NotificationID { get; set; }
-        public DateTime Date { get; set; }
         [Column(TypeName = "varchar(100)")]
         public required string Title { get; set; }
         [Column(TypeName = "varchar(1000)")]

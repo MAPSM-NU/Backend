@@ -58,8 +58,8 @@ namespace Gym_App.Application.Services
             //Creating the session
             var Session = new Session
             {
-                SessionID = Guid.NewGuid(),
-                StartTime = DateTime.Now,
+                Id = Guid.NewGuid(),
+                CreatedAt = DateTime.Now,
                 SessionType = " "//for now leave like this
             };
 
@@ -82,7 +82,7 @@ namespace Gym_App.Application.Services
 
             //Getting the session from the Database
             var session = await (from s in _db.Sessions.Include(s=>s.Users)
-                                 where s.SessionID == sessionID
+                                 where s.Id == sessionID
                                  select s).FirstOrDefaultAsync();
 
             //Return if session was not found
@@ -111,7 +111,7 @@ namespace Gym_App.Application.Services
 
             //Getting the session from the Database
             var Session = await (from s in _db.Sessions.Include(s => s.Messages).Include(s => s.Users)
-                                 where s.SessionID == sessionID
+                                 where s.Id == sessionID
                                  select s).FirstOrDefaultAsync();
 
             //Return if session was not found
@@ -133,19 +133,19 @@ namespace Gym_App.Application.Services
             {
                 //If session has no messages, add all given messages if their IDs point to acctual messages in the database
                 messagesToAdd = await (from m in _db.Messages
-                                    where sessionMessages.messagesID.Contains(m.MessageID)
+                                    where sessionMessages.messagesID.Contains(m.Id)
                                     select m).ToListAsync();
                 Session.Messages = new List<Message>();
             }
             else
             {
                 //If session has messages, only add the new ones if their IDs point to acctual messages in the database
-                var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
+                var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.Id));
                 var messagesIDsToAdd = sessionMessages.messagesID?.Where(id => !existingMessagesIDs.Contains(id)).ToList();
                 if (messagesIDsToAdd == null || messagesIDsToAdd.Count == 0)
                     return new SettersResponse { status = 0, msg = "No new messages to add" };
                 messagesToAdd = await (from m in _db.Messages
-                                where messagesIDsToAdd.Contains(m.MessageID)
+                                where messagesIDsToAdd.Contains(m.Id)
                                 select m).ToListAsync();
             }
 
@@ -172,7 +172,7 @@ namespace Gym_App.Application.Services
 
             //Getting the session from the Database
             var Session = await (from s in _db.Sessions.Include(s => s.Messages).Include(s => s.Users)
-                                 where s.SessionID == sessionID
+                                 where s.Id == sessionID
                                  select s).FirstOrDefaultAsync();
 
             //Return if session was not found
@@ -203,12 +203,12 @@ namespace Gym_App.Application.Services
             else
             {
                 //If session has messages, only remove the ones that exist in the session
-                var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.MessageID));
+                var existingMessagesIDs = new HashSet<Guid>(Session.Messages.Select(m => m.Id));
                 var messagesIDsToRemove = sessionMessages.messagesID.Where(id => existingMessagesIDs.Contains(id)).ToList();
                 if (messagesIDsToRemove == null || messagesIDsToRemove.Count == 0)
                     return new SettersResponse { status = 0, msg = "No messages found in the database" };
                 messagesToRemove = await (from m in _db.Messages.Include(m=>m.Sender)
-                                          where messagesIDsToRemove.Contains(m.MessageID)
+                                          where messagesIDsToRemove.Contains(m.Id)
                                           select m).ToListAsync();
             }
 
@@ -239,7 +239,7 @@ namespace Gym_App.Application.Services
 
         public async Task<bool> isMessageBelongUser(Guid messageID, Guid userID)
         {
-            var message = await _db.Messages.Include(m => m.Sender).FirstOrDefaultAsync(m => m.MessageID == messageID);
+            var message = await _db.Messages.Include(m => m.Sender).FirstOrDefaultAsync(m => m.Id == messageID);
             if (message == null) 
                 return false;
             return message.Sender.Id == userID;
@@ -266,7 +266,7 @@ namespace Gym_App.Application.Services
         {
             //Getting the users of the session from the Database
             var Users = await (from s in _db.Sessions
-                               where s.SessionID == sessionID
+                               where s.Id == sessionID
                                select s.Users).FirstOrDefaultAsync();
 
             //Return null if session not found
@@ -287,7 +287,7 @@ namespace Gym_App.Application.Services
         {
             //Getting the messages of the session from the Database
             var Session = await (from s in _db.Sessions.Include(s => s.Users)
-                                 where s.SessionID == sessionID
+                                 where s.Id == sessionID
                                  select s).FirstOrDefaultAsync();
             //Return null if session not found
             if (Session == null)
@@ -312,7 +312,7 @@ namespace Gym_App.Application.Services
 
             //Getting messages from Database
             IQueryable<Message> messageQuery = from m in _db.Messages
-                                               where m.Session.SessionID == sessionID
+                                               where m.Session.Id == sessionID
                                                select m;
 
             //Filtering by search Term
@@ -322,11 +322,11 @@ namespace Gym_App.Application.Services
             DateTime validStartDate, validEndDate;
             if (DateTime.TryParse(startDate, out validStartDate))
             {
-                messageQuery = messageQuery.Where(m => m.Timestamp > validStartDate);
+                messageQuery = messageQuery.Where(m => m.CreatedAt > validStartDate);
             }
             if (DateTime.TryParse(endDate, out validEndDate))
             {
-                messageQuery = messageQuery.Where(m => m.Timestamp < validEndDate);
+                messageQuery = messageQuery.Where(m => m.CreatedAt < validEndDate);
             }
             //Order by given column
             if (!string.IsNullOrEmpty(sortColumn))
@@ -334,8 +334,8 @@ namespace Gym_App.Application.Services
                 Expression<Func<Message, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
                 {
                     "message" or "content" => Message => Message.Content, // order by messages or content
-                    "time" or "t" or "timestamp" => Message => Message.Timestamp, // order by time or timestamp
-                    _ => Message => Message.MessageID, //failsafe: order by ID
+                    "time" or "t" or "timestamp" => Message => Message.CreatedAt, // order by time or timestamp
+                    _ => Message => Message.Id, //failsafe: order by ID
                 };
                 //If no orderby was inputed, then we sort ascending
                 if (!string.IsNullOrEmpty(OrderBy)) messageQuery = messageQuery.OrderBy(keySelector);
@@ -346,18 +346,18 @@ namespace Gym_App.Application.Services
             else
             {
                 // or just order by recent messages
-                messageQuery = messageQuery.OrderByDescending(m => m.Timestamp);
+                messageQuery = messageQuery.OrderByDescending(m => m.CreatedAt);
             }
             ////Projecting the resultant message queries to messageDTO
             var messageResponse = messageQuery
                                         .Select(m => new MessageViewDTO
                                         {
                                             SenderID = m.Sender.Id,
-                                            SessionID = m.Session.SessionID,
-                                            MessageID = m.MessageID,
+                                            SessionID = m.Session.Id,
+                                            MessageID = m.Id,
                                             Content = m.Content,
                                             IsRead = m.IsRead,
-                                            Timestamp = m.Timestamp
+                                            Timestamp = m.CreatedAt
                                         });
 
             //Making the result as a paged list
@@ -371,7 +371,7 @@ namespace Gym_App.Application.Services
         }
         public async Task<GettersResponse<UserViewDTO>> GetUsersOfSession(ClaimsPrincipal User,Guid sessionID, int page, int pageSize)//The sessions tree in itself needs a big change man fr
         {
-            var session = await _db.Sessions.Include(s => s.Users).FirstOrDefaultAsync(s => s.SessionID == sessionID);
+            var session = await _db.Sessions.Include(s => s.Users).FirstOrDefaultAsync(s => s.Id == sessionID);
             if (session == null)
                 return new GettersResponse<UserViewDTO>
                 {
@@ -395,7 +395,7 @@ namespace Gym_App.Application.Services
             //Projecting the users to UserDTO
             var sessionQuery = from s in _db.Sessions
                                from u in s.Users
-                               where s.SessionID == sessionID
+                               where s.Id == sessionID
                                select new UserViewDTO
                                {
                                    Id = u.Id,
@@ -419,8 +419,8 @@ namespace Gym_App.Application.Services
             var sessionsQuery = from s in _db.Sessions
                                select new SessionViewDTO
                                {
-                                   SessionID = s.SessionID,
-                                   StartTime = s.StartTime,
+                                   SessionID = s.Id,
+                                   StartTime = s.CreatedAt,
                                    UserIDs = s.Users.Select(u => u.Id).ToList(),
                                };
 

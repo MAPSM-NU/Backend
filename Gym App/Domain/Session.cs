@@ -3,11 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain
 {
-    public class Session
+    public class Session : BaseEntity
     {
-        [Key]
-        public Guid SessionID { get; set; }
-        public DateTime StartTime { get; set; }
         //public string Title { get; set; }
         [Column(TypeName = "varchar(21)")]
         public required string SessionType { get; set; } // Discriminator column

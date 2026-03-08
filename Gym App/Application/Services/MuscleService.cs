@@ -31,7 +31,7 @@ namespace Gym_App.Application.Services
 
             var newMuscle = new Muscles
             {
-                MusclesID = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Name = muscle.Name,
                 Description = muscle.Description
             };
@@ -47,7 +47,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Faulty DTO" };
             //Getting muscle from database
             var toBeUpdated = await (from M in _db.Muscles
-                                     where M.MusclesID == muscleID
+                                     where M.Id == muscleID
                                      select M).FirstOrDefaultAsync();
 
             //If muscle doesn't exist
@@ -71,7 +71,7 @@ namespace Gym_App.Application.Services
             if(muscleID == Guid.Empty) 
                 return new SettersResponse { status = 0, msg = "Faulty GUID" };
             var isMuscleExists = (from M in _db.Muscles
-                                  where M.MusclesID == muscleID
+                                  where M.Id == muscleID
                                   select M).FirstOrDefault();
 
             if (isMuscleExists == null) 
@@ -101,7 +101,7 @@ namespace Gym_App.Application.Services
             var musclesQuery = from m in _db.Muscles
                           select new MuscleViewDTO
                           {
-                                MusclesID = m.MusclesID,
+                                MusclesID = m.Id,
                                 Name = m.Name,
                                 Description = m.Description
                           };

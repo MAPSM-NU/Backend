@@ -1,6 +1,4 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
-using Gym_App.Domain;
-using Gym_App.Domain.Entities;
+﻿using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Exercise;
@@ -35,13 +33,13 @@ namespace Gym_App.Application.Services
 
             //Searching for the User
             var isUserExist = await (from user in _db.Users.Include(w => w.Workouts)
-                               where user.UserID == workout.UserID
+                               where user.Id == workout.UserID
                                select user).FirstOrDefaultAsync();
             if (isUserExist == null) 
                 return new SettersResponse { status = 0 , msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, isUserExist.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, isUserExist.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1 , msg = "Forbidden from access" };
 
@@ -56,7 +54,7 @@ namespace Gym_App.Application.Services
                 Day = workout.Day,
                 CreatAt = DateTime.Now,
                 User = isUserExist,
-                Schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.User.UserID == workout.UserID)
+                Schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.User.Id == workout.UserID)
             };
 
             //Saving to Database
@@ -80,7 +78,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0 , msg = "Workout not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, WorkoutToBeUpdated.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, WorkoutToBeUpdated.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1 , msg = "Forbidden from access" };
 
@@ -119,7 +117,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0 , msg = "Workout not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1 , msg = "Forbidden from access" };
 
@@ -145,7 +143,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0 , msg = "Workout not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, workout.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, workout.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Invalid workout data" };
 
@@ -190,7 +188,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Invalid workout data" };
 
@@ -236,7 +234,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authentication
-            var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
@@ -268,13 +266,13 @@ namespace Gym_App.Application.Services
         //-----------------------------------------------------------------------
 
         //        *********** Getters ***********
-        public async Task<Guid> GetWorkoutUserID(Guid workoutID)
+        public async Task<Guid> GetWorkoutId(Guid workoutID)
         {
             //Getting the user by ID
-            Guid UserID = await(from w in _db.Workouts
+            Guid Id = await(from w in _db.Workouts
                                where w.WorkoutID == workoutID
-                               select w.User.UserID).FirstOrDefaultAsync();
-            return UserID; 
+                               select w.User.Id).FirstOrDefaultAsync();
+            return Id; 
         }
         public async Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByName(string name)
         {
@@ -401,7 +399,7 @@ namespace Gym_App.Application.Services
             var workoutsQuery = from w in _db.Workouts
                            select new WorkoutViewDTO
                            {
-                               UserID = w.User.UserID,
+                               UserID = w.User.Id,
                                WorkoutID = w.WorkoutID,
                                Name = w.Name,
                                Description = w.Description,
@@ -425,6 +423,11 @@ namespace Gym_App.Application.Services
                 msg = "Successful",
                 Data = workouts
             };
+        }
+
+        public Task<Guid> GetWorkoutUserID(Guid WorkoutID)
+        {
+            throw new NotImplementedException();
         }
     }
 }

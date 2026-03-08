@@ -32,14 +32,14 @@ namespace Gym_App.Application.Services
 
             //Getting user from Database
             var user = await (from u in _db.Users
-                              where u.UserID == senderID
+                              where u.Id == senderID
                               select u).FirstOrDefaultAsync();
             //if user not found return 
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -85,7 +85,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Message not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -111,7 +111,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Message not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -129,7 +129,7 @@ namespace Gym_App.Application.Services
         {
             var userID = await (from m in _db.Messages
                                 where m.MessageID == messageID
-                                select m.Sender.UserID).FirstOrDefaultAsync();
+                                select m.Sender.Id).FirstOrDefaultAsync();
             return userID;
         }
         public async Task<List<Guid>?> GetSessionUsersIDs(ClaimsPrincipal User, Guid sessionID)
@@ -148,7 +148,7 @@ namespace Gym_App.Application.Services
                 return null;
 
             var UserIDs = (from u in Users
-                           select u.UserID).ToList();
+                           select u.Id).ToList();
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
@@ -171,7 +171,7 @@ namespace Gym_App.Application.Services
                 };
 
             var UserIDs = (from u in session.Users
-                           select u.UserID).ToList();
+                           select u.Id).ToList();
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
             if (!authResult.Succeeded)
@@ -225,7 +225,7 @@ namespace Gym_App.Application.Services
             var messageResponse = messageQuery
                                     .Select(m => new MessageMiniViewDTO
                                     {
-                                        SenderID = m.Sender.UserID,
+                                        SenderID = m.Sender.Id,
                                         MessageID = m.MessageID,
                                         Content = m.Content,
                                         IsRead = m.IsRead,
@@ -288,7 +288,7 @@ namespace Gym_App.Application.Services
             var messageResponse = messageQuery
                                     .Select(m => new MessageViewDTO
                                     {
-                                        SenderID = m.Sender.UserID,
+                                        SenderID = m.Sender.Id,
                                         SessionID = m.Session.SessionID,
                                         MessageID = m.MessageID,
                                         Content = m.Content,
@@ -312,7 +312,7 @@ namespace Gym_App.Application.Services
             var messagesQuery = from m in _db.Messages
                                 select new MessageViewDTO
                                 {
-                                    SenderID = m.Sender.UserID,
+                                    SenderID = m.Sender.Id,
                                     SessionID = m.Session.SessionID,
                                     MessageID = m.MessageID,
                                     Content = m.Content,

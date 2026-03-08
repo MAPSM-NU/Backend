@@ -34,13 +34,13 @@ namespace Gym_App.Application.Services
 
             //Checking if user exists
             var user = await (from u in _db.Users
-                              where u.UserID == userID
+                              where u.Id == userID
                               select u).FirstOrDefaultAsync();
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -74,7 +74,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, existingSchedule.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, existingSchedule.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -101,7 +101,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -124,7 +124,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -162,7 +162,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -198,7 +198,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -240,7 +240,7 @@ namespace Gym_App.Application.Services
                                       ScheduleID = s.ScheduleID,
                                       Name = s.Name,
                                       Type = s.Type,
-                                      UserID = s.User.UserID,
+                                      UserID = s.User.Id,
                                   }).FirstOrDefaultAsync();
 
             //Returning null if schedule not found
@@ -286,7 +286,7 @@ namespace Gym_App.Application.Services
         {
             //Getting schedules from database
             var schedulesQuery = from s in _db.Schedules
-                                 where s.User.UserID == UserID
+                                 where s.User.Id == UserID
                                  select s;
             //if no schedules found, return null
             if (schedulesQuery == null || schedulesQuery.Count() == 0)
@@ -329,7 +329,7 @@ namespace Gym_App.Application.Services
             //Projecting the resultant message queries to messageDTO
             var schedulesResponse = schedulesQuery.Select(s => new ScheduleViewDTO
             {
-                UserID = s.User.UserID,
+                UserID = s.User.Id,
                 ScheduleID = s.ScheduleID,
                 Name = s.Name,
                 Type = s.Type,
@@ -351,7 +351,7 @@ namespace Gym_App.Application.Services
             var schedulesQuery = from s in _db.Schedules
                                  select new ScheduleViewDTO
                                  {
-                                     UserID = s.User.UserID,
+                                     UserID = s.User.Id,
                                      ScheduleID = s.ScheduleID,
                                      Name = s.Name,
                                      Type = s.Type,
@@ -380,7 +380,7 @@ namespace Gym_App.Application.Services
             //Getting userID from database
             var userID = await(from s in _db.Schedules
                           where s.ScheduleID == scheduleID
-                          select s.User.UserID).FirstOrDefaultAsync();
+                          select s.User.Id).FirstOrDefaultAsync();
             return userID;
         }
 

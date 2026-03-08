@@ -28,6 +28,9 @@ namespace Gym_App.Infastructure.Context
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<PastInjuries>();
+            modelBuilder.Entity<User>()
+                .Property(u => u.Id)
+                .HasColumnName("UserID");
 
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Role)
@@ -61,7 +64,7 @@ namespace Gym_App.Infastructure.Context
             modelBuilder.Entity<RefreshTokens>()
                 .HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
-                .HasForeignKey(rt => rt.UserID);
+                .HasForeignKey(rt => rt.Id);
             modelBuilder.Entity<RefreshTokens>();
         }
     }

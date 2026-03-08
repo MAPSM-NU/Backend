@@ -4,6 +4,7 @@ using Gym_App.Infastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym_App.Migrations
 {
     [DbContext(typeof(DbBase))]
-    partial class DbBaseModelSnapshot : ModelSnapshot
+    [Migration("20260307225121_check")]
+    partial class check
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -302,16 +305,16 @@ namespace Gym_App.Migrations
                     b.Property<DateTime>("Expires")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("RefreshToken")
                         .IsRequired()
                         .HasColumnType("varchar(500)");
 
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("RefreshTokenID");
 
-                    b.HasIndex("Id");
+                    b.HasIndex("UserID");
 
                     b.ToTable("RefreshTokens");
                 });
@@ -412,8 +415,7 @@ namespace Gym_App.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("UserID");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Bio")
                         .HasColumnType("nvarchar(1000)");
@@ -470,6 +472,9 @@ namespace Gym_App.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("UserType")
                         .IsRequired()
@@ -665,7 +670,7 @@ namespace Gym_App.Migrations
                 {
                     b.HasOne("Gym_App.Domain.User", "User")
                         .WithMany("RefreshTokens")
-                        .HasForeignKey("Id")
+                        .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

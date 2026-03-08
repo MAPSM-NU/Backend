@@ -2,7 +2,6 @@
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
-using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -58,14 +57,14 @@ namespace Gym_App.Application.Services
             {
                 RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
                 Expires = DateTime.Now.AddDays(4),
-                UserID = UserID,
+                Id = UserID,
             };
             return Task.FromResult(refreshToken.RefreshToken);
         }
         public async Task<string?> RefreshingToken(Guid UserID) //For logging in
         {
             var isTokenExists = (from token in _db.RefreshTokens
-                                 where token.UserID == UserID
+                                 where token.Id == UserID
                                  select token).FirstOrDefault();
             if (isTokenExists == null) return null;
             else
@@ -91,13 +90,13 @@ namespace Gym_App.Application.Services
                 return null;
             }
             var user = await (from u in _db.Users.Include(u=>u.Role)
-                              where u.UserID == result.UserID
+                              where u.Id == result.Id
                               select u).FirstOrDefaultAsync();
 
             if(user == null)
                 return null;
 
-            var Token = await CreateAccessToken(user.UserID, user.Name, user.Email, user.Role.RoleName);
+            var Token = await CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
 
             result.Expires = DateTime.UtcNow.AddDays(4);
             result.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));

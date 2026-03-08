@@ -7,7 +7,7 @@ namespace Gym_App.Domain
     {
         [Key]
         public Guid RefreshTokenID { get; set; }
-        public Guid UserID { get; set; }
+        public Guid Id { get; set; }
         [Column(TypeName = "varchar(500)")]
         public required string RefreshToken { get; set; }
         public DateTime Expires { get; set; }

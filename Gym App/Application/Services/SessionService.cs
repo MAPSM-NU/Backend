@@ -46,7 +46,7 @@ namespace Gym_App.Application.Services
             List<User> users = new List<User>();
             foreach (var ID in userIDs) 
             {
-                var user = await _db.Users.FirstOrDefaultAsync(u => u.UserID == ID);
+                var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == ID);
                 if ( user == null ) 
                     return new SettersResponse { status = 0, msg = "User not found" };
                 else
@@ -91,7 +91,7 @@ namespace Gym_App.Application.Services
 
             //Creating list of UserIDs for authorization
             List<Guid> UserIDs = new List<Guid>();
-            foreach (var UsersID in session.Users) UserIDs.Add(UsersID.UserID);
+            foreach (var UsersID in session.Users) UserIDs.Add(UsersID.Id);
 
             //Authorization check
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
@@ -120,7 +120,7 @@ namespace Gym_App.Application.Services
 
             //Creating list of UserIDs for authorization
             List<Guid> UserIDs = new List<Guid>();
-            foreach(var UsersID in Session.Users) UserIDs.Add(UsersID.UserID);
+            foreach(var UsersID in Session.Users) UserIDs.Add(UsersID.Id);
 
             //Authorization check
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
@@ -181,7 +181,7 @@ namespace Gym_App.Application.Services
 
             //Creating list of UserIDs for authorization
             List<Guid> UserIDs = new List<Guid>();
-            foreach (var UsersID in Session.Users) UserIDs.Add(UsersID.UserID);
+            foreach (var UsersID in Session.Users) UserIDs.Add(UsersID.Id);
 
             //Authorization check
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
@@ -220,7 +220,7 @@ namespace Gym_App.Application.Services
             foreach (var message in messagesToRemove)
             {
                 //If the user is trying to delete a message that is not his return forbidden
-                if (message.Sender.UserID != senderID)
+                if (message.Sender.Id != senderID)
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
 
                 Session.Messages.Remove(message);
@@ -242,7 +242,7 @@ namespace Gym_App.Application.Services
             var message = await _db.Messages.Include(m => m.Sender).FirstOrDefaultAsync(m => m.MessageID == messageID);
             if (message == null) 
                 return false;
-            return message.Sender.UserID == userID;
+            return message.Sender.Id == userID;
         }
         public Guid GettingSenderID(ClaimsPrincipal User)
         {
@@ -274,7 +274,7 @@ namespace Gym_App.Application.Services
 
             //Creating list of UserIDs for authorization
             var UserIDs = (from u in Users
-                           select u.UserID).ToList();
+                           select u.Id).ToList();
 
             //Authorization check
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
@@ -299,7 +299,7 @@ namespace Gym_App.Application.Services
 
             //Creating list of UserIDs for authorization
             List<Guid> UserIDs = new List<Guid>();
-            foreach (var UsersID in Session.Users) UserIDs.Add(UsersID.UserID);
+            foreach (var UsersID in Session.Users) UserIDs.Add(UsersID.Id);
 
             //Authorization check
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
@@ -352,7 +352,7 @@ namespace Gym_App.Application.Services
             var messageResponse = messageQuery
                                         .Select(m => new MessageViewDTO
                                         {
-                                            SenderID = m.Sender.UserID,
+                                            SenderID = m.Sender.Id,
                                             SessionID = m.Session.SessionID,
                                             MessageID = m.MessageID,
                                             Content = m.Content,
@@ -381,7 +381,7 @@ namespace Gym_App.Application.Services
 
             //Creating list of UserIDs for authorization
             List<Guid> UserIDs = new List<Guid>();
-            foreach (var UsersID in session.Users) UserIDs.Add(UsersID.UserID);
+            foreach (var UsersID in session.Users) UserIDs.Add(UsersID.Id);
 
             //Authroization check
             var auhtResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
@@ -398,7 +398,7 @@ namespace Gym_App.Application.Services
                                where s.SessionID == sessionID
                                select new UserViewDTO
                                {
-                                   UserID = u.UserID,
+                                   Id = u.Id,
                                    Name = u.Name,
                                    Email = u.Email,
                                    UserType = u.UserType
@@ -421,7 +421,7 @@ namespace Gym_App.Application.Services
                                {
                                    SessionID = s.SessionID,
                                    StartTime = s.StartTime,
-                                   UserIDs = s.Users.Select(u => u.UserID).ToList(),
+                                   UserIDs = s.Users.Select(u => u.Id).ToList(),
                                };
 
             if (sessionsQuery == null || sessionsQuery.Count() == 0)

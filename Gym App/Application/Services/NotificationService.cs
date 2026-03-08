@@ -38,14 +38,14 @@ namespace Gym_App.Application.Services
 
             //Getting User from Database
             var user = await (from u in _db.Users
-                              where u.UserID == userID
+                              where u.Id == userID
                               select u).FirstOrDefaultAsync();
             //If user not found return 
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Faulty DTO" };
 
@@ -81,7 +81,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Notification not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, Notification.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, Notification.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -100,13 +100,13 @@ namespace Gym_App.Application.Services
             //Getting User from Database
             var user = await _db.Users
                 .Include(u => u.Notifications)//Include is ,sadly😔, important here
-                .FirstOrDefaultAsync(u => u.UserID == UserID);
+                .FirstOrDefaultAsync(u => u.Id == UserID);
             //If user not found return
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Faulty DTO" };
 
@@ -133,7 +133,7 @@ namespace Gym_App.Application.Services
             //Getting UserID from Database
             var userID = await (from n in _db.Notifications
                                 where n.NotificationID == NotificationID
-                                select n.User.UserID).FirstOrDefaultAsync();
+                                select n.User.Id).FirstOrDefaultAsync();
             return userID;
         }
         public async Task<GettersResponse<NotificationMiniViewDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
@@ -149,7 +149,7 @@ namespace Gym_App.Application.Services
 
             //Getting notifications from Database and projecting to DTO
             var notificationsQuery = from n in _db.Notifications
-                                     where n.User.UserID == UserID
+                                     where n.User.Id == UserID
                                      select new NotificationMiniViewDTO
                                      {
                                          NotificationID = n.NotificationID,
@@ -216,7 +216,7 @@ namespace Gym_App.Application.Services
                                      select new NotificationViewDTO
                                      {
                                          NotificationID = n.NotificationID,
-                                         UserID = n.User.UserID,
+                                         UserID = n.User.Id,
                                          Date = n.Date,
                                          Title = n.Title,
                                          Content = n.Content

@@ -22,7 +22,7 @@ namespace Gym_App.Api.Controllers
             
             if(user == null)return BadRequest(new { message = "Invalid Data" });
             
-            var authResult = await _authenticationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            var authResult = await _authenticationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
             if(!authResult.Succeeded)
                 return Forbid();
             

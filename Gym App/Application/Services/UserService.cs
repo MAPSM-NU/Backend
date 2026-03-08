@@ -53,7 +53,7 @@ namespace Gym_App.Application.Services
             //Creating the user 
             User user = new User
             {
-                UserID = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Name = u.Name,
                 Email = u.Email,
                 Password = new PasswordHasher<User>().HashPassword(null, u.Password),
@@ -63,14 +63,14 @@ namespace Gym_App.Application.Services
             };
 
             //Generating Tokens
-            var Token = await _tokenHandler.CreateAccessToken(user.UserID, user.Name, user.Email, user.Role.RoleName);
-            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
+            var Token = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
+            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
 
             //Saving to Database
             await _db.Users.AddAsync(user);
             await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
-                UserID = user.UserID,
+                Id = user.Id,
                 RefreshToken = RefreshToken,
                 Expires = DateTime.Now.AddDays(4)
             });
@@ -110,7 +110,7 @@ namespace Gym_App.Application.Services
             //Creating the user
             User user = new User
             {
-                UserID = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Name = u.Name,
                 Email = u.Email,
                 Password = new PasswordHasher<User>().HashPassword(null, u.Password),
@@ -129,14 +129,14 @@ namespace Gym_App.Application.Services
                 user.UserType = "Trainee";
 
             //Generating Tokens
-            var Token = await _tokenHandler.CreateAccessToken(user.UserID, user.Name, user.Email, user.Role.RoleName);
-            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.UserID);
+            var Token = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
+            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
 
             //Saving to Database
             await _db.Users.AddAsync(user);
             await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
-                UserID = user.UserID,
+                Id = user.Id,
                 RefreshToken = RefreshToken,
                 Expires = DateTime.Now.AddDays(4)
             });
@@ -167,8 +167,8 @@ namespace Gym_App.Application.Services
             else
             {
                 //Creating Tokens
-                var AccessToken = await _tokenHandler.CreateAccessToken(isUserExists.UserID, isUserExists.Name, isUserExists.Email, isUserExists.Role.RoleName);
-                var RefreshToken = await _tokenHandler.RefreshingToken(isUserExists.UserID);
+                var AccessToken = await _tokenHandler.CreateAccessToken(isUserExists.Id, isUserExists.Name, isUserExists.Email, isUserExists.Role.RoleName);
+                var RefreshToken = await _tokenHandler.RefreshingToken(isUserExists.Id);
 
                 //Returning Tokens 
                 return new ResponseToken
@@ -186,7 +186,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid user data." };
             //Getting the user from the database
             var isUserExists = await (from u in _db.Users
-                                      where u.UserID == user.UserID
+                                      where u.Id == user.Id
                                       select u).FirstOrDefaultAsync();
             //If user does not exist return
             if (isUserExists is null)
@@ -248,7 +248,7 @@ namespace Gym_App.Application.Services
 
             //Getting User from Database
             var user = await (from u in _db.Users
-                              where u.UserID == User.UserID
+                              where u.Id == User.Id
                               select u).FirstOrDefaultAsync();
             //If user not found return
             if (user is null)
@@ -294,15 +294,15 @@ namespace Gym_App.Application.Services
             await _db.SaveChangesAsync();
             return new SettersResponse { status = 1, msg = "User type changed successfully." };
         }
-        public async Task<SettersResponse> DeleteUser(Guid userID)//0 == error || 1 == successfull
+        public async Task<SettersResponse> DeleteUser(Guid Id)//0 == error || 1 == successfull
         {
-            //Checking userID validity
-            if (userID == Guid.Empty)
+            //Checking Id validity
+            if (Id == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid user ID." };
 
             //Getting user from database
             var u = await (from usr in _db.Users
-                           where usr.UserID == userID
+                           where usr.Id == Id
                            select usr).FirstOrDefaultAsync();
             //If user not found return
             if (u == null)
@@ -359,9 +359,9 @@ namespace Gym_App.Application.Services
 
         //        *********** Getters ***********
 
-        public async Task<GettersResponse<UserViewDTO>> GetUserByID(Guid userID)
+        public async Task<GettersResponse<UserViewDTO>> GetUserByID(Guid Id)
         {
-            if(userID == Guid.Empty)
+            if(Id == Guid.Empty)
                 return new GettersResponse<UserViewDTO>
                 {
                     status = 0,
@@ -369,10 +369,10 @@ namespace Gym_App.Application.Services
                 };
 
             var user = await (from u in _db.Users
-                              where u.UserID == userID
+                              where u.Id == Id
                               select new UserViewDTO
                               {
-                                  UserID = userID,
+                                  Id = Id,
                                   Name = u.Name,
                                   Email = u.Email,
                                   Bio = u.Bio,
@@ -436,7 +436,7 @@ namespace Gym_App.Application.Services
                     "city" or "ci" => User => User.City!,
                     "height" or "h" => User => User.HeightCm!,
                     "weight" or "w" => User => User.WeightKg!,
-                    _ => User => User.UserID,
+                    _ => User => User.Id,
                 };
                 if(!string.IsNullOrEmpty(OrderBy))userQuery = userQuery.OrderBy(keySelector);
                 else userQuery = userQuery.OrderBy(keySelector);
@@ -444,7 +444,7 @@ namespace Gym_App.Application.Services
             var userResponse = userQuery
                                 .Select(u => new UserMiniViewDTO
                                 {
-                                    UserID = u.UserID,
+                                    Id = u.Id,
                                     Name = u.Name,
                                     Email = u.Email,
                                     ProfilePictureUrl = u.ProfilePictureUrl
@@ -490,7 +490,7 @@ namespace Gym_App.Application.Services
                     "city" or "ci" => User => User.City!,
                     "height" or "h" => User => User.HeightCm!,
                     "weight" or "w" => User => User.WeightKg!,
-                    _ => User => User.UserID,
+                    _ => User => User.Id,
                 };
                 if (!string.IsNullOrEmpty(OrderBy)) userQuery = userQuery.OrderBy(keySelector);
                 else userQuery = userQuery.OrderBy(keySelector);
@@ -498,7 +498,7 @@ namespace Gym_App.Application.Services
             var userResponse = userQuery
                                 .Select(u => new UserViewDTO
                                 {
-                                    UserID = u.UserID,
+                                    Id = u.Id,
                                     Name = u.Name,
                                     Email = u.Email,
                                     Bio = u.Bio,
@@ -527,7 +527,7 @@ namespace Gym_App.Application.Services
             var userQuery =   from u in _db.Users
                                select new UserViewDTO
                                {
-                                   UserID = u.UserID,
+                                   Id = u.Id,
                                    Name = u.Name,
                                    Email = u.Email,
                                    Bio = u.Bio,

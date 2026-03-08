@@ -34,14 +34,14 @@ namespace Gym_App.Application.Services
 
             //Getting user from Database
             var user = await (from u in _db.Users
-                              where u.UserID == userID
+                              where u.Id == userID
                               select u).FirstOrDefaultAsync();
             //if user not found return
             if(user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -54,7 +54,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Checking if the workout belongs to the user
-            if (workout.User.UserID != user.UserID)
+            if (workout.User.Id != user.Id)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Feedback already exists for this workout
@@ -96,7 +96,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Feedback not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, feedback.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, feedback.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -136,7 +136,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Feedback not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, feedback.User.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, feedback.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -150,23 +150,23 @@ namespace Gym_App.Application.Services
 
         //        *********** Getters ***********
 
-        public async Task<Guid> GetFeedbackUserID(ClaimsPrincipal User, Guid feedbackID)//Not User anymore
+        public async Task<Guid> GetFeedbackId(ClaimsPrincipal User, Guid feedbackID)//Not User anymore
         {
             //Checking feedbackID validity
             if (feedbackID == Guid.Empty)
                 return Guid.Empty;
 
-            //Getting UserID from Database
-            var userID = await (from f in _db.Feedbacks
+            //Getting Id from Database
+            var Id = await (from f in _db.Feedbacks
                                   where f.FeedbackID == feedbackID
-                                  select f.User.UserID).FirstOrDefaultAsync();
+                                  select f.User.Id).FirstOrDefaultAsync();
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, userID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return Guid.Empty;
 
-            return userID;
+            return Id;
         }
         public async Task<GettersResponse<FeedbackViewDTO>> GetFeedbackByID(ClaimsPrincipal User, Guid feedbackID)
         {
@@ -191,7 +191,7 @@ namespace Gym_App.Application.Services
                                       Title = f.Title,
                                       Type = f.Type,
                                       FeedbackText = f.FeedbackText,
-                                      UserID = f.User.UserID
+                                      UserID = f.User.Id
                                   }).FirstOrDefaultAsync();
             if (feedback == null)
                 return new GettersResponse<FeedbackViewDTO>
@@ -229,7 +229,7 @@ namespace Gym_App.Application.Services
                     msg = "User not found"
                 };
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new GettersResponse<FeedbackMiniViewDTO>
                 {
@@ -258,11 +258,11 @@ namespace Gym_App.Application.Services
             };
 
         }
-        public async Task<GettersResponse<FeedbackMiniViewDTO>> GetUserFeedbacks(ClaimsPrincipal User, Guid UserID, string startDate, string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<GettersResponse<FeedbackMiniViewDTO>> GetUserFeedbacks(ClaimsPrincipal User, Guid Id, string startDate, string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Getting User from Database
             var user = await (from u in _db.Users
-                              where u.UserID == UserID
+                              where u.Id == Id
                               select u).FirstOrDefaultAsync();
             //if user not found return
             if (user == null)
@@ -273,7 +273,7 @@ namespace Gym_App.Application.Services
                 };
             
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.UserID, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new GettersResponse<FeedbackMiniViewDTO>
                 {
@@ -282,7 +282,7 @@ namespace Gym_App.Application.Services
                 };
 
             IQueryable<Feedback> feedbackQuery = from f in _db.Feedbacks
-                                                  where f.User.UserID == UserID
+                                                  where f.User.Id == Id
                                                   select f;
 
             if (feedbackQuery == null || feedbackQuery.Count() == 0)
@@ -370,7 +370,7 @@ namespace Gym_App.Application.Services
                 FeedbackText = f.FeedbackText,
                 CaloriesBurned = f.CaloriesBurned ?? 0,//For testing purposes only
                 DurationMinutes = f.DurationMinutes ?? 0,
-                UserID = f.User.UserID,
+                UserID = f.User.Id,
                 WorkoutID = f.Workout.WorkoutID
             });
 
@@ -384,5 +384,9 @@ namespace Gym_App.Application.Services
             };
         }
 
+        public Task<Guid> GetFeedbackUserID(ClaimsPrincipal User, Guid feedbackId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

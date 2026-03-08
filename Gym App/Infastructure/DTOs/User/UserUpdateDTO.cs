@@ -2,7 +2,7 @@
 {
     public class UserUpdateDTO
     {
-        public Guid UserID { get; set; }
+        public Guid Id { get; set; }
         public string? Name { get; set; }
         public string? Bio { get; set; }
         public DateTime DOB { get; set; }

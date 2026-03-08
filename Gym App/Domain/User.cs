@@ -3,10 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain
 {
-    public class User
+    public class User : BaseEntity
     {
-        [Required]
-        public Guid UserID { get; set; }
         [Column(TypeName = "nvarchar(100)")]
         public required string Name { get; set; }
         [Column(TypeName = "varchar(100)")]
@@ -16,7 +14,6 @@ namespace Gym_App.Domain
         public required string Password{ get; set; }
         [Column(TypeName = "nvarchar(1000)")]
         public string? Bio { get; set; }
-        public DateTime CreatedAt { get; set; }
         public DateTime? DOB { get; set; }
         [Column(TypeName = "nvarchar(100)")]
         public string? State { get; set; }

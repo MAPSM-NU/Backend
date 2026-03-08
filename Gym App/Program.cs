@@ -76,6 +76,8 @@ builder.Services.AddScoped<IWorkoutRepositry, WorkoutRepositry>();
 builder.Services.AddScoped<IBaseRepositry<Workout>, WorkoutRepositry>();
 builder.Services.AddScoped<IExerciseRepositry, ExerciseRepositry>();
 builder.Services.AddScoped<IBaseRepositry<Exercise>, ExerciseRepositry>();
+builder.Services.AddScoped<IMuscleRepositry, MuscleRepositry>();
+builder.Services.AddScoped<IBaseRepositry<Muscles>, MuscleRepositry>();
 //builder.Services.AddScoped<IBaseRepositry<BaseEntity>,BaseRepositry<BaseEntity>>();
 builder.Services.AddSingleton<IAuthorizationHandler, SameUserHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();

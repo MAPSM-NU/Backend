@@ -5,6 +5,7 @@ using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Exercise;
 using Gym_App.Infastructure.DTOs.Muscle;
+using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using MailKit.Search;
@@ -16,10 +17,12 @@ namespace Gym_App.Application.Services
 {
     public class ExerciseService : IExerciseService
     {
-        private readonly DbBase _db;
-        public ExerciseService(DbBase db)
+        private readonly IExerciseRepositry _exerciseRepositry;
+        private readonly IMuscleRepositry _muscleRepositry;
+        public ExerciseService(IExerciseRepositry exerciseRepositry,IMuscleRepositry muscleRepositry)
         {
-            _db = db;
+            _exerciseRepositry = exerciseRepositry;
+            _muscleRepositry = muscleRepositry;
         }
 
         //        *********** Setters ***********
@@ -44,8 +47,7 @@ namespace Gym_App.Application.Services
                 Category = exercise.Category,
                 Grip = exercise.Grip
             };
-            _db.Exercises.Add(newExercise);
-            await _db.SaveChangesAsync();
+            await _exerciseRepositry.Create(newExercise);
             return new SettersResponse { status = 2, msg = "Exercise created successfully" };
         }
         public async Task<SettersResponse> UpdateExercise(Guid Id, ExerciseCreationDTO exercise)
@@ -53,7 +55,7 @@ namespace Gym_App.Application.Services
             if(exercise == null || Id == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid exercise data" };
 
-            var toBeUpdated = await (from E in _db.Exercises
+            var toBeUpdated = await (from E in _exerciseRepositry.GetAll()
                                where E.Id == Id
                                select E).FirstOrDefaultAsync();
             
@@ -78,28 +80,26 @@ namespace Gym_App.Application.Services
             
             if (!string.IsNullOrEmpty(exercise.VideoUrl))
                 toBeUpdated.VideoUrl = exercise.VideoUrl;
-            
-            _db.Exercises.Update(toBeUpdated);
-            await _db.SaveChangesAsync();
+
+            await _exerciseRepositry.Update(toBeUpdated);
             return new SettersResponse { status = 2, msg = "Exercise updated successfully" };
         }
         public async Task<SettersResponse> DeleteExercise(Guid ExerciseID)
         {
             
-            var isExerciseExists = await (from E in _db.Exercises
+            var isExerciseExists = await (from E in _exerciseRepositry.GetAll()
                                     where E.Id == ExerciseID
                                     select E).FirstOrDefaultAsync();
             if (isExerciseExists == null)
                 return new SettersResponse { status = 0, msg = "Exercise not found" };
-            _db.Exercises.Remove(isExerciseExists);
-            await _db.SaveChangesAsync();
+            await _exerciseRepositry.Create(isExerciseExists);
             return new SettersResponse { status = 2, msg = "Exercise deleted successfully" };
         }
         public async Task<SettersResponse> AddMusclesToExercise(Guid exerciseID, ExerciseMusclesDTO exerciseMuscles)
         {
             if(exerciseMuscles == null || exerciseMuscles.Muscles == null || exerciseMuscles.Muscles.Count == 0) 
                 return new SettersResponse { status = 0, msg = "Invalid DTO"};
-            var exercise = await(from e in _db.Exercises.Include(m =>m.Muscles)
+            var exercise = await(from e in _exerciseRepositry.GetAll().Include(e=>e.Muscles)
                             where e.Id == exerciseID       
                             select e).FirstOrDefaultAsync();
 
@@ -110,25 +110,24 @@ namespace Gym_App.Application.Services
             if (musclesIDsToAdd == null || musclesIDsToAdd.Count == 0)
                 return new SettersResponse { status = 0, msg = "No new muscles to add" };
 
-            var musclesToAdd = await (from m in _db.Muscles
-                               where musclesIDsToAdd.Contains(m.Id)
-                               select m).ToListAsync();
+            var musclesToAdd = await (from m in _muscleRepositry.GetAll()
+                                      where musclesIDsToAdd.Contains(m.Id)
+                                      select m).ToListAsync();
             if (musclesToAdd.Count == 0) 
                 return new SettersResponse { status = 0, msg = "Muscles to add not found" };
             foreach (var muscle in musclesToAdd)
             {
                 exercise.Muscles!.Add(muscle);
             }
-            _db.Exercises.Update(exercise);
-            await _db.SaveChangesAsync();
+            await _exerciseRepositry.Update(exercise);  
             return new SettersResponse { status = 2, msg = "Muscles added successfully" };
         }
         public async Task<SettersResponse> RemoveMusclesFromExercise(Guid exerciseID, ExerciseMusclesDTO exerciseMuscles)
         {
             if(exerciseMuscles == null || exerciseMuscles.Muscles == null || exerciseMuscles.Muscles.Count == 0)
                 return new SettersResponse { status = 0,msg = "Invalid DTO"};
-            var exercise = await(from e in _db.Exercises.Include(m =>m.Muscles)
-                            where e.Id == exerciseID       
+            var exercise = await(from e in _exerciseRepositry.GetAll().Include(e=>e.Muscles)
+                                 where e.Id == exerciseID       
                             select e).FirstOrDefaultAsync();
 
             if (exercise == null) 
@@ -139,7 +138,7 @@ namespace Gym_App.Application.Services
             if (musclesIDsToRemove == null || musclesIDsToRemove.Count == 0)
                 return new SettersResponse { status = 0, msg = "No muscles to remove" };
 
-            var musclesToRemove = await (from m in _db.Muscles
+            var musclesToRemove = await (from m in _muscleRepositry.GetAll()
                                where musclesIDsToRemove.Contains(m.Id)
                                select m).ToListAsync();
 
@@ -149,8 +148,7 @@ namespace Gym_App.Application.Services
             {
                 exercise.Muscles.Remove(muscle);
             }
-            _db.Exercises.Update(exercise);
-            await _db.SaveChangesAsync();
+            await _exerciseRepositry.Update(exercise); 
             return new SettersResponse { status = 2, msg = "Muscles removed successfully" };
         }
 
@@ -161,7 +159,7 @@ namespace Gym_App.Application.Services
 
         public async Task<bool> isExerciseExist(string name)
         {
-            var isExerciseExists = await _db.Exercises.AnyAsync(e => e.Name.ToLower() == name.ToLower());
+            var isExerciseExists = await _exerciseRepositry.isExerciseNameExist(name);
             return isExerciseExists;
         }
         
@@ -170,8 +168,8 @@ namespace Gym_App.Application.Services
         //        *********** Getters ***********
         public async Task<GettersResponse<ExerciseViewDTO>> GetExerciseByName(string name)
         {
-            var Exercise = await (from e in _db.Exercises
-                            where e.Name == name
+            var Exercise = await (from e in _exerciseRepositry.GetAll()
+                                  where e.Name == name
                             select new ExerciseViewDTO
                             {
                                 ExerciseID = e.Id,
@@ -197,8 +195,8 @@ namespace Gym_App.Application.Services
         }
         public async Task<GettersResponse<ExerciseMiniViewDTO>> GetExerciseByID(Guid id)
         {
-            var Exercise = await (from e in _db.Exercises
-                            where e.Id == id
+            var Exercise = await (from e in _exerciseRepositry.GetAll()
+                                  where e.Id == id
                             select new ExerciseMiniViewDTO
                             {
                                 Name = e.Name,
@@ -223,8 +221,8 @@ namespace Gym_App.Application.Services
         }
         public async Task<GettersResponse<List<MuscleViewDTO>>> GetExerciseMuscles(Guid exerciseID)
         {
-            var exercise = await (from e in _db.Exercises.Include(e=>e.Muscles)
-                                 where e.Id == exerciseID
+            var exercise = await (from e in _exerciseRepositry.GetAll().Include(e => e.Muscles)
+                                  where e.Id == exerciseID
                                  select e).FirstOrDefaultAsync();
             if (exercise == null) 
                 return new GettersResponse<List<MuscleViewDTO>>
@@ -250,18 +248,18 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<ExerciseViewDTO>> GetExercisesByMuscle(ExerciseListDTO muscles,int page,int pageSize)
         {
             var muscleNames = muscles.Muscles;
-            var exercisequery = from e in _db.Exercises
-                where muscleNames.All(name => e.Muscles!.Any(m => m.Name.Contains(name)))
-                select new ExerciseViewDTO
-                {
-                    ExerciseID = e.Id,
-                    Name = e.Name,
-                    Description = e.Description,
-                    Difficulty = e.Difficulty,
-                    VideoUrl = e.VideoUrl,
-                    Category = e.Category,
-                    Grip = e.Grip,
-                };
+            var exercisequery = from e in _exerciseRepositry.GetAll().Include(e => e.Muscles)
+                                where muscleNames.All(name => e.Muscles!.Any(m => m.Name.Contains(name)))
+                                select new ExerciseViewDTO
+                                {
+                                    ExerciseID = e.Id,
+                                    Name = e.Name,
+                                    Description = e.Description,
+                                    Difficulty = e.Difficulty,
+                                    VideoUrl = e.VideoUrl,
+                                    Category = e.Category,
+                                    Grip = e.Grip,
+                                };
 
             if (exercisequery.Count() == 0)
                 return new GettersResponse<ExerciseViewDTO>
@@ -280,28 +278,19 @@ namespace Gym_App.Application.Services
         }
         public async Task<GettersResponse<ExerciseViewDTO>> GetExercisesByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5)
         {
-            IQueryable<Exercise> exerciseQuery = _db.Exercises;
+            IQueryable<Exercise> exerciseQuery = _exerciseRepositry.GetAll();
 
-            if(!string.IsNullOrEmpty(searchTerm))exerciseQuery = exerciseQuery.Where(e => e.Name.Contains(searchTerm) || e.Difficulty!.Contains(searchTerm));
+            if(!string.IsNullOrEmpty(searchTerm))exerciseQuery = _exerciseRepositry.Search(searchTerm, exerciseQuery);
 
-            if(exerciseQuery.Count() == 0)
+            if (exerciseQuery.Count() == 0)
                 return new GettersResponse<ExerciseViewDTO>
                 {
                     status = 0,
                     msg = "No Exercise found with specified conditions"
                 };
 
-            if (!string.IsNullOrEmpty(sortColumn))
-            {
-                Expression<Func<Exercise, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
-                {
-                    "name" => Exercise => Exercise.Name,
-                    "difficulty" => Exercise => Exercise.Difficulty!,
-                    _ => Exercise => Exercise.Id
-                };
-                if (!string.IsNullOrEmpty(OrderBy))exerciseQuery = exerciseQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
-                else exerciseQuery = exerciseQuery.OrderByDescending(keySelector);
-            }
+            if (!string.IsNullOrEmpty(sortColumn)) exerciseQuery = _exerciseRepositry.FilterSortColumn(sortColumn, OrderBy, exerciseQuery);
+
             var exercisesResponse = exerciseQuery
                                         .Select(e => new ExerciseViewDTO
                                         {
@@ -323,7 +312,7 @@ namespace Gym_App.Application.Services
         }
         public async Task<GettersResponse<ExerciseViewDTO>> GetAllExercises(int page, int pageSize = 5)
         {
-            IQueryable<Exercise> exerciseQuery = _db.Exercises;
+            IQueryable<Exercise> exerciseQuery = _exerciseRepositry.GetAll();
             var exercisesResponse = exerciseQuery
                                         .Select(e=> new ExerciseViewDTO
                                        {

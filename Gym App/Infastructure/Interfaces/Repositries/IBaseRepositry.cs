@@ -10,6 +10,7 @@ namespace Gym_App.Infastructure.Interfaces.Repositries
         Task Create(T entity);
         Task Update(T entity);
         Task Delete(Guid id);
+        Task Delete(T entity);
         abstract IQueryable<T> Search(string searchTerm, IQueryable<T> query);
         IQueryable<T> FilterDate(DateTime startDate, DateTime endDate, IQueryable<T> query);
         abstract IQueryable<T> FilterSortColumn(string columnName, string sortOrder, IQueryable<T> query);

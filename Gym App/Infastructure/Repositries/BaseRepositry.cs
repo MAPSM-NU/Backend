@@ -36,6 +36,13 @@ namespace Gym_App.Infastructure.Repositries
             table.Remove(entity);
             await _db.SaveChangesAsync();
         }
+        public async Task Delete(T entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+            table.Remove(entity);
+            await _db.SaveChangesAsync();
+        }
 
         public IQueryable<T> FilterDate(DateTime startDate, DateTime endDate, IQueryable<T> query)
         {

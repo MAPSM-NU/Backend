@@ -2,19 +2,19 @@
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Muscle;
+using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Gym_App.Application.Services
 {
     public class MuscleService : IMuscleService
     {
-        private readonly DbBase _db;
-        public MuscleService(DbBase db)
+        private readonly IMuscleRepositry _muscleRepositry;
+        public MuscleService(IMuscleRepositry muscleRepositry)
         {
-            _db = db;
+            _muscleRepositry = muscleRepositry;
         }
 
         //        *********** Setters ***********
@@ -26,7 +26,7 @@ namespace Gym_App.Application.Services
             if(muscle == null || string.IsNullOrEmpty(muscle.Name))
                 return new SettersResponse { status = 0, msg = "Faulty DTO" };
 
-            if(await isMuscleExist(muscle.Name))
+            if(await _muscleRepositry.isMuscleExist(muscle.Name))
                 return new SettersResponse { status = 0, msg = "Muscle name already used" };
 
             var newMuscle = new Muscles
@@ -36,8 +36,7 @@ namespace Gym_App.Application.Services
                 Description = muscle.Description
             };
 
-            await _db.Muscles.AddAsync(newMuscle);
-            await _db.SaveChangesAsync();
+            await _muscleRepositry.Create(newMuscle);
             return new SettersResponse { status = 2, msg = "Success" };
         }
         public async Task<SettersResponse> UpdateMuscle(Guid muscleID,MuscleCreationAndEditDTO muscle)
@@ -46,7 +45,7 @@ namespace Gym_App.Application.Services
             if (muscle == null || muscleID == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Faulty DTO" };
             //Getting muscle from database
-            var toBeUpdated = await (from M in _db.Muscles
+            var toBeUpdated = await (from M in _muscleRepositry.GetAll()
                                      where M.Id == muscleID
                                      select M).FirstOrDefaultAsync();
 
@@ -61,8 +60,7 @@ namespace Gym_App.Application.Services
             if (!string.IsNullOrEmpty(muscle.Description))
                 toBeUpdated.Description = muscle.Description;
 
-            _db.Muscles.Update(toBeUpdated);
-            await _db.SaveChangesAsync();
+            await _muscleRepositry.Update(toBeUpdated);
             return new SettersResponse { status = 2, msg = "Success" };
                 
         }
@@ -70,27 +68,17 @@ namespace Gym_App.Application.Services
         {
             if(muscleID == Guid.Empty) 
                 return new SettersResponse { status = 0, msg = "Faulty GUID" };
-            var isMuscleExists = (from M in _db.Muscles
+            var isMuscleExists = (from M in _muscleRepositry.GetAll()
                                   where M.Id == muscleID
                                   select M).FirstOrDefault();
 
             if (isMuscleExists == null) 
                 return new SettersResponse { status = 0,msg = "Muscle not found" };
 
-            _db.Muscles.Remove(isMuscleExists);
-            await _db.SaveChangesAsync();
+            await _muscleRepositry.Delete(isMuscleExists);
             return new SettersResponse { status = 2, msg = "Success" };
         }
         //-----------------------------------------------------------------------
-
-
-        //        *********** Extra Validation Function ***********
-
-        public async Task<bool> isMuscleExist(string name)
-        {
-            var isMuscleExists = await _db.Muscles.AnyAsync(m => m.Name == name);
-            return isMuscleExists;
-        }
 
         //-----------------------------------------------------------------------
 
@@ -98,8 +86,8 @@ namespace Gym_App.Application.Services
 
         public async Task<GettersResponse<MuscleViewDTO>> GetAllMuscles(int page,int pageSize)
         {
-            var musclesQuery = from m in _db.Muscles
-                          select new MuscleViewDTO
+            var musclesQuery = from m in _muscleRepositry.GetAll()
+                               select new MuscleViewDTO
                           {
                                 MusclesID = m.Id,
                                 Name = m.Name,

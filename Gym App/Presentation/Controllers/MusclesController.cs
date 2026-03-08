@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Api.Controllers
 {
-    //[Authorize(Policy = "ElevatedPower")]
+    [Authorize(Policy = "ElevatedPower")]
     [Route("api/v1/muscle")]
     public class MusclesController : Controller
     {
@@ -45,6 +45,7 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
+        [AllowAnonymous]
         [HttpGet("get")]
         public async Task<IActionResult> GetAllMuscles(int page = 1, int pageSize = 15)
         {

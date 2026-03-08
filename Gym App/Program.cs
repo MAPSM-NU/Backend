@@ -1,7 +1,10 @@
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
+using Gym_App.Domain;
 using Gym_App.Infastructure.Context;
+using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 
@@ -67,6 +70,9 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IScheduleService,ScheduleService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IUserRepositry, UserRepositry>();
+builder.Services.AddScoped<IBaseRepositry<User>, UserRepositry>();
+//builder.Services.AddScoped<IBaseRepositry<BaseEntity>,BaseRepositry<BaseEntity>>();
 builder.Services.AddSingleton<IAuthorizationHandler, SameUserHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();
 

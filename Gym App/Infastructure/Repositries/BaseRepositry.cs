@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Gym_App.Domain;
+using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,10 +10,10 @@ namespace Gym_App.Infastructure.Repositries
 {
     public class BaseRepositry<T> : IBaseRepositry<T> where T : BaseEntity
     {
-        private readonly DbContext _db;
+        private readonly DbBase _db;
         private readonly DbSet<T> table;
 
-        public BaseRepositry(DbContext db)
+        public BaseRepositry(DbBase db)
         {
             _db = db ?? throw new ArgumentNullException(nameof(db));
             table = _db.Set<T>();
@@ -44,9 +45,10 @@ namespace Gym_App.Infastructure.Repositries
         }
 
         // sorting should be implemented in the derived class as it depends on the specific properties of T
-        public IQueryable<T> FilterSortColumn(string columnName, string sortOrder, IQueryable<T> query)
+        public virtual IQueryable<T> FilterSortColumn(string columnName, string sortOrder, IQueryable<T> query)
         {
-            throw new NotImplementedException();
+            // Default implementation: return the query as-is
+            return query;
         }
 
         public async Task<IEnumerable<T>> GetAll(int pageNumber = 1, int pageSize = 10)
@@ -60,9 +62,10 @@ namespace Gym_App.Infastructure.Repositries
         }
 
         // search should be implemented in the derived class as it depends on the specific properties of T
-        public IQueryable<T> Search(string searchTerm, IQueryable<T> query)
+        public virtual IQueryable<T> Search(string searchTerm, IQueryable<T> query)
         {
-            throw new NotImplementedException();
+            // Default implementation: return the query as-is
+            return query;
         }
 
         public async Task Update(T entity)

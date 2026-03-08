@@ -3,6 +3,7 @@ using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.UserDTOs;
+using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Identity;
@@ -14,10 +15,12 @@ namespace Gym_App.Application.Services
 {
     public class UserService : IUserServise
     {
+        private readonly IUserRepositry _userRepositry;
         private readonly DbBase _db;
         private readonly ITokenHandler _tokenHandler;
-        public UserService(DbBase db, ITokenHandler tokenHandler)
+        public UserService(IUserRepositry userRepositry, DbBase db, ITokenHandler tokenHandler)
         {
+            _userRepositry = userRepositry;
             _db = db;
             _tokenHandler = tokenHandler;
         }
@@ -66,8 +69,10 @@ namespace Gym_App.Application.Services
             var Token = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
             var RefreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
 
-            //Saving to Database
-            await _db.Users.AddAsync(user);
+            //Saving to Database via repository for user
+            await _userRepositry.Create(user);
+
+            // Save refresh token using Db (keeps refresh token storage separate)
             await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
                 Id = user.Id,
@@ -75,20 +80,22 @@ namespace Gym_App.Application.Services
                 Expires = DateTime.Now.AddDays(4)
             });
             await _db.SaveChangesAsync();
-            return await Task.FromResult(new ResponseToken
+
+            return new ResponseToken
             {
                 Status = 1,
                 AccessToken = Token,
                 RefreshToken = RefreshToken,
                 msg = "Admin created successfully"
-            });
+            };
         }
         public async Task<ResponseToken> SignUpUser(UserCreationDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
                                                                       //5 == Succesful signup
         {
             //Signing up the user
-            if (u.Name == null || u.Email == null || u.Password == null)
+            if (u == null || u.Name == null || u.Email == null || u.Password == null)
                 return new ResponseToken { Status = 0, msg = "Missing Information" };
+
             //Checking for name Validity
             if (!await isNameValid(u.Name))
                 return new ResponseToken { Status = 0, msg = "Name is already used" };
@@ -118,13 +125,16 @@ namespace Gym_App.Application.Services
                 Role = role
             };
 
-            //Setting UseeType to Coach
-            if (u.UserType!.ToLower() == "coach" || u.UserType.ToLower() == "c")
-                user.UserType = "Coach";
-            //Setting UserType to Doctor
-            else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d")
-                user.UserType = "Doctor";
-            //If not coach or Doctor set to Trainee
+            //Setting UserType to Coach/Doctor/Trainee
+            if (!string.IsNullOrEmpty(u.UserType))
+            {
+                if (u.UserType!.ToLower() == "coach" || u.UserType.ToLower() == "c")
+                    user.UserType = "Coach";
+                else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d")
+                    user.UserType = "Doctor";
+                else
+                    user.UserType = "Trainee";
+            }
             else
                 user.UserType = "Trainee";
 
@@ -132,8 +142,10 @@ namespace Gym_App.Application.Services
             var Token = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
             var RefreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
 
-            //Saving to Database
-            await _db.Users.AddAsync(user);
+            //Saving to Database via repository for user
+            await _userRepositry.Create(user);
+
+            // Save refresh token
             await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
                 Id = user.Id,
@@ -141,19 +153,20 @@ namespace Gym_App.Application.Services
                 Expires = DateTime.Now.AddDays(4)
             });
             await _db.SaveChangesAsync();
-            return await Task.FromResult(new ResponseToken
+
+            return new ResponseToken
             {
                 Status = 1,
                 AccessToken = Token,
                 RefreshToken = RefreshToken,
                 msg = "User created successfully"
-            });
+            };
         }
         public async Task<ResponseToken> SigninUser(string email, string password) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
         {   //Checking if the user exists
-            var isUserExists = await (from u in _db.Users.Include(u => u.Role)
-                                      where u.Email.ToLower() == email.ToLower()
-                                      select u).FirstOrDefaultAsync();
+            var isUserExists = await _db.Users.Include(u => u.Role)
+                                      .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+
             //If User does not exist return
             if (isUserExists is null)
                 return new ResponseToken { Status = 0, msg = "User not found" };
@@ -184,16 +197,15 @@ namespace Gym_App.Application.Services
         {
             if (user == null)
                 return new SettersResponse { status = 0, msg = "Invalid user data." };
-            //Getting the user from the database
-            var isUserExists = await (from u in _db.Users
-                                      where u.Id == user.Id
-                                      select u).FirstOrDefaultAsync();
+
+            //Getting the user from repository
+            var isUserExists = await _userRepositry.GetById(user.Id);
             //If user does not exist return
             if (isUserExists is null)
                 return new SettersResponse { status = 0, msg = "User not found." };
 
             //If user wants to change name check if the name is valid
-            if (!string.IsNullOrEmpty(user.Name))
+            if (!string.IsNullOrEmpty(user.Name))    
             {
                 //If name is not valid return
                 if (!await isNameValid(user.Name))
@@ -205,7 +217,7 @@ namespace Gym_App.Application.Services
             if (!string.IsNullOrEmpty(user.Bio))
                 isUserExists.Bio = user.Bio;
             //Updating DOB
-            if (user.DOB.ToString() != null)
+            if (user.DOB != default)
                 isUserExists.DOB = user.DOB;
             //Updating State 
             if (!string.IsNullOrEmpty(user.State))
@@ -229,9 +241,8 @@ namespace Gym_App.Application.Services
             if (user.WeightKg > 0)
                 isUserExists.WeightKg = user.WeightKg;
 
-            //Saving to Database
-            _db.Users.Update(isUserExists);
-            await _db.SaveChangesAsync();
+            //Saving to Database via repository
+            await _userRepositry.Update(isUserExists);
             return new SettersResponse { status = 1, msg = "User updated successfully." };
         }
         public async Task<SettersResponse> ChangeUserType(UserChangeTypeDTO User)//0 == Faulty UserType || 1 == invalid UserType || 2 == user not found || 3 == same user type || 4 == succesful change
@@ -246,16 +257,13 @@ namespace Gym_App.Application.Services
             if (!keywords.Contains(User.UserType.ToLower()))
                 return new SettersResponse { status = 0, msg = "Invalid user type." };
 
-            //Getting User from Database
-            var user = await (from u in _db.Users
-                              where u.Id == User.Id
-                              select u).FirstOrDefaultAsync();
+            var user = await _userRepositry.GetById(User.Id);
             //If user not found return
             if (user is null)
                 return new SettersResponse { status = 0, msg = "Invalid user data." };
 
             //Making all usertypes into lowercase letters
-            var usertype = user.UserType.ToLower();
+            var usertype = (user.UserType ?? string.Empty).ToLower();
             var incomingUsertype = User.UserType.ToLower();
 
             // Changing userType from initials to full words to immedietly apply them to the user
@@ -274,7 +282,7 @@ namespace Gym_App.Application.Services
             {
                 //Changing from Trainee to either doctor or coach
                 user.UserType = incomingUsertype;
-                if (incomingUsertype == "coach" || incomingUsertype == "doctor")// could maybe make the trainne doctor and coach be t,d,c to make the comparisons less computational
+                if (incomingUsertype == "coach" || incomingUsertype == "doctor")
                 {
                     user.Specialty = User.Specialty;
                     user.ExperienceYears = User.ExperienceYears;
@@ -289,9 +297,8 @@ namespace Gym_App.Application.Services
                 }
             }
 
-            //Saving to Database
-            _db.Users.Update(user);
-            await _db.SaveChangesAsync();
+            //Saving to Database via repository
+            await _userRepositry.Update(user);
             return new SettersResponse { status = 1, msg = "User type changed successfully." };
         }
         public async Task<SettersResponse> DeleteUser(Guid Id)//0 == error || 1 == successfull
@@ -300,17 +307,8 @@ namespace Gym_App.Application.Services
             if (Id == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid user ID." };
 
-            //Getting user from database
-            var u = await (from usr in _db.Users
-                           where usr.Id == Id
-                           select usr).FirstOrDefaultAsync();
-            //If user not found return
-            if (u == null)
-                return new SettersResponse { status = 0, msg = "User not found." };
-
-            //Saving to Database
-            _db.Users.Remove(u);
-            await _db.SaveChangesAsync();
+            //Use repository to delete
+            await _userRepositry.Delete(Id);
             return new SettersResponse { status = 1, msg = "User deleted successfully." };
         }
 
@@ -321,16 +319,16 @@ namespace Gym_App.Application.Services
 
         public async Task<bool> isNameValid(string name)//checks if the name is already taken
         {
-            var n = await (from u in _db.Users
-                           where u.Name.ToLower() == name.ToLower()
-                           select u).FirstOrDefaultAsync();
-
-            if (n is null) return true;
-            else return false;
+            if (string.IsNullOrWhiteSpace(name)) return false;
+            // repository returns true if name exists; invert to match previous semantics
+            var exists = await _userRepositry.isUserNameExist(name);
+            return !exists;
         }
         public async Task<bool> EmailExists(string email)
         {
-            return await _db.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower());
+            if (string.IsNullOrWhiteSpace(email)) return false;
+            var exists = await _userRepositry.isUserEmailExist(email);
+            return exists;
         }
         public bool IsEmailValid(string email)
         {
@@ -368,40 +366,39 @@ namespace Gym_App.Application.Services
                     msg = "Faulty ID"
                 };
 
-            var user = await (from u in _db.Users
-                              where u.Id == Id
-                              select new UserViewDTO
-                              {
-                                  Id = Id,
-                                  Name = u.Name,
-                                  Email = u.Email,
-                                  Bio = u.Bio,
-                                  CreatedAt = u.CreatedAt,
-                                  DOB = u.DOB,
-                                  State = u.State,
-                                  City = u.City,
-                                  Country = u.Country,
-                                  PhoneNumber = u.PhoneNumber,
-                                  ProfilePictureUrl = u.ProfilePictureUrl,
-                                  subscriptionPlan = u.subscriptionPlan,
-                                  HeightCm = u.HeightCm,
-                                  WeightKg = u.WeightKg,
-                                  UserType = u.UserType
-                              }).FirstOrDefaultAsync();
-
-            if (user == null)
+            var userEntity = await _userRepositry.GetById(Id);
+            if (userEntity == null)
                 return new GettersResponse<UserViewDTO>
                 {
                     status = 0,
                     msg = "User not found"
                 };
-            else
-                return new GettersResponse<UserViewDTO>
-                {
-                    status = 2,
-                    msg = "Successful",
-                    Value = user
-                }; ;
+
+            var user = new UserViewDTO
+            {
+                Id = Id,
+                Name = userEntity.Name,
+                Email = userEntity.Email,
+                Bio = userEntity.Bio,
+                CreatedAt = userEntity.CreatedAt,
+                DOB = userEntity.DOB,
+                State = userEntity.State,
+                City = userEntity.City,
+                Country = userEntity.Country,
+                PhoneNumber = userEntity.PhoneNumber,
+                ProfilePictureUrl = userEntity.ProfilePictureUrl,
+                subscriptionPlan = userEntity.subscriptionPlan,
+                HeightCm = userEntity.HeightCm,
+                WeightKg = userEntity.WeightKg,
+                UserType = userEntity.UserType
+            };
+
+            return new GettersResponse<UserViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Value = user
+            };
         }
         public async Task<GettersResponse<UserMiniViewDTO>> GetMiniUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
@@ -415,31 +412,15 @@ namespace Gym_App.Application.Services
                 };
 
             DateTime validStartDate, validEndDate;
-            if(DateTime.TryParse(startDate,out validStartDate))
+            if(DateTime.TryParse(startDate,out validStartDate) && DateTime.TryParse(endDate, out validEndDate))
             {
-                userQuery = userQuery.Where(u => u.CreatedAt > validStartDate);
+                userQuery = _userRepositry.FilterDate(validStartDate, validEndDate,userQuery);
             }
-            if(DateTime.TryParse(endDate, out validEndDate))
-            {
-                userQuery = userQuery.Where(u=>u.CreatedAt < validEndDate);
-            }
-            if (!string.IsNullOrEmpty(searchTerm)) userQuery = userQuery.Where(u => u.Name.Contains(searchTerm) || u.Email.Contains(searchTerm) || u.Specialty!.Contains(searchTerm));
-            
+            if (!string.IsNullOrEmpty(searchTerm)) userQuery = _userRepositry.Search(searchTerm, userQuery);
+
             if (!string.IsNullOrEmpty(sortColumn))
             {
-                Expression<Func<User, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
-                {
-                    "name" or "n" => User => User.Name,
-                    "email" or "e" => User => User.Email,
-                    "country" or "co" => User => User.Country!,
-                    "state" or "s" => User => User.State!,
-                    "city" or "ci" => User => User.City!,
-                    "height" or "h" => User => User.HeightCm!,
-                    "weight" or "w" => User => User.WeightKg!,
-                    _ => User => User.Id,
-                };
-                if(!string.IsNullOrEmpty(OrderBy))userQuery = userQuery.OrderBy(keySelector);
-                else userQuery = userQuery.OrderBy(keySelector);
+               userQuery = _userRepositry.FilterSortColumn(sortColumn, OrderBy, userQuery);
             }
             var userResponse = userQuery
                                 .Select(u => new UserMiniViewDTO
@@ -469,31 +450,15 @@ namespace Gym_App.Application.Services
                 };
 
             DateTime validStartDate, validEndDate;
-            if (DateTime.TryParse(startDate, out validStartDate))
+            if (DateTime.TryParse(startDate, out validStartDate) && DateTime.TryParse(endDate, out validEndDate))
             {
-                userQuery = userQuery.Where(u => u.CreatedAt > validStartDate);
+                userQuery = _userRepositry.FilterDate(validStartDate, validEndDate, userQuery);
             }
-            if (DateTime.TryParse(endDate, out validEndDate))
-            {
-                userQuery = userQuery.Where(u => u.CreatedAt < validEndDate);
-            }
-            if (!string.IsNullOrEmpty(searchTerm)) userQuery = userQuery.Where(u => u.Name.Contains(searchTerm) || u.Email.Contains(searchTerm) || u.Specialty!.Contains(searchTerm));
+            if (!string.IsNullOrEmpty(searchTerm)) userQuery = _userRepositry.Search(searchTerm, userQuery);
 
             if (!string.IsNullOrEmpty(sortColumn))
             {
-                Expression<Func<User, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
-                {
-                    "name" or "n" => User => User.Name,
-                    "email" or "e" => User => User.Email,
-                    "country" or "co" => User => User.Country!,
-                    "state" or "s" => User => User.State!,
-                    "city" or "ci" => User => User.City!,
-                    "height" or "h" => User => User.HeightCm!,
-                    "weight" or "w" => User => User.WeightKg!,
-                    _ => User => User.Id,
-                };
-                if (!string.IsNullOrEmpty(OrderBy)) userQuery = userQuery.OrderBy(keySelector);
-                else userQuery = userQuery.OrderBy(keySelector);
+                userQuery = _userRepositry.FilterSortColumn(sortColumn, OrderBy, userQuery);
             }
             var userResponse = userQuery
                                 .Select(u => new UserViewDTO

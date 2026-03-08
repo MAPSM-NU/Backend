@@ -34,7 +34,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("ParticipantsId");
 
-                    b.ToTable("ChallengesUser");
+                    b.ToTable("ChallengesUser", (string)null);
                 });
 
             modelBuilder.Entity("ExerciseMuscles", b =>
@@ -49,7 +49,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("MusclesID");
 
-                    b.ToTable("ExerciseMuscles");
+                    b.ToTable("ExerciseMuscles", (string)null);
                 });
 
             modelBuilder.Entity("ExerciseWorkout", b =>
@@ -64,7 +64,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("WorkoutsWorkoutID");
 
-                    b.ToTable("ExerciseWorkout");
+                    b.ToTable("ExerciseWorkout", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Challenges", b =>
@@ -96,7 +96,7 @@ namespace Gym_App.Migrations
 
                     b.HasKey("ChallengeId");
 
-                    b.ToTable("Challenges");
+                    b.ToTable("Challenges", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Exercise", b =>
@@ -126,7 +126,7 @@ namespace Gym_App.Migrations
 
                     b.HasKey("ExerciseID");
 
-                    b.ToTable("Exercises");
+                    b.ToTable("Exercises", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Feedback", b =>
@@ -169,7 +169,7 @@ namespace Gym_App.Migrations
                     b.HasIndex("WorkoutID")
                         .IsUnique();
 
-                    b.ToTable("Feedbacks");
+                    b.ToTable("Feedbacks", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.LiveFeedback", b =>
@@ -192,7 +192,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("LiveFeedbacks");
+                    b.ToTable("LiveFeedbacks", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Message", b =>
@@ -223,7 +223,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("SessionID");
 
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Muscles", b =>
@@ -241,7 +241,7 @@ namespace Gym_App.Migrations
 
                     b.HasKey("MusclesID");
 
-                    b.ToTable("Muscles");
+                    b.ToTable("Muscles", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Notification", b =>
@@ -267,7 +267,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.PastInjuries", b =>
@@ -290,7 +290,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PastInjuries");
+                    b.ToTable("PastInjuries", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.RefreshTokens", b =>
@@ -313,7 +313,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("Id");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Role", b =>
@@ -330,7 +330,7 @@ namespace Gym_App.Migrations
 
                     b.HasKey("RoleID");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Schedule", b =>
@@ -357,7 +357,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Schedules");
+                    b.ToTable("Schedules", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Session", b =>
@@ -375,7 +375,7 @@ namespace Gym_App.Migrations
 
                     b.HasKey("SessionID");
 
-                    b.ToTable("Sessions");
+                    b.ToTable("Sessions", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Transaction", b =>
@@ -405,7 +405,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Transactions");
+                    b.ToTable("Transactions", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.User", b =>
@@ -488,7 +488,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("RoleID");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Gym_App.Domain.Workout", b =>
@@ -529,7 +529,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Workouts");
+                    b.ToTable("Workouts", (string)null);
                 });
 
             modelBuilder.Entity("SessionUser", b =>
@@ -544,7 +544,7 @@ namespace Gym_App.Migrations
 
                     b.HasIndex("UsersId");
 
-                    b.ToTable("SessionUser");
+                    b.ToTable("SessionUser", (string)null);
                 });
 
             modelBuilder.Entity("ChallengesUser", b =>

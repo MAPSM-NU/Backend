@@ -55,6 +55,10 @@ namespace Gym_App.Infastructure.Repositries
         {
             return await table.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
         }
+        public IQueryable<T> GetAll()
+        {
+            return  table.AsQueryable();
+        }
 
         public async Task<T> GetById(Guid id)
         {

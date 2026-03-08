@@ -28,9 +28,11 @@ namespace Gym_App.Infastructure.Context
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<PastInjuries>();
-            modelBuilder.Entity<User>()
-                .Property(u => u.Id)
-                .HasColumnName("UserID");
+            //modelBuilder.Entity<User>()
+            //    .Property(u => u.Id)
+            //    .HasColumnName("Id");
+            //modelBuilder.Entity<User>()
+            //    .HasKey(u => u.Id);
 
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Role)

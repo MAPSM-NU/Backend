@@ -5,6 +5,7 @@ namespace Gym_App.Infastructure.Interfaces.Repositries
     public interface IBaseRepositry<T> where T : class
     {
         Task<IEnumerable<T>> GetAll(int pageNumber = 1, int pageSize = 10);
+        IQueryable<T> GetAll();
         Task<T> GetById(Guid id);
         Task Create(T entity);
         Task Update(T entity);

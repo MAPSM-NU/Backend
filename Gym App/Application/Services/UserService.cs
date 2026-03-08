@@ -402,7 +402,7 @@ namespace Gym_App.Application.Services
         }
         public async Task<GettersResponse<UserMiniViewDTO>> GetMiniUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            IQueryable<User> userQuery = _db.Users;
+            IQueryable<User> userQuery = _userRepositry.GetAll();
 
             if (userQuery == null || userQuery.Count() == 0)
                 return new GettersResponse<UserMiniViewDTO>
@@ -412,16 +412,13 @@ namespace Gym_App.Application.Services
                 };
 
             DateTime validStartDate, validEndDate;
-            if(DateTime.TryParse(startDate,out validStartDate) && DateTime.TryParse(endDate, out validEndDate))
-            {
+            if(DateTime.TryParse(startDate,out validStartDate) && DateTime.TryParse(endDate, out validEndDate)) 
                 userQuery = _userRepositry.FilterDate(validStartDate, validEndDate,userQuery);
-            }
+           
             if (!string.IsNullOrEmpty(searchTerm)) userQuery = _userRepositry.Search(searchTerm, userQuery);
 
-            if (!string.IsNullOrEmpty(sortColumn))
-            {
-               userQuery = _userRepositry.FilterSortColumn(sortColumn, OrderBy, userQuery);
-            }
+            if (!string.IsNullOrEmpty(sortColumn)) userQuery = _userRepositry.FilterSortColumn(sortColumn, OrderBy, userQuery);
+            
             var userResponse = userQuery
                                 .Select(u => new UserMiniViewDTO
                                 {
@@ -440,7 +437,7 @@ namespace Gym_App.Application.Services
         }
         public async Task<GettersResponse<UserViewDTO>> GetUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            IQueryable<User> userQuery = _db.Users;
+            IQueryable<User> userQuery = _userRepositry.GetAll();
 
             if (userQuery == null || userQuery.Count() == 0)
                 return new GettersResponse<UserViewDTO>
@@ -489,8 +486,8 @@ namespace Gym_App.Application.Services
         }
         public async Task<GettersResponse<UserViewDTO>> GetAllUsers(int page, int pageSize)
         {
-            var userQuery =   from u in _db.Users
-                               select new UserViewDTO
+            var userQuery =   from u in _userRepositry.GetAll()
+                              select new UserViewDTO
                                {
                                    Id = u.Id,
                                    Name = u.Name,

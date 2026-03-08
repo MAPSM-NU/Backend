@@ -3,6 +3,7 @@ using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Exercise;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
+using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Authorization;
@@ -14,34 +15,36 @@ namespace Gym_App.Application.Services
 {
     public class WorkoutService : IWorkoutService
     {
-        private readonly DbBase _db;
+        private readonly IWorkoutRepositry _workoutRepositry;
+        private readonly IExerciseRepositry _exerciseRepositry;                                         
+        private readonly IUserRepositry _userRepositry;
         private readonly IAuthorizationService _authorizationService;
-        public WorkoutService(DbBase db,IAuthorizationService authorizationService)
+
+        public WorkoutService(IWorkoutRepositry workoutRepositry, IExerciseRepositry exerciseRepositry, IUserRepositry userRepositry, IAuthorizationService authorizationService)
         {
-            _db = db;
+            _workoutRepositry = workoutRepositry;
+            _exerciseRepositry = exerciseRepositry;
+            _userRepositry = userRepositry;
             _authorizationService = authorizationService;
         }
 
         //        *********** Setters ***********
 
-        public async Task<SettersResponse> CreateWorkout(ClaimsPrincipal User,WorkoutCreationDTO workout)//0 == Error happened || 1 == Unauthorized || 2 == success
-        {//Important detail: day attribute can't be more than 15 chars
-
+        public async Task<SettersResponse> CreateWorkout(ClaimsPrincipal User, WorkoutCreationDTO workout)
+        {
             //Checking the validity of the DTO
-            if (workout == null || string.IsNullOrEmpty(workout.Name) || workout.UserID == Guid.Empty) 
-                return new SettersResponse { status = 0 , msg = "Invalid workout data" };
+            if (workout == null || string.IsNullOrEmpty(workout.Name) || workout.UserID == Guid.Empty)
+                return new SettersResponse { status = 0, msg = "Invalid workout data" };
 
             //Searching for the User
-            var isUserExist = await (from user in _db.Users.Include(w => w.Workouts)
-                               where user.Id == workout.UserID
-                               select user).FirstOrDefaultAsync();
-            if (isUserExist == null) 
-                return new SettersResponse { status = 0 , msg = "User not found" };
+            var isUserExist = await _userRepositry.GetById(workout.UserID);
+            if (isUserExist == null)
+                return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, isUserExist.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return new SettersResponse { status = 1 , msg = "Forbidden from access" };
+                return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Creating the new Workout
             var newWorkout = new Workout
@@ -53,138 +56,120 @@ namespace Gym_App.Application.Services
                 Difficulty = workout.Difficulty,
                 Day = workout.Day,
                 CreatedAt = DateTime.Now,
-                User = isUserExist,
-                Schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.User.Id == workout.UserID)
+                User = isUserExist
             };
 
-            //Saving to Database
-            isUserExist.Workouts?.Add(newWorkout);
-            _db.Users.Update(isUserExist);
-            await _db.Workouts.AddAsync(newWorkout);
-            await _db.SaveChangesAsync();
-            return new SettersResponse { status = 2 , msg = "Workout created successfully" };
+            //Saving to Database via repository
+            await _workoutRepositry.Create(newWorkout);
+            return new SettersResponse { status = 2, msg = "Workout created successfully" };
         }
-        public async Task<SettersResponse> UpdateWorkout(ClaimsPrincipal User,Guid workoutID, WorkoutUpdateDTO workout)//0 == faulty DTO ||1 == Workout not found || 2 == Forbidden from access || 3 == success
+
+        public async Task<SettersResponse> UpdateWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutUpdateDTO workout)
         {
             //Checking the validity of the DTO
-            if (workout == null || workoutID == Guid.Empty) 
-                return new SettersResponse { status = 0 , msg = "Invalid workout data" };
+            if (workout == null || workoutID == Guid.Empty)
+                return new SettersResponse { status = 0, msg = "Invalid workout data" };
 
             //Searching for the Workout
-            var WorkoutToBeUpdated = await(from w in _db.Workouts.Include(w => w.User)
-                                      where w.Id == workoutID
-                                      select w).FirstOrDefaultAsync();
-            if (WorkoutToBeUpdated == null) 
-                return new SettersResponse { status = 0 , msg = "Workout not found" };
+            var WorkoutToBeUpdated = await _workoutRepositry.GetWorkoutById(workoutID);
+            if (WorkoutToBeUpdated == null)
+                return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, WorkoutToBeUpdated.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return new SettersResponse { status = 1 , msg = "Forbidden from access" };
+                return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Updating the Workout
-            if (!string.IsNullOrEmpty(workout.Name)) 
+            if (!string.IsNullOrEmpty(workout.Name))
                 WorkoutToBeUpdated.Name = workout.Name;
-            
+
             if (!string.IsNullOrEmpty(workout.Description))
                 WorkoutToBeUpdated.Description = workout.Description;
-            
+
             if (workout.Date != default)
                 WorkoutToBeUpdated.Date = workout.Date;
-            
+
             if (!string.IsNullOrEmpty(workout.Difficulty))
                 WorkoutToBeUpdated.Difficulty = workout.Difficulty;
-            
+
             if (!string.IsNullOrEmpty(workout.Day))
                 WorkoutToBeUpdated.Day = workout.Day;
 
-            //Saving to Database
-            _db.Workouts.Update(WorkoutToBeUpdated);
-            await _db.SaveChangesAsync();
-            return new SettersResponse { status = 2 , msg = "Workout updated successfully" };
+            //Saving to Database via repository
+            await _workoutRepositry.Update(WorkoutToBeUpdated);
+            return new SettersResponse { status = 2, msg = "Workout updated successfully" };
         }
-        public async Task<SettersResponse> DeleteWorkout(ClaimsPrincipal User, Guid workoutID)//0 == faulty DTO ||1 == Workout not found || 2 == Forbidden from access || 3 == success
+
+        public async Task<SettersResponse> DeleteWorkout(ClaimsPrincipal User, Guid workoutID)
         {
             //Checking the workoutID
             if (workoutID == Guid.Empty)
-                return new SettersResponse { status = 0 , msg = "Invalid workout ID" };
+                return new SettersResponse { status = 0, msg = "Invalid workout ID" };
 
             //Searching for the Workout
-            var isWorkoutExist = await (from w in _db.Workouts.Include(w => w.User)
-                                        where w.Id == workoutID
-                                  select w).FirstOrDefaultAsync();
+            var isWorkoutExist = await _workoutRepositry.GetWorkoutById(workoutID);
             if (isWorkoutExist == null)
-                return new SettersResponse { status = 0 , msg = "Workout not found" };
+                return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return new SettersResponse { status = 1 , msg = "Forbidden from access" };
+                return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
-            //Deleting from Database
-            _db.Workouts.Remove(isWorkoutExist);
-            await _db.SaveChangesAsync();
-            return new SettersResponse { status = 2 , msg = "Workout deleted successfully" };
+            //Deleting from Database via repository
+            await _workoutRepositry.Delete(workoutID);
+            return new SettersResponse { status = 2, msg = "Workout deleted successfully" };
         }
-        public async Task<SettersResponse> AddExercisesToWorkout(ClaimsPrincipal User,Guid workoutID, WorkoutExerciseDTO workoutExercises)//0 == faulty DTO || 1 == Workout not found || 2 == Forbidden from access ||
-                                                                                                              // 3 == No new exercises to add || 4 == success
-        {//there is a problem here
 
+        public async Task<SettersResponse> AddExercisesToWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)
+        {
             //Checking the validity of the DTO
             if (workoutExercises == null || workoutID == Guid.Empty)
-                return new SettersResponse { status = 0 , msg = "Invalid workout ID" };
+                return new SettersResponse { status = 0, msg = "Invalid workout ID" };
 
             //Searching for the Workout
-            var workout = await _db.Workouts
-                .Include(w => w.Exercises)
-                .Include(w => w.User)
-                .FirstOrDefaultAsync(w => w.Id == workoutID);
+            var workout = await _workoutRepositry.GetWorkoutById(workoutID);
             if (workout == null)
-                return new SettersResponse { status = 0 , msg = "Workout not found" };
+                return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, workout.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Invalid workout data" };
 
-            //Determening if there are new exercises to add
-            var existingExerciseIds = new HashSet<Guid>(workout.Exercises.Select(e => e.Id));
+            //Determining if there are new exercises to add
+            var existingExerciseIds = new HashSet<Guid>(workout.Exercises!.Select(e => e.Id));
             var exerciseIdsToAdd = workoutExercises.ExercisesID?.Where(id => !existingExerciseIds.Contains(id)).ToList();
 
             if (exerciseIdsToAdd == null || !exerciseIdsToAdd.Any())
                 return new SettersResponse { status = 0, msg = "No new exercises to add" };
 
-            //Getting the exercises to add from the database
-            var exercisesToAdd = await _db.Exercises
-                .Where(e => exerciseIdsToAdd.Contains(e.Id))
-                .ToListAsync();
+            //Getting the exercises to add from the repository
+            var exercisesToAdd = await _exerciseRepositry.GetExercisesByIds(exerciseIdsToAdd);
             if (exercisesToAdd == null || !exercisesToAdd.Any())
                 return new SettersResponse { status = 0, msg = "No new exercises found" };
 
             //Saving the new exercises to the workout
             foreach (var exercise in exercisesToAdd)
             {
-                workout.Exercises.Add(exercise);
+                workout.Exercises!.Add(exercise);
             }
 
-            //Saving to Database
-            _db.Workouts.Update(workout);
-            await _db.SaveChangesAsync();
+            //Saving to Database via repository
+            await _workoutRepositry.Update(workout);
             return new SettersResponse { status = 2, msg = "Exercises added successfully" };
         }
-        public async Task<SettersResponse> SetExercisesOfWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)//0 == faulty DTO || 1 == Workout not found ||2 == Forbidden from access ||
-                                                                                                              //3 == No new exercises to add || 4 == success
-        {//there is a problem here
 
+        public async Task<SettersResponse> SetExercisesOfWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)
+        {
             //Checking the validity of the DTO
-            if (workoutExercises == null || workoutID == Guid.Empty) 
+            if (workoutExercises == null || workoutID == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid workout ID" };
 
             //Searching for the Workout
-            var isWorkoutExist = await(from w in _db.Workouts.Include(w => w.Exercises).Include(w => w.User)
-                                       where w.Id == workoutID
-                                  select w).FirstOrDefaultAsync();
-            if(isWorkoutExist == null) 
+            var isWorkoutExist = await _workoutRepositry.GetWorkoutById(workoutID);
+            if (isWorkoutExist == null)
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authorization
@@ -193,17 +178,15 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Invalid workout data" };
 
             //Clearing existing exercises to add new ones
-            isWorkoutExist.Exercises.Clear();
+            isWorkoutExist.Exercises!.Clear();
 
-            //Determening if there are new exercises to add
+            //Determining if there are new exercises to add
             var exerciseIDsToAdd = workoutExercises.ExercisesID.ToList();
-            if (exerciseIDsToAdd == null || exerciseIDsToAdd.Count == 0) 
+            if (exerciseIDsToAdd == null || exerciseIDsToAdd.Count == 0)
                 return new SettersResponse { status = 0, msg = "No new exercises to add" };
 
-            //Getting the exercises to add from the database
-            var ExercisesToAdd = await _db.Exercises
-                                .Where(e => exerciseIDsToAdd.Contains(e.Id))
-                                .ToListAsync();
+            //Getting the exercises to add from the repository
+            var ExercisesToAdd = await _exerciseRepositry.GetExercisesByIds(exerciseIDsToAdd);
             if (ExercisesToAdd == null || !ExercisesToAdd.Any())
                 return new SettersResponse { status = 0, msg = "No new exercises found" };
 
@@ -213,24 +196,20 @@ namespace Gym_App.Application.Services
                 isWorkoutExist.Exercises.Add(exercise);
             }
 
-            //Saving to Database
-            _db.Workouts.Update(isWorkoutExist);
-            await _db.SaveChangesAsync();
+            //Saving to Database via repository
+            await _workoutRepositry.Update(isWorkoutExist);
             return new SettersResponse { status = 2, msg = "Exercises added successfully" };
         }
-        public async Task<SettersResponse> DeleteExercisesFromWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)//0 == faulty DTO || 1 == Workout not found || 2 == Forbidden from access
-                                                                                                                   //3 == No exercises to remove || 4 == success
-        {
 
-            //checking the Validitiy of the DTO
-            if (workoutExercises == null || workoutID == Guid.Empty) 
+        public async Task<SettersResponse> DeleteExercisesFromWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)
+        {
+            //checking the Validity of the DTO
+            if (workoutExercises == null || workoutID == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid workout ID" };
 
             //Searching for the Workout
-            var isWorkoutExist = await(from w in _db.Workouts.Include(w => w.Exercises).Include(w => w.User)
-                                  where w.Id == workoutID
-                                  select w).FirstOrDefaultAsync();
-            if (isWorkoutExist == null) 
+            var isWorkoutExist = await _workoutRepositry.GetWorkoutById(workoutID);
+            if (isWorkoutExist == null)
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authentication
@@ -238,16 +217,14 @@ namespace Gym_App.Application.Services
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
-            //Determening if there are exercises to Delete
+            //Determining if there are exercises to Delete
             var existingExerciseIDs = new HashSet<Guid>(isWorkoutExist.Exercises.Select(i => i.Id));
             var exerciseIDsToRemove = workoutExercises.ExercisesID?.Where(id => existingExerciseIDs.Contains(id)).ToList();
-            if (exerciseIDsToRemove == null || !exerciseIDsToRemove.Any()) 
+            if (exerciseIDsToRemove == null || !exerciseIDsToRemove.Any())
                 return new SettersResponse { status = 0, msg = "No exercises to remove" };
 
-            //Getting the exercises to delete from the Database
-            var ExercisesToRemove = await _db.Exercises
-                                    .Where(e => exerciseIDsToRemove.Contains(e.Id))
-                                    .ToListAsync();
+            //Getting the exercises to delete from the Repository
+            var ExercisesToRemove = await _exerciseRepositry.GetExercisesByIds(exerciseIDsToRemove);
             if (ExercisesToRemove == null || !ExercisesToRemove.Any())
                 return new SettersResponse { status = 0, msg = "No exercises found" };
 
@@ -257,37 +234,37 @@ namespace Gym_App.Application.Services
                 isWorkoutExist.Exercises.Remove(exercise);
             }
 
-            //Saving to Database
-            _db.Workouts.Update(isWorkoutExist);
-            await _db.SaveChangesAsync();
+            //Saving to Database via repository
+            await _workoutRepositry.Update(isWorkoutExist);
             return new SettersResponse { status = 2, msg = "Exercises removed successfully" };
         }
 
         //-----------------------------------------------------------------------
 
         //        *********** Getters ***********
+
         public async Task<Guid> GetWorkoutId(Guid workoutID)
         {
-            //Getting the user by ID
-            Guid Id = await(from w in _db.Workouts
-                               where w.Id == workoutID
-                               select w.User.Id).FirstOrDefaultAsync();
-            return Id; 
+            var workout = await _workoutRepositry.GetWorkoutById(workoutID);
+            return workout?.User.Id ?? Guid.Empty;
         }
+
         public async Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByName(string name)
         {
-            //Getting workout by name
-            var workout = await(from w in _db.Workouts
-                          where w.Name == name
-                          select new WorkoutViewDTO
-                          {
-                                WorkoutID = w.Id,
-                                Name = w.Name,
-                                Description = w.Description,
-                                Date = w.Date,
-                                Difficulty = w.Difficulty,
-                                Day = w.Day,
-                          }).FirstOrDefaultAsync();
+            //Getting workout by name from repository
+            var allWorkouts = _workoutRepositry.GetAll();
+            var workout = await allWorkouts
+                .Where(w => w.Name == name)
+                .Select(w => new WorkoutViewDTO
+                {
+                    WorkoutID = w.Id,
+                    Name = w.Name,
+                    Description = w.Description,
+                    Date = w.Date,
+                    Difficulty = w.Difficulty,
+                    Day = w.Day,
+                })
+                .FirstOrDefaultAsync();
 
             if (workout == null)
                 return new GettersResponse<WorkoutViewDTO>
@@ -303,20 +280,11 @@ namespace Gym_App.Application.Services
                     Value = workout
                 };
         }
+
         public async Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByID(Guid ID)
         {
-            //Getting the Workout by ID
-            var workout = await(from w in _db.Workouts
-                          where w.Id == ID
-                          select new WorkoutViewDTO
-                          {
-                              WorkoutID = w.Id,
-                              Name = w.Name,
-                              Description = w.Description,
-                              Date = w.Date,
-                              Difficulty = w.Difficulty,
-                              Day = w.Day,
-                          }).FirstOrDefaultAsync();
+            //Getting the Workout by ID from repository
+            var workout = await _workoutRepositry.GetWorkoutById(ID);
 
             if (workout == null)
                 return new GettersResponse<WorkoutViewDTO>
@@ -324,64 +292,74 @@ namespace Gym_App.Application.Services
                     status = 0,
                     msg = "Not Found"
                 };
-            else
-                return new GettersResponse<WorkoutViewDTO>
-                {
-                    status = 2,
-                    msg = "Successful",
-                    Value = workout
-                };
+
+            var workoutDTO = new WorkoutViewDTO
+            {
+                WorkoutID = workout.Id,
+                Name = workout.Name,
+                Description = workout.Description,
+                Date = workout.Date,
+                Difficulty = workout.Difficulty,
+                Day = workout.Day,
+            };
+
+            return new GettersResponse<WorkoutViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Value = workoutDTO
+            };
         }
+
         public async Task<GettersResponse<ExerciseViewDTO>> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
-            //Getting the exercises in the given workout by workoutID
-            var exercisesQuery = from w in _db.Workouts
-                            from e in w.Exercises!
-                            where w.Id == WorkoutID && w.Exercises!.Contains(e)
-                            select e;
+            //Getting the workout and its exercises from repository
+            var workout = await _workoutRepositry.GetWorkoutById(WorkoutID);
 
-            if (exercisesQuery == null || exercisesQuery.Count() == 0)
+            if (workout == null || workout.Exercises == null || !workout.Exercises.Any())
                 return new GettersResponse<ExerciseViewDTO>
                 {
                     status = 0,
                     msg = "No Exercises in given workout"
                 };
 
-            //If the searchTerm is not null, we gonna return all the exercises that contains the searchTerm in the name, description Difficulty
-            if(!string.IsNullOrEmpty(searchTerm))exercisesQuery = exercisesQuery.Where(e=>e.Name.Contains(searchTerm) || e.Description!.Contains(searchTerm)
-            || e.Difficulty!.Contains(searchTerm));
+            var exercisesQuery = workout.Exercises.AsQueryable();
 
-            //If the sortColumn not null, we gonna order the data by the specified sortColumn
+            //If the searchTerm is not null, filter by name, description, or difficulty
+            if (!string.IsNullOrEmpty(searchTerm))
+                exercisesQuery = exercisesQuery.Where(e => e.Name.Contains(searchTerm) || e.Description!.Contains(searchTerm) || e.Difficulty!.Contains(searchTerm));
+
+            //If the sortColumn is not null, sort the data
             if (!string.IsNullOrEmpty(sortColumn))
             {
-                Expression<Func<Exercise, object>> keySelector = searchTerm.ToLower() switch
+                Expression<Func<Exercise, object>> keySelector = sortColumn.ToLower() switch
                 {
-                    "name" or "n" => Exercise => Exercise.Name, // Sort by name
-                    "difficulty" or "dif" => Exercise => Exercise.Difficulty!, // sort by difficulty
-                    "description" or "desc" => Exercise => Exercise.Description!, // sort by description
-                    "category" or "c" => Exercise => Exercise.Category!, // sort by category
-                    _ => Exercise => Exercise.Id // failsafe: sort by ID
+                    "name" or "n" => e => e.Name,
+                    "difficulty" or "dif" => e => e.Difficulty!,
+                    "description" or "desc" => e => e.Description!,
+                    "category" or "c" => e => e.Category!,
+                    _ => e => e.Id
                 };
 
-                //If no orderby was inputed, then we sort ascending
-                if (!string.IsNullOrEmpty(OrderBy)) exercisesQuery = exercisesQuery.OrderBy(keySelector);
-
-                //else if anything was inputted we sort descending
-                else exercisesQuery = exercisesQuery.OrderByDescending(keySelector);
+                //If orderby was inputted, sort ascending; otherwise sort descending
+                if (!string.IsNullOrEmpty(OrderBy))
+                    exercisesQuery = exercisesQuery.OrderBy(keySelector);
+                else
+                    exercisesQuery = exercisesQuery.OrderByDescending(keySelector);
             }
 
             //Projecting the resultant exercise queries as exerciseDTO
             var exerciseResult = exercisesQuery
-                                .Select(e => new ExerciseViewDTO
-                                {
-                                    ExerciseID = e.Id,
-                                    Name = e.Name,
-                                    Description = e.Description,
-                                    Difficulty = e.Difficulty,
-                                    Grip = e.Grip,
-                                    Category = e.Category,
-                                    VideoUrl = e.VideoUrl,
-                                });
+                .Select(e => new ExerciseViewDTO
+                {
+                    ExerciseID = e.Id,
+                    Name = e.Name,
+                    Description = e.Description,
+                    Difficulty = e.Difficulty,
+                    Grip = e.Grip,
+                    Category = e.Category,
+                    VideoUrl = e.VideoUrl,
+                });
 
             //Making the result as a paged list
             var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exerciseResult, page, pageSize);
@@ -392,23 +370,23 @@ namespace Gym_App.Application.Services
                 Data = exercises
             };
         }
+
         public async Task<GettersResponse<WorkoutViewDTO>> GetAllWorkouts(int page, int pageSize)
         {
+            //Getting all workouts from repository
+            var workoutsQuery = _workoutRepositry.GetAll()
+                .Select(w => new WorkoutViewDTO
+                {
+                    UserID = w.User.Id,
+                    WorkoutID = w.Id,
+                    Name = w.Name,
+                    Description = w.Description,
+                    Date = w.Date,
+                    Difficulty = w.Difficulty,
+                    Day = w.Day,
+                });
 
-            //Getting all workouts and projecting them as WorkoutDTO
-            var workoutsQuery = from w in _db.Workouts
-                           select new WorkoutViewDTO
-                           {
-                               UserID = w.User.Id,
-                               WorkoutID = w.Id,
-                               Name = w.Name,
-                               Description = w.Description,
-                               Date = w.Date,
-                               Difficulty = w.Difficulty,
-                               Day = w.Day,
-                           };
-
-            if (workoutsQuery == null || workoutsQuery.Count() == 0)
+            if (workoutsQuery == null || !workoutsQuery.Any())
                 return new GettersResponse<WorkoutViewDTO>
                 {
                     status = 0,

@@ -75,7 +75,7 @@ namespace Gym_App.Application.Services
             // Save refresh token using Db (keeps refresh token storage separate)
             await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
-                Id = user.Id,
+                UserID = user.Id,
                 RefreshToken = RefreshToken,
                 Expires = DateTime.Now.AddDays(4)
             });
@@ -148,7 +148,7 @@ namespace Gym_App.Application.Services
             // Save refresh token
             await _db.RefreshTokens.AddAsync(new RefreshTokens
             {
-                Id = user.Id,
+                UserID = user.Id,
                 RefreshToken = RefreshToken,
                 Expires = DateTime.Now.AddDays(4)
             });

@@ -44,11 +44,11 @@ namespace Gym_App.Infastructure.Repositries
             {
                 "name" or "n" => u => u.Name,
                 "email" or "e" => u => u.Email,
-                "country" or "co" => u => u.Country,
-                "state" or "s" => u => u.State,
-                "city" or "ci" => u => u.City,
-                "height" or "h" => u => u.HeightCm,
-                "weight" or "w" => u => u.WeightKg,
+                "country" or "co" => u => u.Country!,
+                "state" or "s" => u => u.State!,
+                "city" or "ci" => u => u.City!,
+                "height" or "h" => u => u.HeightCm!,
+                "weight" or "w" => u => u.WeightKg!,
                 _ => u => u.Id,
             };
 

@@ -1,11 +1,10 @@
 ﻿using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Message;
+using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using System.Security.Claims;
 
@@ -13,12 +12,21 @@ namespace Gym_App.Application.Services
 {
     public class MessageService : IMessageService
     {
-        private readonly DbBase _db;
+        private readonly IMessageRepositry _messageRepositry;
+        private readonly IUserRepositry _userRepositry;
+        private readonly ISessionRepositry _sessionRepositry;
         private readonly IAuthorizationService _authorizationService;
-        public MessageService(DbBase db, IAuthorizationService authorizationService)
+
+        public MessageService(
+            IMessageRepositry messageRepositry,
+            IUserRepositry userRepositry,
+            IAuthorizationService authorizationService,
+            ISessionRepositry sessionRepositry)
         {
-            _db = db;
+            _messageRepositry = messageRepositry;
+            _userRepositry = userRepositry;
             _authorizationService = authorizationService;
+            _sessionRepositry = sessionRepositry;
         }
 
         //        *********** Setters ***********
@@ -27,13 +35,11 @@ namespace Gym_App.Application.Services
         public async Task<SettersResponse> AddMessage(ClaimsPrincipal User, Guid senderID, MessageCreationDTO message)
         {
             //checking for DTO validity
-            if (message == null)
+            if (message == null || message.SessionID == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
-            //Getting user from Database
-            var user = await (from u in _db.Users
-                              where u.Id == senderID
-                              select u).FirstOrDefaultAsync();
+            //Getting user from repository
+            var user = await _userRepositry.GetById(senderID);
             //if user not found return 
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
@@ -43,81 +49,76 @@ namespace Gym_App.Application.Services
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
-            //Getting session from Database
-            var session = await (from s in _db.Sessions.Include(s => s.Users)
-                                 where s.Id == message.SessionID
-                                 select s).FirstOrDefaultAsync();
-            //if session not found return
+            //Getting session with users included from repository
+            var session = await _sessionRepositry.GetSessionWithUsers(message.SessionID);
             if (session == null)
                 return new SettersResponse { status = 0, msg = "Session not found" };
+            
             //Checking if user is part of the session
-            if (!session.Users.Contains(user))
-                return new SettersResponse { status = 0, msg = "Invalid DTO" };
+            if (!session.Users.Any(u => u.Id == user.Id))
+                return new SettersResponse { status = 0, msg = "User is not part of this session" };
 
             //Creating new message
             var newMessage = new Message
             {
                 Id = Guid.NewGuid(),
                 Sender = user,
-                Session = session,
                 Content = message.Content,
                 CreatedAt = DateTime.UtcNow,
-                IsRead = message.IsRead
+                IsRead = message.IsRead,
+                Session = session
             };
 
-            //Saving to Database
-            await _db.Messages.AddAsync(newMessage);
-            await _db.SaveChangesAsync();
+            //Saving to Database via repository
+            await _messageRepositry.Create(newMessage);
             return new SettersResponse { status = 2, msg = "Success" };
         }
+
         public async Task<SettersResponse> UpdateMessage(ClaimsPrincipal User, Guid messageID, MessageUpdateDTO message)
         {
             //checking for DTO validity
             if (message == null)
                 return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
-            //Getting message from Database
-            var Message = await (from u in _db.Messages.Include(m => m.Sender)
-                                 where u.Id == messageID
-                                 select u).FirstOrDefaultAsync();
+            //Getting message from repository
+            var messageEntity = await _messageRepositry.GetMessageById(messageID);
             //if message not found return
-            if (Message == null)
+            if (messageEntity == null)
                 return new SettersResponse { status = 0, msg = "Message not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.Id, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, messageEntity.Sender.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Updating message
-            Message.Content = message.Content;
-            Message.IsRead = message.IsRead;
+            messageEntity.Content = message.Content;
+            messageEntity.IsRead = message.IsRead;
 
-            //Saving to Database
-            await _db.SaveChangesAsync();
+            //Saving to Database via repository
+            await _messageRepositry.Update(messageEntity);
             return new SettersResponse { status = 2, msg = "Success" };
         }
+
         public async Task<SettersResponse> DeleteMessage(ClaimsPrincipal User, Guid messageID)
         {
             //checking for messageID validity
             if (messageID == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid messageID" };
 
-            var Message = await (from u in _db.Messages.Include(m => m.Sender)
-                                 where u.Id == messageID
-                                 select u).FirstOrDefaultAsync();
+            //Getting message from repository
+            var messageEntity = await _messageRepositry.GetMessageById(messageID);
             //if message not found return
-            if (Message == null)
+            if (messageEntity == null)
                 return new SettersResponse { status = 0, msg = "Message not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, Message.Sender.Id, "SameUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, messageEntity.Sender.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
-            //Saving to Database
-            _db.Messages.Remove(Message);
-            await _db.SaveChangesAsync();
+            //Deleting from Database via repository
+            await _messageRepositry.Delete(messageID);
             return new SettersResponse { status = 2, msg = "Success" };
         }
 
@@ -125,31 +126,24 @@ namespace Gym_App.Application.Services
 
         //        *********** Getters ***********
 
-        public async Task<Guid> GetMessageUserID(Guid messageID)//Not used anymore
+        public async Task<Guid> GetMessageUserID(Guid messageID)
         {
-            var userID = await (from m in _db.Messages
-                                where m.Id == messageID
-                                select m.Sender.Id).FirstOrDefaultAsync();
-            return userID;
+            var messageEntity = await _messageRepositry.GetMessageById(messageID);
+            return messageEntity?.Sender.Id ?? Guid.Empty;
         }
+
         public async Task<List<Guid>?> GetSessionUsersIDs(ClaimsPrincipal User, Guid sessionID)
         {
             //checking for sessionID validity
             if (sessionID == Guid.Empty)
                 return null;
 
-            //Getting users from Database
-            var Users = await (from s in _db.Sessions
-                               where s.Id == sessionID
-                               select s.Users).FirstOrDefaultAsync();
-
-            //if session not found return
+            //Note: This requires ISessionRepositry implementation
+            var Users = await _sessionRepositry.GetSessionUsers(sessionID);
             if (Users == null)
                 return null;
 
-            var UserIDs = (from u in Users
-                           select u.Id).ToList();
-
+            var UserIDs = Users.Select(u => u.Id).ToList();
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
             if (!authResult.Succeeded)
@@ -157,22 +151,28 @@ namespace Gym_App.Application.Services
 
             return UserIDs;
         }
-        public async Task<GettersResponse<MessageMiniViewDTO>> GetSessionMessages(ClaimsPrincipal User, Guid sessionID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+
+        public async Task<GettersResponse<MessageMiniViewDTO>> GetSessionMessages(
+            ClaimsPrincipal User,
+            Guid sessionID,
+            string startDate,
+            string endDate,
+            int page,
+            string sortColumn,
+            string OrderBy,
+            string searchTerm,
+            int pageSize)
         {
-            var session = await (from s in _db.Sessions.Include(s => s.Users)
-                                 where s.Id == sessionID
-                                 select s).FirstOrDefaultAsync();
-            //if session not found return
-            if (session == null)
+            //Note: This requires ISessionRepositry implementation
+            var users = await _sessionRepositry.GetSessionUsers(sessionID);
+            if (users == null || !users.Any())
                 return new GettersResponse<MessageMiniViewDTO>
                 {
                     status = 0,
                     msg = "Session not found"
                 };
 
-            var UserIDs = (from u in session.Users
-                           select u.Id).ToList();
-            //Authorization
+            var UserIDs = users.Select(u => u.Id).ToList();
             var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
             if (!authResult.Succeeded)
                 return new GettersResponse<MessageMiniViewDTO>
@@ -181,56 +181,30 @@ namespace Gym_App.Application.Services
                     msg = "Unauthorized"
                 };
 
-            //Getting messages from Database
-            var messageQuery = from s in _db.Sessions
-                               from m in _db.Messages
-                               where s.Id == sessionID && s.Messages!.Contains(m)
-                               select m;
+            //Getting messages from repository
+            var messageQuery = _messageRepositry.GetSessionMessagesQueryable(sessionID);
 
-            //filtering by start date and end date
-            DateTime validStartDate, validEndDate;
-            if (DateTime.TryParse(startDate, out validStartDate))
-            {
-                messageQuery = messageQuery.Where(m => m.CreatedAt > validStartDate);
-            }
-            if (DateTime.TryParse(endDate, out validEndDate))
-            {
-                messageQuery = messageQuery.Where(m => m.CreatedAt < validEndDate);
-            }
+
+            if (DateTime.TryParse(startDate, out DateTime parsedStartDate) && DateTime.TryParse(endDate, out DateTime parsedEndDate))
+                messageQuery = _messageRepositry.FilterDate(parsedStartDate, parsedEndDate, messageQuery);
 
             //filtering by search term
-            if (!string.IsNullOrEmpty(searchTerm)) messageQuery = messageQuery.Where(m => m.Content.Contains(searchTerm));//Might add user name belmara bs will wait
+            if (!string.IsNullOrEmpty(searchTerm))
+                messageQuery = _messageRepositry.Search(searchTerm, messageQuery);
 
             //ordering by a given column
-            if (!string.IsNullOrEmpty(sortColumn))//order by custom column 
-            {
-                Expression<Func<Message, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
-                {
-                    "message" or "m" or "c" or "content" => Message => Message.Content, //ordering by message content
-                    "time" or "t" or "timestamp" => Message => Message.CreatedAt, // ordering by timestamp
-                    _ => Message => Message.Id, //failsafe: ordering by message ID
-                };
-                //If no orderby was inputed, then we sort ascending
-                if (!string.IsNullOrEmpty(OrderBy)) messageQuery = messageQuery.OrderBy(keySelector);
-
-                //else if anything was inputted we sort descending
-                else messageQuery = messageQuery.OrderByDescending(keySelector);
-            }
-            else
-            {
-                messageQuery = messageQuery.OrderByDescending(m => m.CreatedAt);// or just order by recent messages
-            }
+            if (!string.IsNullOrEmpty(sortColumn))
+                messageQuery = _messageRepositry.FilterSortColumn(sortColumn, OrderBy, messageQuery);
 
             //Projecting the resultant message queries to messageDTO
-            var messageResponse = messageQuery
-                                    .Select(m => new MessageMiniViewDTO
-                                    {
-                                        SenderID = m.Sender.Id,
-                                        MessageID = m.Id,
-                                        Content = m.Content,
-                                        IsRead = m.IsRead,
-                                        Timestamp = m.CreatedAt
-                                    });
+            var messageResponse = messageQuery.Select(m => new MessageMiniViewDTO
+            {
+                SenderID = m.Sender.Id,
+                MessageID = m.Id,
+                Content = m.Content,
+                IsRead = m.IsRead,
+                Timestamp = m.CreatedAt
+            });
 
             //Making the result as a paged list
             var messages = await PagedList<MessageMiniViewDTO>.CreateAsync(messageResponse, page, pageSize);
@@ -241,60 +215,47 @@ namespace Gym_App.Application.Services
                 Data = messages
             };
         }
-        public async Task<GettersResponse<MessageViewDTO>> GetMessagesByFilter(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)//will be accessed by admin only
-                                                                                                                                                                                              //so there is no need for authorization
-        {
 
-            //Getting messages from Database
-            IQueryable<Message> messageQuery = _db.Messages;
-            
-            if (messageQuery == null || messageQuery.Count() == 0)
+        public async Task<GettersResponse<MessageViewDTO>> GetMessagesByFilter(
+            string startDate,
+            string endDate,
+            int page,
+            string sortColumn,
+            string OrderBy,
+            string searchTerm,
+            int pageSize)
+        {
+            //Getting messages from repository
+            var messageQuery = _messageRepositry.GetAllMessagesQueryable();
+
+            if (messageQuery == null || !messageQuery.Any())
                 return new GettersResponse<MessageViewDTO>
                 {
                     status = 0,
                     msg = "No messages in Database"
                 };
 
-            //filtering by start date and end date
-            DateTime validStartDate, validEndDate;
-            if (DateTime.TryParse(startDate, out validStartDate))
-            {
-                messageQuery = messageQuery.Where(m => m.CreatedAt > validStartDate);
-            }
-            if (DateTime.TryParse(endDate, out validEndDate))
-            {
-                messageQuery = messageQuery.Where(m => m.CreatedAt < validEndDate);
-            }
+            if (DateTime.TryParse(startDate, out DateTime parsedStartDate) && DateTime.TryParse(endDate, out DateTime parsedEndDate))
+                messageQuery = _messageRepositry.FilterDate(parsedStartDate, parsedEndDate, messageQuery);
 
             //filtering by search term
-            if (!string.IsNullOrEmpty(searchTerm)) messageQuery = messageQuery.Where(m => m.Content.Contains(searchTerm));//Might add user name belmara bs will wait
+            if (!string.IsNullOrEmpty(searchTerm))
+                messageQuery = _messageRepositry.Search(searchTerm, messageQuery);
 
             //ordering by a given column
             if (!string.IsNullOrEmpty(sortColumn))
-            {
-                Expression<Func<Message, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
-                {
-                    "message" or "content" => Message => Message.Content,//ordering by message content
-                    _ => Message => Message.Id,//failsafe: ordering by message ID
-                };
-                //If no orderby was inputed, then we sort ascending
-                if (!string.IsNullOrEmpty(OrderBy)) messageQuery = messageQuery.OrderBy(keySelector);
-
-                //else if anything was inputted we sort descending
-                else messageQuery = messageQuery.OrderByDescending(keySelector);
-            }
+                messageQuery = _messageRepositry.FilterSortColumn(sortColumn, OrderBy, messageQuery);
 
             //Projecting the resultant message queries to messageDTO
-            var messageResponse = messageQuery
-                                    .Select(m => new MessageViewDTO
-                                    {
-                                        SenderID = m.Sender.Id,
-                                        SessionID = m.Session.Id,
-                                        MessageID = m.Id,
-                                        Content = m.Content,
-                                        IsRead = m.IsRead,
-                                        Timestamp = m.CreatedAt
-                                    });
+            var messageResponse = messageQuery.Select(m => new MessageViewDTO
+            {
+                SenderID = m.Sender.Id,
+                SessionID = m.Session.Id,
+                MessageID = m.Id,
+                Content = m.Content,
+                IsRead = m.IsRead,
+                Timestamp = m.CreatedAt
+            });
 
             //Making the result as a paged list
             var messages = await PagedList<MessageViewDTO>.CreateAsync(messageResponse, page, pageSize);
@@ -305,22 +266,22 @@ namespace Gym_App.Application.Services
                 Data = messages
             };
         }
+
         public async Task<GettersResponse<MessageViewDTO>> GetMessages(int page, int pageSize)
         {
+            //Getting messages from repository
+            var messagesQuery = _messageRepositry.GetAllMessagesQueryable()
+                .Select(m => new MessageViewDTO
+                {
+                    SenderID = m.Sender.Id,
+                    SessionID = m.Session.Id,
+                    MessageID = m.Id,
+                    Content = m.Content,
+                    IsRead = m.IsRead,
+                    Timestamp = m.CreatedAt
+                });
 
-            //Getting messages from Database
-            var messagesQuery = from m in _db.Messages
-                                select new MessageViewDTO
-                                {
-                                    SenderID = m.Sender.Id,
-                                    SessionID = m.Session.Id,
-                                    MessageID = m.Id,
-                                    Content = m.Content,
-                                    IsRead = m.IsRead,
-                                    Timestamp = m.CreatedAt
-                                };
-
-            if (messagesQuery == null || messagesQuery.Count() == 0)
+            if (messagesQuery == null || !messagesQuery.Any())
                 return new GettersResponse<MessageViewDTO>
                 {
                     status = 0,
@@ -336,6 +297,5 @@ namespace Gym_App.Application.Services
                 Data = messages
             };
         }
-
     }
 }

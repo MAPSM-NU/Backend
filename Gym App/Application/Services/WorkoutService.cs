@@ -327,26 +327,11 @@ namespace Gym_App.Application.Services
 
             //If the searchTerm is not null, filter by name, description, or difficulty
             if (!string.IsNullOrEmpty(searchTerm))
-                exercisesQuery = exercisesQuery.Where(e => e.Name.Contains(searchTerm) || e.Description!.Contains(searchTerm) || e.Difficulty!.Contains(searchTerm));
+                exercisesQuery = _exerciseRepositry.Search(searchTerm,exercisesQuery);
 
             //If the sortColumn is not null, sort the data
             if (!string.IsNullOrEmpty(sortColumn))
-            {
-                Expression<Func<Exercise, object>> keySelector = sortColumn.ToLower() switch
-                {
-                    "name" or "n" => e => e.Name,
-                    "difficulty" or "dif" => e => e.Difficulty!,
-                    "description" or "desc" => e => e.Description!,
-                    "category" or "c" => e => e.Category!,
-                    _ => e => e.Id
-                };
-
-                //If orderby was inputted, sort ascending; otherwise sort descending
-                if (!string.IsNullOrEmpty(OrderBy))
-                    exercisesQuery = exercisesQuery.OrderBy(keySelector);
-                else
-                    exercisesQuery = exercisesQuery.OrderByDescending(keySelector);
-            }
+                exercisesQuery = _exerciseRepositry.FilterSortColumn(sortColumn, OrderBy, exercisesQuery);
 
             //Projecting the resultant exercise queries as exerciseDTO
             var exerciseResult = exercisesQuery

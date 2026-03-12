@@ -16,9 +16,34 @@ namespace Gym_App.Infastructure.Repositries
             table = _db.Set<User>();
         }
 
-        public async Task<User> GetUserById(Guid userID)
+        public async Task<User> GetUserById(Guid userID, bool includeRole)
         {
-            return await table.FirstOrDefaultAsync(u=>u.Id == userID);
+            if (includeRole)
+                return await table.Include(u=>u.Role).FirstOrDefaultAsync(u => u.Id == userID);
+            else
+                return await table.FirstOrDefaultAsync(u => u.Id == userID);
+        }
+        public async Task<User> GetUserByEmail(string email, bool includeRole)
+        {
+            if (includeRole)
+                return await table.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
+            else
+                return await table.FirstOrDefaultAsync(u => u.Email == email);
+        }
+        public async Task<User> GetUserByName(string name, bool includeRole)
+        {
+            if (includeRole)
+                return await table.Include(u => u.Role).FirstOrDefaultAsync(u => u.Name == name);
+            else
+                return await table.FirstOrDefaultAsync(u => u.Name == name);
+        }
+        public async Task<ICollection<User>> GetUsersByRole(Guid roleID)
+        {
+            return await table.Where(u => u.RoleID == roleID).ToListAsync();
+        }
+        public async Task<IQueryable<User>> GetUsersByRoleAsQueryable(Guid roleID)
+        {
+            return table.Where(u => u.RoleID == roleID);
         }
 
         public async Task<bool> isUserEmailExist(string email)
@@ -64,6 +89,5 @@ namespace Gym_App.Infastructure.Repositries
             searchTerm = searchTerm.ToLower();
             return query.Where(u => u.Name.ToLower().Contains(searchTerm) || u.Email.ToLower().Contains(searchTerm));
         }
-
     }
 }

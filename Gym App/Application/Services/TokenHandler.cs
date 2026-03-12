@@ -1,9 +1,8 @@
 ﻿using Gym_App.Domain;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.Context;
+using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -14,26 +13,29 @@ namespace Gym_App.Application.Services
 {
     public class TokenHandler : ITokenHandler
     {
-        private readonly DbBase _db;
+        private readonly ITokenRepositry _tokenRepositry;
+        private readonly IUserRepositry _userRepositry;
         private readonly IConfiguration _config;
-        //private readonly ILogger _logger;
-        public TokenHandler(DbBase db, IConfiguration config)
+
+        public TokenHandler(ITokenRepositry tokenRepositry, IUserRepositry userRepositry, IConfiguration config)
         {
-            _db = db;
+            _tokenRepositry = tokenRepositry;
+            _userRepositry = userRepositry;
             _config = config;
-            //_logger = logger;
         }
-        
+
         //        *********** Setters ***********
-        public async Task<string> CreateAccessToken(Guid userID, string name,string email, string role) // For creating access Tokens
+
+        public async Task<string> CreateAccessToken(Guid userID, string name, string email, string role)
         {
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Name, name),
                 new Claim(JwtRegisteredClaimNames.Email, email),
-                new Claim(JwtRegisteredClaimNames.Sub,userID.ToString()),
-                new Claim(ClaimTypes.Role,role)
+                new Claim(JwtRegisteredClaimNames.Sub, userID.ToString()),
+                new Claim(ClaimTypes.Role, role)
             };
+
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_config.GetValue<string>("JwtSettings:Token")!));
 
@@ -43,81 +45,81 @@ namespace Gym_App.Application.Services
                 issuer: _config.GetValue<string>("JwtSettings:Issuer"),
                 audience: _config.GetValue<string>("JwtSettings:Audience"),
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),//EXPIRATION DATE
+                expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: creds
-                );
-            //_logger.LogInformation("Json Web Token created");
+            );
 
             return await Task.FromResult(new JwtSecurityTokenHandler().WriteToken(TokenDescriptor));
         }
-        public Task<string> CreateRefreshToken(Guid UserID)//For creating new RefreshTokens
+
+        public async Task<string> CreateRefreshToken(Guid UserID)
         {
-            
             var refreshToken = new RefreshTokens
             {
                 RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
                 Expires = DateTime.Now.AddDays(4),
-                Id = UserID,
+                UserID = UserID,
             };
-            return Task.FromResult(refreshToken.RefreshToken);
+            await _tokenRepositry.Create(refreshToken);
+            return refreshToken.RefreshToken;
         }
-        public async Task<string?> RefreshingToken(Guid UserID) //For logging in
+
+        public async Task<string?> RefreshingToken(Guid UserID)
         {
-            var isTokenExists = (from token in _db.RefreshTokens
-                                 where token.Id == UserID
-                                 select token).FirstOrDefault();
-            if (isTokenExists == null) return null;
-            else
-            {
-                isTokenExists.Expires = DateTime.UtcNow.AddDays(4);
-                isTokenExists.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-                _db.RefreshTokens.Update(isTokenExists);
-                await _db.SaveChangesAsync();
-                return await Task.FromResult(isTokenExists.RefreshToken);
-            }
+            //Getting refresh token from repository
+            var isTokenExists = await _tokenRepositry.GetRefreshTokenByUserId(UserID);
+            
+            if (isTokenExists == null)
+                return null;
+
+            //Updating the refresh token
+            var newRefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            await _tokenRepositry.UpdateRefreshToken(UserID, newRefreshToken, DateTime.UtcNow.AddDays(4));
+
+            return newRefreshToken;
         }
 
         //-----------------------------------------------------------------------
 
-
         //        *********** Extra Validation Function ***********
 
-        public async Task<ResponseToken?> ValidateAccessToken(string Refreshtoken) // for logging in with Tokens
+        public async Task<ResponseToken?> ValidateAccessToken(string refreshToken)
         {
-            var result = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.RefreshToken == Refreshtoken);
+            //Getting refresh token from repository
+            var result = await _tokenRepositry.GetRefreshTokenByToken(refreshToken);
+            
             if (result == null || result.Expires < DateTime.UtcNow)
-            {
-                return null;
-            }
-            var user = await (from u in _db.Users.Include(u=>u.Role)
-                              where u.Id == result.Id
-                              select u).FirstOrDefaultAsync();
-
-            if(user == null)
                 return null;
 
+            //Getting user from repository
+            var user = await _userRepositry.GetById(result.Id);
+
+            if (user == null)
+                return null;
+
+            //Creating new access token
             var Token = await CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
 
-            result.Expires = DateTime.UtcNow.AddDays(4);
-            result.RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            //Updating refresh token
+            var newRefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            await _tokenRepositry.UpdateRefreshToken(user.Id, newRefreshToken, DateTime.UtcNow.AddDays(4));
 
             var Response = new ResponseToken
             {
                 Status = 1,
                 AccessToken = Token,
-                RefreshToken = result.RefreshToken,
+                RefreshToken = newRefreshToken,
                 msg = "Token refreshed successfully"
             };
 
-            _db.RefreshTokens.Update(result);
-            await _db.SaveChangesAsync();
             return Response;
         }
 
         //-----------------------------------------------------------------------
 
         //        *********** Getters ***********
-        public async Task<PagedList<RefreshTokens>> GetAllRefreshTokens(int page,int pageSize)
+
+        public async Task<PagedList<RefreshTokens>> GetAllRefreshTokens(int page, int pageSize)
         {
             if (page == 0)
                 page = 1;
@@ -125,8 +127,8 @@ namespace Gym_App.Application.Services
             if (pageSize == 0)
                 pageSize = 10;
 
-            var tokensQuery = from t in _db.RefreshTokens
-                          select t;
+            //Getting all tokens from repository
+            var tokensQuery = _tokenRepositry.GetAll();
 
             var tokens = await PagedList<RefreshTokens>.CreateAsync(tokensQuery, page, pageSize);
             return tokens;

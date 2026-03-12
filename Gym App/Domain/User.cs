@@ -36,7 +36,7 @@ namespace Gym_App.Domain
         public string? Certifications { get; set; }
         [Column(TypeName = "varchar(8)")]
         public string UserType { get; set; } = "User"; // Discriminator column
-        public int RoleID { get; set; } // Foreign key property
+        public Guid RoleID { get; set; } // Foreign key property
 
         //Relationships
         public ICollection<PastInjuries>? PastInjuries  { get; set; } = new List<PastInjuries>();

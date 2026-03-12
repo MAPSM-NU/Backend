@@ -51,32 +51,37 @@ namespace Gym_App.Infastructure.Context
                 .HasKey(c => c.Id);
             modelBuilder.Entity<RefreshTokens>()
                 .HasKey(t => t.Id);
-
+            modelBuilder.Entity<Role>()
+                .HasKey(r => r.Id);
+            modelBuilder.Entity<Transaction>()
+                .HasKey(t => t.Id);
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Role)
                 .WithMany(r => r.Users)
                 .HasForeignKey(u=>u.RoleID)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<User>()
-                .Property(u => u.RoleID)
-                .HasDefaultValue(2);
-
             modelBuilder.Entity<Workout>()
                 .HasOne(w => w.Feedback)
                 .WithOne(f => f.Workout)
                 .HasForeignKey<Feedback>(f => f.WorkoutID)
                 .OnDelete(DeleteBehavior.NoAction);
-            modelBuilder.Entity<Role>(); 
+            
             modelBuilder.Entity<LiveFeedback>();
-            modelBuilder.Entity<Transaction>();
+            
             modelBuilder.Entity<Transaction>()
                 .Property(t => t.Amount)
                 .HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.User)
+                .WithMany(u=>u.Transactions)
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<RefreshTokens>()
                 .HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
-                .HasForeignKey(rt => rt.UserID);
+                .HasForeignKey(rt => rt.UserID)
+                .OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<RefreshTokens>();
         }
     }

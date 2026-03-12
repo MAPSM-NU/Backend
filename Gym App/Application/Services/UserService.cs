@@ -1,27 +1,24 @@
 ﻿using Gym_App.Domain;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
-using System.Linq.Expressions;
 
 namespace Gym_App.Application.Services
 {
     public class UserService : IUserServise
     {
         private readonly IUserRepositry _userRepositry;
-        private readonly DbBase _db;
+        private readonly IRoleRepositry _roleRepositry;
         private readonly ITokenHandler _tokenHandler;
-        public UserService(IUserRepositry userRepositry, DbBase db, ITokenHandler tokenHandler)
+        public UserService(IUserRepositry userRepositry,IRoleRepositry roleRepositry, ITokenHandler tokenHandler)
         {
             _userRepositry = userRepositry;
-            _db = db;
+            _roleRepositry = roleRepositry;
             _tokenHandler = tokenHandler;
         }
 
@@ -49,7 +46,7 @@ namespace Gym_App.Application.Services
                 return new ResponseToken { Status = 0, msg = "Invalid Password" };
 
             //Creating the admin user
-            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
+            var role = await _roleRepositry.GetRoleByName("Admin");
             if (role == null)
                 return new ResponseToken { Status = 0, msg = "Role not found" };
 
@@ -67,20 +64,11 @@ namespace Gym_App.Application.Services
 
             //Generating Tokens
             var Token = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
-            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
 
             //Saving to Database via repository for user
             await _userRepositry.Create(user);
 
-            // Save refresh token using Db (keeps refresh token storage separate)
-            await _db.RefreshTokens.AddAsync(new RefreshTokens
-            {
-                UserID = user.Id,
-                RefreshToken = RefreshToken,
-                Expires = DateTime.Now.AddDays(4)
-            });
-            await _db.SaveChangesAsync();
-
+            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
             return new ResponseToken
             {
                 Status = 1,
@@ -110,7 +98,7 @@ namespace Gym_App.Application.Services
                 return new ResponseToken { Status = 0, msg = "Invalid Password" };
 
             //Getting the role for the user
-            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "User");
+            var role = await _roleRepositry.GetRoleByName("User");
             if (role == null)
                 return new ResponseToken { Status = 0, msg = "Role not found" };
 
@@ -140,20 +128,11 @@ namespace Gym_App.Application.Services
 
             //Generating Tokens
             var Token = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
-            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
 
             //Saving to Database via repository for user
             await _userRepositry.Create(user);
 
-            // Save refresh token
-            await _db.RefreshTokens.AddAsync(new RefreshTokens
-            {
-                UserID = user.Id,
-                RefreshToken = RefreshToken,
-                Expires = DateTime.Now.AddDays(4)
-            });
-            await _db.SaveChangesAsync();
-
+            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
             return new ResponseToken
             {
                 Status = 1,
@@ -164,8 +143,7 @@ namespace Gym_App.Application.Services
         }
         public async Task<ResponseToken> SigninUser(string email, string password) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
         {   //Checking if the user exists
-            var isUserExists = await _db.Users.Include(u => u.Role)
-                                      .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            var isUserExists = await _userRepositry.GetUserByEmail(email,true);
 
             //If User does not exist return
             if (isUserExists is null)

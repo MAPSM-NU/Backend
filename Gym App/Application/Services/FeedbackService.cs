@@ -2,6 +2,7 @@
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Feedback;
+using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Authorization;
@@ -14,12 +15,16 @@ namespace Gym_App.Application.Services
 {
     public class FeedbackService : IFeedbackService
     {
-        private readonly DbBase _db;
+        private readonly IFeedbackRepositry _feedbackRepositry;
+        private readonly IUserRepositry _userRepositry;
+        private readonly IWorkoutRepositry _workoutRepositry;
         private readonly IAuthorizationService _authorizationService;
-        public FeedbackService(DbBase db,IAuthorizationService authorizationService)
+        public FeedbackService(IFeedbackRepositry feedbackRepositry,IUserRepositry userRepositry, IAuthorizationService authorizationService, IWorkoutRepositry workoutRepositry)
         {
-            _db = db;
+            _feedbackRepositry = feedbackRepositry;
+            _userRepositry = userRepositry;
             _authorizationService = authorizationService;
+            _workoutRepositry = workoutRepositry;
         }
 
         //        *********** Setters ***********
@@ -33,9 +38,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
             //Getting user from Database
-            var user = await (from u in _db.Users
-                              where u.Id == userID
-                              select u).FirstOrDefaultAsync();
+            var user = await _userRepositry.GetById(userID);
             //if user not found return
             if(user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
@@ -46,9 +49,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Getting workout from Databse
-            var workout = await (from w in _db.Workouts.Include(w => w.Feedback)
-                                 where w.Id == feedbackDTO.WorkoutID
-                                 select w).FirstOrDefaultAsync(); ;
+            var workout = await _workoutRepositry.GetWorkoutByUserId(userID);
             //if workout not found return
             if (workout == null)
                 return new SettersResponse { status = 0, msg = "Workout not found" };
@@ -76,8 +77,7 @@ namespace Gym_App.Application.Services
             };
 
             //Saving to Database
-            await _db.Feedbacks.AddAsync(feedback);
-            await _db.SaveChangesAsync();
+            await _feedbackRepositry.Create(feedback);
             return new SettersResponse { status = 2, msg = "Success" };
         }
         public async Task<SettersResponse> UpdateFeedback(ClaimsPrincipal User, Guid feedbackID, FeedbackUpdateDTO feedbackDTO)
@@ -87,9 +87,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
             //Getting Feedback from Database
-            var feedback = await (from f in _db.Feedbacks.Include(f => f.User)
-                                  where f.Id == feedbackID
-                                  select f).FirstOrDefaultAsync();
+            var feedback = await _feedbackRepositry.GetFeedbackwithUser(feedbackID);
 
             //if feedback not found return
             if (feedback == null)
@@ -117,8 +115,7 @@ namespace Gym_App.Application.Services
                 feedback.DurationMinutes = feedbackDTO.DurationMinutes;
 
             //Saving to Database
-            _db.Feedbacks.Update(feedback);
-            await _db.SaveChangesAsync();
+            await _feedbackRepositry.Update(feedback);
             return new SettersResponse { status = 2, msg = "Success" };
         }
         public async Task<SettersResponse> DeleteFeedback(ClaimsPrincipal User, Guid feedbackID)
@@ -128,9 +125,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid feedback ID" };
 
             //Getting feedback
-            var feedback = await (from f in _db.Feedbacks.Include(f => f.User)
-                                  where f.Id == feedbackID
-                                  select f).FirstOrDefaultAsync();
+            var feedback = await _feedbackRepositry.GetFeedbackwithUser(feedbackID);
             //if feedback not found return
             if (feedback == null)
                 return new SettersResponse { status = 0, msg = "Feedback not found" };
@@ -141,8 +136,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to Database
-            _db.Feedbacks.Remove(feedback);
-            await _db.SaveChangesAsync();
+            await _feedbackRepositry.Delete(feedback);
             return new SettersResponse { status = 2, msg = "Success" };
         }
 
@@ -157,9 +151,7 @@ namespace Gym_App.Application.Services
                 return Guid.Empty;
 
             //Getting Id from Database
-            var Id = await (from f in _db.Feedbacks
-                                  where f.Id == feedbackID
-                                  select f.User.Id).FirstOrDefaultAsync();
+            var Id = (await _feedbackRepositry.GetFeedbackwithUser(feedbackID)).Id;
 
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, Id, "SameUserPolicy");
@@ -179,20 +171,19 @@ namespace Gym_App.Application.Services
                 };
 
             //Getting feedback from Database
-            var feedback = await (from f in _db.Feedbacks
-                                  where f.Id == feedbackID
-                                  select new FeedbackViewDTO
-                                  {
-                                      WorkoutID = f.WorkoutID,
-                                      FeedbackID = f.Id,
-                                      Date = f.CreatedAt,
-                                      CaloriesBurned = f.CaloriesBurned ?? 0,
-                                      DurationMinutes = f.CaloriesBurned ?? 0,
-                                      Title = f.Title,
-                                      Type = f.Type,
-                                      FeedbackText = f.FeedbackText,
-                                      UserID = f.User.Id
-                                  }).FirstOrDefaultAsync();
+            var f = await _feedbackRepositry.GetById(feedbackID);
+            var feedback = new FeedbackViewDTO
+            {
+                WorkoutID = f.WorkoutID,
+                FeedbackID = f.Id,
+                Date = f.CreatedAt,
+                CaloriesBurned = f.CaloriesBurned ?? 0,
+                DurationMinutes = f.CaloriesBurned ?? 0,
+                Title = f.Title,
+                Type = f.Type,
+                FeedbackText = f.FeedbackText,
+                UserID = f.User.Id
+            };
             if (feedback == null)
                 return new GettersResponse<FeedbackViewDTO>
                 {
@@ -218,9 +209,8 @@ namespace Gym_App.Application.Services
         }
         public async Task<GettersResponse<FeedbackMiniViewDTO>> GetFeedbackOfWorkout(ClaimsPrincipal User, Guid workoutID)
         {
-            var user = await (from w in _db.Workouts.Include(w => w.User)
-                              where w.Id == workoutID
-                              select w.User).FirstOrDefaultAsync();
+            var workout = await _workoutRepositry.GetWorkoutById(workoutID);
+            var user = workout.User;
 
             if (user == null)
                 return new GettersResponse<FeedbackMiniViewDTO>
@@ -237,19 +227,17 @@ namespace Gym_App.Application.Services
                     msg = "Unauthorized"
                 };
 
-            var feedback = await  (from f in _db.Feedbacks.Include(f => f.Workout).Include(f => f.User)
-                                   where f.Workout.Id == workoutID
-                                   select new FeedbackMiniViewDTO
-                                   {
-                                       WorkoutID = f.WorkoutID,
-                                       FeedbackID = f.Id,
-                                       Date = f.CreatedAt,
-                                       Title = f.Title,
-                                       Type = f.Type,
-                                       FeedbackText = f.FeedbackText,
-                                       CaloriesBurned = f.CaloriesBurned ?? 0,//For testing purposes only
-                                       DurationMinutes = f.DurationMinutes ?? 0,
-                                   }).FirstOrDefaultAsync();
+            var feedback = new FeedbackMiniViewDTO
+            {
+                FeedbackID = workout.Feedback.Id,
+                WorkoutID = workout.Id,
+                FeedbackText = workout.Feedback.FeedbackText,
+                CaloriesBurned = (int)workout.Feedback.CaloriesBurned,
+                Date = workout.Feedback.CreatedAt,
+                DurationMinutes = (int)workout.Feedback.DurationMinutes,
+                Title = workout.Feedback.Title,
+                Type = workout.Feedback.Type,
+            };
             return new GettersResponse<FeedbackMiniViewDTO>
             {
                 status = 2,
@@ -261,9 +249,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<FeedbackMiniViewDTO>> GetUserFeedbacks(ClaimsPrincipal User, Guid Id, string startDate, string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Getting User from Database
-            var user = await (from u in _db.Users
-                              where u.Id == Id
-                              select u).FirstOrDefaultAsync();
+            var user = await _userRepositry.GetById(Id);
             //if user not found return
             if (user == null)
                 return new GettersResponse<FeedbackMiniViewDTO>
@@ -281,9 +267,7 @@ namespace Gym_App.Application.Services
                     msg = "Unauthorized"
                 };
 
-            IQueryable<Feedback> feedbackQuery = from f in _db.Feedbacks
-                                                  where f.User.Id == Id
-                                                  select f;
+            IQueryable<Feedback> feedbackQuery = await _feedbackRepositry.GetFeedbacksOfUser(Id);
 
             if (feedbackQuery == null || feedbackQuery.Count() == 0)
                 return new GettersResponse<FeedbackMiniViewDTO>
@@ -294,35 +278,15 @@ namespace Gym_App.Application.Services
 
             //Filtering by start date and end date
             DateTime validStartDate,validEndDate;
-            if (DateTime.TryParse(startDate, out validStartDate))//Takes Dates after the start Date
-            {
-                feedbackQuery = feedbackQuery.Where(f=>f.CreatedAt > validStartDate);
-            }
-            if(DateTime.TryParse(endDate, out validEndDate))//Takes Dates before the end date
-            {
-                feedbackQuery = feedbackQuery.Where(f=>f.CreatedAt < validEndDate);
-            }
+            if (DateTime.TryParse(startDate, out validStartDate) && DateTime.TryParse(endDate, out validEndDate))//Takes Dates after the start Date
+                feedbackQuery = _feedbackRepositry.FilterDate(validStartDate, validEndDate,feedbackQuery);
 
             //filtering by search term in title
-            if (!string.IsNullOrEmpty(searchTerm)) feedbackQuery = feedbackQuery.Where(f => f.Title.Contains(searchTerm));
+            if (!string.IsNullOrEmpty(searchTerm)) feedbackQuery = _feedbackRepositry.Search(searchTerm, feedbackQuery);
 
             //Ordering by given column
             if (!string.IsNullOrEmpty(sortColumn))
-            {
-                Expression<Func<Feedback, object>> keySelector = sortColumn.ToLower() switch // throws error when sortColumn is null
-                {
-                    "title" => Feedback => Feedback.Title, //order by Title
-                    "calories" => Feedback => Feedback.CaloriesBurned!, // order by CaloriesBurned
-                    "duration" => Feedback => Feedback.DurationMinutes!, // order by DurationMinutes
-                    _ => Feedback => Feedback.Id//failsafe: order by FeedbackID
-                };
-                //If no orderby was inputed, then we sort ascending
-                if (!string.IsNullOrEmpty(OrderBy)) feedbackQuery = feedbackQuery.OrderBy(keySelector);//If any kind of value is in OrderBy then it is ascending
-
-                //else if anything was inputted we sort descending
-                else feedbackQuery = feedbackQuery.OrderByDescending(keySelector);
-            }
-
+                feedbackQuery = _feedbackRepositry.FilterSortColumn(sortColumn,OrderBy,feedbackQuery);
             //Projecting the resultant feedbacks queries to FeedbackDTO
             var feedbackResponse = feedbackQuery
                                     .Select(f => new FeedbackMiniViewDTO
@@ -347,10 +311,9 @@ namespace Gym_App.Application.Services
             };
         }
         public async Task<GettersResponse<FeedbackViewDTO>> GetAllFeedbacks(int page,int pageSize)
-        {                                         
+        {
             //Getting all feedbacks from Database
-            var feedbacks = from f in _db.Feedbacks.Include(f => f.User).Include(f => f.Workout)
-                            select f;
+            var feedbacks = _feedbackRepositry.GetFeedbacks();
 
             //if no feedbacks found return
             if (feedbacks == null)

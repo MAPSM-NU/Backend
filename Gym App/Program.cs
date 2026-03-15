@@ -87,6 +87,8 @@ builder.Services.AddScoped<ITokenRepositry, TokenRepositry>();
 builder.Services.AddScoped<IBaseRepositry<RefreshTokens>, TokenRepositry>();
 builder.Services.AddScoped<IRoleRepositry, RoleRepositry>();
 builder.Services.AddScoped<IBaseRepositry<Role>, RoleRepositry>();
+builder.Services.AddScoped<IFeedbackRepositry, FeedbackRepositry>();
+builder.Services.AddScoped<IBaseRepositry<Feedback>, FeedbackRepositry>();
 //builder.Services.AddScoped<IBaseRepositry<BaseEntity>,BaseRepositry<BaseEntity>>();
 builder.Services.AddSingleton<IAuthorizationHandler, SameUserHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();

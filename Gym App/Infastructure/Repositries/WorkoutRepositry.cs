@@ -23,7 +23,13 @@ namespace Gym_App.Infastructure.Repositries
                         .Include(w => w.Feedback)
                         .FirstOrDefaultAsync(w => w.Id == workoutID);
         }
-
+        public async Task<Workout> GetWorkoutByUserId(Guid userId)
+        {
+            return await table.Include(w => w.Exercises)
+                        .Include(w => w.User)
+                        .Include(w => w.Feedback)
+                        .FirstOrDefaultAsync(w => w.User.Id == userId);
+        }
         public async Task<IEnumerable<Workout>> GetWorkoutsByUserId(Guid userID, int pageNumber = 1, int pageSize = 10)
         {
             return await table.Where(w => w.User.Id == userID)

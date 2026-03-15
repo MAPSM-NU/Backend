@@ -1,6 +1,4 @@
-﻿using Gym_App.Domain.Entities;
-using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.DTOs.Feedback;
+﻿using Gym_App.Infastructure.DTOs.Feedback;
 using Gym_App.Infastructure.Transfer_Classes;
 using System.Security.Claims;
 

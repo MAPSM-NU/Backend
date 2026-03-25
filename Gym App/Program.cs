@@ -91,6 +91,8 @@ builder.Services.AddScoped<IFeedbackRepositry, FeedbackRepositry>();
 builder.Services.AddScoped<IBaseRepositry<Feedback>, FeedbackRepositry>();
 builder.Services.AddScoped<INotificationRepositry, NotifiacationRepositry>();
 builder.Services.AddScoped<IBaseRepositry<Notification>, NotifiacationRepositry>();
+builder.Services.AddScoped<IScheduleRepositry, ScheduleRepositry>();
+builder.Services.AddScoped<IBaseRepositry<Schedule>, ScheduleRepositry>();
 //builder.Services.AddScoped<IBaseRepositry<BaseEntity>,BaseRepositry<BaseEntity>>();
 builder.Services.AddSingleton<IAuthorizationHandler, SameUserHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();

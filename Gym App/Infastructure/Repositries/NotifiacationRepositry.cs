@@ -35,7 +35,7 @@ namespace Gym_App.Infastructure.Repositries
 
         public async Task<Notification> GetNotificationById(Guid notificationId)
         {
-            return await table.Include(n=>n.User).FirstOrDefaultAsync(n => n.Id == notificationId);
+            return await table!.Include(n=>n.User).FirstOrDefaultAsync(n => n.Id == notificationId);
         }
 
         public async Task<IEnumerable<Notification>> GetRecentNotifications(Guid userId, int count = 10)
@@ -87,7 +87,6 @@ namespace Gym_App.Infastructure.Repositries
 
             //If no orderby was inputed, then we sort ascending
             if (!string.IsNullOrEmpty(sortOrder)) query = query.OrderBy(keySelector);
-
             //else if anything was inputed we sort descending
             else query = query.OrderByDescending(keySelector);
             return query;

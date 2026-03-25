@@ -1,24 +1,26 @@
 ﻿using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Schedule;
+using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 using System.Security.Claims;
 
 namespace Gym_App.Application.Services
 {
     public class ScheduleService : IScheduleService
     {
-        private readonly DbBase _db;
+        private readonly IScheduleRepositry _scheduleRepositry;
+        private readonly IUserRepositry _userRepositry;
+        private readonly IWorkoutRepositry _workoutRepositry;
         private readonly IAuthorizationService _authorizationService;
-        public ScheduleService(DbBase db, IAuthorizationService authorizationService)
+        public ScheduleService(IScheduleRepositry scheduleRepositry,IUserRepositry userRepositry, IAuthorizationService authorizationService, IWorkoutRepositry workoutRepositry)
         {
-            _db = db;
+            _scheduleRepositry = scheduleRepositry;
+            _userRepositry = userRepositry;
+            _workoutRepositry = workoutRepositry;
             _authorizationService = authorizationService;
         }
 
@@ -33,9 +35,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid schedule data" };
 
             //Checking if user exists
-            var user = await (from u in _db.Users
-                              where u.Id == userID
-                              select u).FirstOrDefaultAsync();
+            var user = await _userRepositry.GetById(userID);
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
 
@@ -56,8 +56,7 @@ namespace Gym_App.Application.Services
             };
 
             //Saving to Database
-            _db.Schedules.Add(newSchedule);
-            await _db.SaveChangesAsync();
+            await _scheduleRepositry.Create(newSchedule);
             return new SettersResponse { status = 2, msg = "Schedule created successfully" };
         }
         public async Task<SettersResponse> UpdateSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleCreationAndEditDTO schedule)
@@ -67,9 +66,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid schedule data" };
 
             //Getting schedule from database
-            var existingSchedule = await (from s in _db.Schedules.Include(s => s.User)
-                                          where s.Id == scheduleID
-                                          select s).FirstOrDefaultAsync();
+            var existingSchedule = await _scheduleRepositry.GetScheduleById(scheduleID);
             if (existingSchedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
@@ -83,8 +80,7 @@ namespace Gym_App.Application.Services
             if (!string.IsNullOrEmpty(schedule.Type)) existingSchedule.Type = schedule.Type;
 
             //Saving to Database
-            _db.Schedules.Update(existingSchedule);
-            await _db.SaveChangesAsync();
+            await _scheduleRepositry.Update(existingSchedule);
             return new SettersResponse { status = 2, msg = "Schedule updated successfully" };
         }
         public async Task<SettersResponse> DeleteSchedule(ClaimsPrincipal User, Guid scheduleID)
@@ -94,9 +90,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid schedule ID" };
 
             //Getting schedule from database
-            var schedule = await (from s in _db.Schedules.Include(s => s.User)
-                                  where s.Id == scheduleID
-                                  select s).FirstOrDefaultAsync();
+            var schedule = await _scheduleRepositry.GetScheduleById(scheduleID);
             if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
@@ -106,8 +100,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to Database
-            _db.Schedules.Remove(schedule);
-            await _db.SaveChangesAsync();
+            await _scheduleRepositry.Delete(schedule);
             return new SettersResponse { status = 2, msg = "Schedule deleted successfully" };
         }
         public async Task<SettersResponse> AddWorkoutsToSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
@@ -117,9 +110,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid schedule workout data" };
 
             //Getting schedule from database
-            var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
-                                  where s.Id == scheduleID
-                                  select s).FirstOrDefaultAsync();
+            var schedule = await _scheduleRepositry.GetScheduleById(scheduleID);
             if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
@@ -133,7 +124,7 @@ namespace Gym_App.Application.Services
             var workoutIDs = scheduleWorkout.WorkoutsID?.Where(id => !workoutIDsToAdd.Contains(id)).ToList();
             if (workoutIDs == null || workoutIDs.Count == 0)
                 return new SettersResponse { status = 0, msg = "No new workouts to add" };
-            var workoutsToAdd = await (from w in _db.Workouts
+            var workoutsToAdd = await (from w in _workoutRepositry.GetAll()
                                        where workoutIDs.Contains(w.Id)
                                        select w).ToListAsync();
             if (workoutsToAdd.Count == 0)
@@ -144,8 +135,7 @@ namespace Gym_App.Application.Services
             }
 
             //Saving to Database
-            _db.Schedules.Update(schedule);
-            await _db.SaveChangesAsync();
+            await _scheduleRepositry.Update(schedule);
             return new SettersResponse { status = 2, msg = "Workouts added successfully" };
         }
         public async Task<SettersResponse> SetWorkoutsOfSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
@@ -155,9 +145,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid schedule workout data" };
 
             //Getting schedule from database    
-            var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
-                                  where s.Id == scheduleID
-                                  select s).FirstOrDefaultAsync();
+            var schedule = await _scheduleRepositry.GetScheduleById(scheduleID);
             if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
@@ -169,7 +157,7 @@ namespace Gym_App.Application.Services
             //Setting workouts
             schedule.Workouts?.Clear();
             var workoutsIDs = scheduleWorkout.WorkoutsID.ToList();
-            var workoutsToAdd = await (from w in _db.Workouts
+            var workoutsToAdd = await (from w in _workoutRepositry.GetAll()
                                        where workoutsIDs.Contains(w.Id)
                                        select w).ToListAsync();
             if (workoutsToAdd.Count == 0)
@@ -180,8 +168,7 @@ namespace Gym_App.Application.Services
             }
 
             //Saving to Database
-            _db.Schedules.Update(schedule);
-            await _db.SaveChangesAsync();
+            await _scheduleRepositry.Update(schedule);
             return new SettersResponse { status = 2, msg = "Workouts added successfully" };
         }
         public async Task<SettersResponse> DeleteWorkoutsFromSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
@@ -191,9 +178,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid schedule workout data" };
 
             //Getting schedule from database
-            var schedule = await (from s in _db.Schedules.Include(s => s.Workouts).Include(s => s.User)
-                                  where s.Id == scheduleID
-                                  select s).FirstOrDefaultAsync();
+            var schedule = await _scheduleRepositry.GetScheduleById(scheduleID);
             if (schedule == null)
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
@@ -207,7 +192,7 @@ namespace Gym_App.Application.Services
             var workoutIDsToRemove = scheduleWorkout.WorkoutsID?.Where(id => existingWorkoutsIDs.Contains(id)).ToList();
             if (workoutIDsToRemove == null || workoutIDsToRemove.Count == 0)
                 return new SettersResponse { status = 0, msg = "No workouts to remove" };
-            var workoutsToRemove = await (from w in _db.Workouts
+            var workoutsToRemove = await (from w in _workoutRepositry.GetAll()
                                           where workoutIDsToRemove.Contains(w.Id)
                                           select w).ToListAsync();
             if (workoutsToRemove.Count == 0)
@@ -218,8 +203,7 @@ namespace Gym_App.Application.Services
             }
 
             //Saving to Database
-            _db.Schedules.Update(schedule);
-            await _db.SaveChangesAsync();
+            await _scheduleRepositry.Update(schedule);
             return new SettersResponse { status = 2, msg = "Workouts removed successfully" };
         }
 
@@ -233,16 +217,16 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<ScheduleViewDTO>> GetScheduleById(Guid scheduleID)//AHHHHHHHHHHHHHHHHH
         {
             //Getting schedule from database and projecting to DTO
-            var schedule = await (from s in _db.Schedules
-                                  where s.Id == scheduleID
-                                  select new ScheduleViewDTO
-                                  {
-                                      ScheduleID = s.Id,
-                                      Name = s.Name,
-                                      Type = s.Type,
-                                      UserID = s.User.Id,
-                                  }).FirstOrDefaultAsync();
+            var schedule = await _scheduleRepositry.GetScheduleById(scheduleID);
 
+            var projectedSched = new ScheduleViewDTO
+            {
+                Name = schedule.Name,
+                UserID = schedule.User.Id,
+                ScheduleID = scheduleID,
+                CreatedAt = schedule.CreatedAt,
+                Type = schedule.Type,
+            };
             //Returning null if schedule not found
             if (schedule == null)
                 return new GettersResponse<ScheduleViewDTO>
@@ -255,18 +239,20 @@ namespace Gym_App.Application.Services
             {
                 status = 2,
                 msg = "Successful",
-                Value = schedule
+                Value = projectedSched
             };
         }
         public async Task<GettersResponse<ScheduleWorkoutDTO>> GetScheduleWorkouts(Guid scheduleID)
         {
             //Getting the schedule's workouts from database and projecting to DTO
-            var schedule = await (from s in _db.Schedules
-                                  where s.Id == scheduleID
-                                  select new ScheduleWorkoutDTO
-                                  {
-                                      WorkoutsID = s.Workouts!.Select(w => w.Id).ToList()
-                                  }).FirstOrDefaultAsync();
+            var schedule = await _scheduleRepositry.GetScheduleById(scheduleID);
+
+            var workouts = schedule.Workouts!.Select(w=>w.Id).ToList();
+
+            var projectedSched = new ScheduleWorkoutDTO
+            {
+                WorkoutsID = workouts,
+            };
             //Returning null if schedule not found
             if (schedule == null)
                 return new GettersResponse<ScheduleWorkoutDTO>
@@ -279,15 +265,13 @@ namespace Gym_App.Application.Services
             {
                 status = 2,
                 msg = "Successful",
-                Value = schedule
+                Value = projectedSched
             };
         }
         public async Task<GettersResponse<ScheduleViewDTO>> GetSchedulesByOfUser(Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Getting schedules from database
-            var schedulesQuery = from s in _db.Schedules
-                                 where s.User.Id == UserID
-                                 select s;
+            var schedulesQuery = _scheduleRepositry.GetUserSchedulesQueryable(UserID);
             //if no schedules found, return null
             if (schedulesQuery == null || schedulesQuery.Count() == 0)
                 return new GettersResponse<ScheduleViewDTO>
@@ -298,34 +282,15 @@ namespace Gym_App.Application.Services
 
             //filtering by start date and end date
             DateTime validStartDate, validEndDate;
-            if (DateTime.TryParse(startDate, out validStartDate))
-            {
-                schedulesQuery = schedulesQuery.Where(s => s.CreatedAt > validStartDate);
-            }
-            if (DateTime.TryParse(endDate, out validEndDate))
-            {
-                schedulesQuery = schedulesQuery.Where(s => s.CreatedAt < validEndDate);
-            }
+            if (DateTime.TryParse(startDate, out validStartDate) && DateTime.TryParse(endDate, out validEndDate))
+                schedulesQuery = _scheduleRepositry.FilterDate(validStartDate, validEndDate, schedulesQuery);
 
             //filtering by search term
-            if (!string.IsNullOrEmpty(searchTerm)) schedulesQuery = schedulesQuery.Where(s => s.Name.Contains(searchTerm));
+            if (!string.IsNullOrEmpty(searchTerm)) schedulesQuery = _scheduleRepositry.Search(searchTerm, schedulesQuery);
 
             //Order by given column
             if (!string.IsNullOrEmpty(sortColumn))
-            {
-                Expression<Func<Schedule, object>> keySelector = sortColumn.ToLower() switch
-                {
-                    "date" or "d" => Schedule => Schedule.CreatedAt, // order by date
-                    "name" or "n" => Schedule => Schedule.Name, // order by name
-                    "type" or "t" => Schedule => Schedule.Type, // order by type
-                    _ => Schedule => Schedule.Id //failsafe: order by Id
-                };
-                //If no orderby was inputed, then we sort ascending
-                if (!string.IsNullOrEmpty(OrderBy)) schedulesQuery = schedulesQuery.OrderBy(keySelector);
-
-                //else if anything was inputted we sort descending
-                else schedulesQuery = schedulesQuery.OrderByDescending(keySelector);
-            }
+                schedulesQuery = _scheduleRepositry.FilterSortColumn(sortColumn, OrderBy, schedulesQuery);
             //Projecting the resultant message queries to messageDTO
             var schedulesResponse = schedulesQuery.Select(s => new ScheduleViewDTO
             {
@@ -348,7 +313,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<ScheduleViewDTO>> GetAllSchedules(int page, int pageSize)
         {
             //Getting schedules from database and projecting to DTO
-            var schedulesQuery = from s in _db.Schedules
+            var schedulesQuery = from s in _scheduleRepositry.GetAll()
                                  select new ScheduleViewDTO
                                  {
                                      UserID = s.User.Id,
@@ -378,7 +343,7 @@ namespace Gym_App.Application.Services
         public async Task<Guid> GetScheduleUserID(Guid scheduleID) 
         {
             //Getting userID from database
-            var userID = await(from s in _db.Schedules
+            var userID = await(from s in _scheduleRepositry.GetAll()
                           where s.Id == scheduleID
                           select s.User.Id).FirstOrDefaultAsync();
             return userID;

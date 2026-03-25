@@ -80,7 +80,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to the Database
-            _notificationRepositry.Delete(Notification);
+            await _notificationRepositry.Delete(Notification);
             return new SettersResponse { status = 2, msg = "Successful" };
         }
         public async Task<SettersResponse> DeleteAllNotifications(ClaimsPrincipal User, Guid UserID)//0 == Invalid UserID || 1 == User not found || 2 == Unauthorized || 3 == Successful

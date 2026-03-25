@@ -35,7 +35,7 @@ namespace Gym_App.Infastructure.Repositries
 
         public async Task<Notification> GetNotificationById(Guid notificationId)
         {
-            return await table!.Include(n=>n.User).FirstOrDefaultAsync(n => n.Id == notificationId);
+            return await table!.Include(n=>n.User).FirstOrDefaultAsync(n => n.Id == notificationId);   
         }
 
         public async Task<IEnumerable<Notification>> GetRecentNotifications(Guid userId, int count = 10)

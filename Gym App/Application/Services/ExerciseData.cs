@@ -19,8 +19,12 @@ namespace Gym_App.Application.Services
         }
         public bool AddingExerciseAndMuscles()
         {
+            if(_db.Exercises.Count() > 900 || _db.Muscles.Any())
+            {
+                return false;
+            }
             var basePath = AppDomain.CurrentDomain.BaseDirectory;
-            var filePath = Path.Combine(basePath, "Domain", "Entities", "workout-data.csv");
+            var filePath = Path.Combine(basePath, "Infastructure", "Datasets", "workout-data.csv");
 
             using var reader = new StreamReader(filePath);
             using var csv = new CsvReader(reader, new CsvHelper.Configuration.CsvConfiguration(CultureInfo.InvariantCulture));
@@ -87,10 +91,12 @@ namespace Gym_App.Application.Services
 
         public bool LinkingMusclesAndExercises()
         {
+            if (_db.Muscles.Count() >= 15)
+                return false;
             var exercises = _db.Exercises.ToList();
             var muscles = _db.Muscles.ToList();
             var basePath = AppDomain.CurrentDomain.BaseDirectory;
-            var filePath = Path.Combine(basePath, "Domain", "Entities", "workout-data.csv");
+            var filePath = Path.Combine(basePath, "Infastructure", "Datasets", "workout-data.csv");
             using var reader = new StreamReader(filePath);
             using var csv = new CsvReader(reader, new CsvHelper.Configuration.CsvConfiguration(CultureInfo.InvariantCulture));
             csv.Context.RegisterClassMap<ExerciseCSVDTOMap>();

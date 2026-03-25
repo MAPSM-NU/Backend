@@ -27,16 +27,16 @@ namespace Gym_App.Api.Controllers
         [Route("add-exercises-data")]
         public IActionResult AddingDataset()
         {
-            if(_workoutData.AddingExerciseAndMuscles()) return View("Complete");
-            else return View("Error");
+            if (_workoutData.AddingExerciseAndMuscles()) return Ok("Complete");
+            else return BadRequest("Error");
 
         }
         [HttpGet]
         [Route("merging-exercises-and-muscles")]
         public IActionResult MergingExercisesAndMuscles()
         {
-            if(_workoutData.LinkingMusclesAndExercises()) return View("Complete");
-            else return View("Error");
+            if(_workoutData.LinkingMusclesAndExercises()) return Ok("Complete");
+            else return BadRequest("Error");
         }
     }
 }

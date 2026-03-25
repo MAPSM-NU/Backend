@@ -1,6 +1,5 @@
 ﻿using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.Exercise;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
@@ -8,23 +7,18 @@ using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 using System.Security.Claims;
 
-namespace Gym_App.Application.Services
+namespace Gym_App.Application.Services  
 {
     public class WorkoutService : IWorkoutService
     {
-        private readonly IWorkoutRepositry _workoutRepositry;
-        private readonly IExerciseRepositry _exerciseRepositry;                                         
-        private readonly IUserRepositry _userRepositry;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IAuthorizationService _authorizationService;
 
-        public WorkoutService(IWorkoutRepositry workoutRepositry, IExerciseRepositry exerciseRepositry, IUserRepositry userRepositry, IAuthorizationService authorizationService)
+        public WorkoutService(IUnitOfWork unitOfWork, IAuthorizationService authorizationService)
         {
-            _workoutRepositry = workoutRepositry;
-            _exerciseRepositry = exerciseRepositry;
-            _userRepositry = userRepositry;
+            _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
         }
 
@@ -37,7 +31,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid workout data" };
 
             //Searching for the User
-            var isUserExist = await _userRepositry.GetById(workout.UserID);
+            var isUserExist = await _unitOfWork.Users.GetById(workout.UserID);
             if (isUserExist == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
 
@@ -60,7 +54,8 @@ namespace Gym_App.Application.Services
             };
 
             //Saving to Database via repository
-            await _workoutRepositry.Create(newWorkout);
+            await _unitOfWork.Workouts.Create(newWorkout);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Workout created successfully" };
         }
 
@@ -71,7 +66,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid workout data" };
 
             //Searching for the Workout
-            var WorkoutToBeUpdated = await _workoutRepositry.GetWorkoutById(workoutID);
+            var WorkoutToBeUpdated = await _unitOfWork.Workouts.GetWorkoutById(workoutID);
             if (WorkoutToBeUpdated == null)
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
@@ -97,7 +92,8 @@ namespace Gym_App.Application.Services
                 WorkoutToBeUpdated.Day = workout.Day;
 
             //Saving to Database via repository
-            await _workoutRepositry.Update(WorkoutToBeUpdated);
+            await _unitOfWork.Workouts.Update(WorkoutToBeUpdated);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Workout updated successfully" };
         }
 
@@ -108,7 +104,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid workout ID" };
 
             //Searching for the Workout
-            var isWorkoutExist = await _workoutRepositry.GetWorkoutById(workoutID);
+            var isWorkoutExist = await _unitOfWork.Workouts.GetWorkoutById(workoutID);
             if (isWorkoutExist == null)
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
@@ -118,7 +114,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Deleting from Database via repository
-            await _workoutRepositry.Delete(workoutID);
+            await _unitOfWork.Workouts.Delete(workoutID);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Workout deleted successfully" };
         }
 
@@ -129,7 +126,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid workout ID" };
 
             //Searching for the Workout
-            var workout = await _workoutRepositry.GetWorkoutById(workoutID);
+            var workout = await _unitOfWork.Workouts.GetWorkoutById(workoutID);
             if (workout == null)
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
@@ -146,7 +143,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "No new exercises to add" };
 
             //Getting the exercises to add from the repository
-            var exercisesToAdd = await _exerciseRepositry.GetExercisesByIds(exerciseIdsToAdd);
+            var exercisesToAdd = await _unitOfWork.Exercises.GetExercisesByIds(exerciseIdsToAdd);
             if (exercisesToAdd == null || !exercisesToAdd.Any())
                 return new SettersResponse { status = 0, msg = "No new exercises found" };
 
@@ -157,7 +154,8 @@ namespace Gym_App.Application.Services
             }
 
             //Saving to Database via repository
-            await _workoutRepositry.Update(workout);
+            await _unitOfWork.Workouts.Update(workout);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Exercises added successfully" };
         }
 
@@ -168,7 +166,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid workout ID" };
 
             //Searching for the Workout
-            var isWorkoutExist = await _workoutRepositry.GetWorkoutById(workoutID);
+            var isWorkoutExist = await _unitOfWork.Workouts.GetWorkoutById(workoutID);
             if (isWorkoutExist == null)
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
@@ -186,7 +184,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "No new exercises to add" };
 
             //Getting the exercises to add from the repository
-            var ExercisesToAdd = await _exerciseRepositry.GetExercisesByIds(exerciseIDsToAdd);
+            var ExercisesToAdd = await _unitOfWork.Exercises.GetExercisesByIds(exerciseIDsToAdd);
             if (ExercisesToAdd == null || !ExercisesToAdd.Any())
                 return new SettersResponse { status = 0, msg = "No new exercises found" };
 
@@ -197,7 +195,8 @@ namespace Gym_App.Application.Services
             }
 
             //Saving to Database via repository
-            await _workoutRepositry.Update(isWorkoutExist);
+            await _unitOfWork.Workouts.Update(isWorkoutExist);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Exercises added successfully" };
         }
 
@@ -208,7 +207,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid workout ID" };
 
             //Searching for the Workout
-            var isWorkoutExist = await _workoutRepositry.GetWorkoutById(workoutID);
+            var isWorkoutExist = await _unitOfWork.Workouts.GetWorkoutById(workoutID);
             if (isWorkoutExist == null)
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
@@ -224,7 +223,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "No exercises to remove" };
 
             //Getting the exercises to delete from the Repository
-            var ExercisesToRemove = await _exerciseRepositry.GetExercisesByIds(exerciseIDsToRemove);
+            var ExercisesToRemove = await _unitOfWork.Exercises.GetExercisesByIds(exerciseIDsToRemove);
             if (ExercisesToRemove == null || !ExercisesToRemove.Any())
                 return new SettersResponse { status = 0, msg = "No exercises found" };
 
@@ -235,7 +234,8 @@ namespace Gym_App.Application.Services
             }
 
             //Saving to Database via repository
-            await _workoutRepositry.Update(isWorkoutExist);
+            await _unitOfWork.Workouts.Update(isWorkoutExist);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Exercises removed successfully" };
         }
 
@@ -245,14 +245,14 @@ namespace Gym_App.Application.Services
 
         public async Task<Guid> GetWorkoutId(Guid workoutID)
         {
-            var workout = await _workoutRepositry.GetWorkoutById(workoutID);
+            var workout = await _unitOfWork.Workouts.GetWorkoutById(workoutID);
             return workout?.User.Id ?? Guid.Empty;
         }
 
         public async Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByName(string name)
         {
             //Getting workout by name from repository
-            var allWorkouts = _workoutRepositry.GetAll();
+            var allWorkouts = _unitOfWork.Workouts.GetAll();
             var workout = await allWorkouts
                 .Where(w => w.Name == name)
                 .Select(w => new WorkoutViewDTO
@@ -284,7 +284,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByID(Guid ID)
         {
             //Getting the Workout by ID from repository
-            var workout = await _workoutRepositry.GetWorkoutById(ID);
+            var workout = await _unitOfWork.Workouts.GetWorkoutById(ID);
 
             if (workout == null)
                 return new GettersResponse<WorkoutViewDTO>
@@ -314,7 +314,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<ExerciseViewDTO>> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Getting the workout and its exercises from repository
-            var workout = await _workoutRepositry.GetWorkoutById(WorkoutID);
+            var workout = await _unitOfWork.Workouts.GetWorkoutById(WorkoutID);
 
             if (workout == null || workout.Exercises == null || !workout.Exercises.Any())
                 return new GettersResponse<ExerciseViewDTO>
@@ -327,11 +327,11 @@ namespace Gym_App.Application.Services
 
             //If the searchTerm is not null, filter by name, description, or difficulty
             if (!string.IsNullOrEmpty(searchTerm))
-                exercisesQuery = _exerciseRepositry.Search(searchTerm,exercisesQuery);
+                exercisesQuery = _unitOfWork.Exercises.Search(searchTerm, exercisesQuery);
 
             //If the sortColumn is not null, sort the data
             if (!string.IsNullOrEmpty(sortColumn))
-                exercisesQuery = _exerciseRepositry.FilterSortColumn(sortColumn, OrderBy, exercisesQuery);
+                exercisesQuery = _unitOfWork.Exercises.FilterSortColumn(sortColumn, OrderBy, exercisesQuery);
 
             //Projecting the resultant exercise queries as exerciseDTO
             var exerciseResult = exercisesQuery
@@ -359,7 +359,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<WorkoutViewDTO>> GetAllWorkouts(int page, int pageSize)
         {
             //Getting all workouts from repository
-            var workoutsQuery = _workoutRepositry.GetAll()
+            var workoutsQuery = _unitOfWork.Workouts.GetAll()
                 .Select(w => new WorkoutViewDTO
                 {
                     UserID = w.User.Id,

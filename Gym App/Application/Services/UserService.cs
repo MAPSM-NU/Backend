@@ -8,497 +8,489 @@ using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
-namespace Gym_App.Application.Services
+namespace Gym_App.Application.Services;
+
+public class UserService : IUserServise
 {
-    public class UserService : IUserServise
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITokenHandler _tokenHandler;
+
+    public UserService(IUnitOfWork unitOfWork, ITokenHandler tokenHandler)
     {
-        private readonly IUserRepositry _userRepositry;
-        private readonly IRoleRepositry _roleRepositry;
-        private readonly ITokenHandler _tokenHandler;
-        public UserService(IUserRepositry userRepositry,IRoleRepositry roleRepositry, ITokenHandler tokenHandler)
+        _unitOfWork = unitOfWork;
+        _tokenHandler = tokenHandler;
+    }
+
+    //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
+
+    public async Task<ResponseToken> CreateAdmin(UserCreationDTO u)
+    {
+        if (u == null || u.Name == null || u.Email == null || u.Password == null)
+            return new ResponseToken { Status = 0, msg = "Invalid Data" };
+
+        if (!await isNameValid(u.Name))
+            return new ResponseToken { Status = 0, msg = "Name is already used" };
+
+        if (!IsEmailValid(u.Email))
+            return new ResponseToken { Status = 0, msg = "Invalid Email" };
+
+        if (await _unitOfWork.Users.isUserEmailExist(u.Email))
+            return new ResponseToken { Status = 0, msg = "Email already in use" };
+
+        if (!await IsPasswordValid(u.Password))
+            return new ResponseToken { Status = 0, msg = "Invalid Password" };
+
+        var role = await _unitOfWork.Roles.GetRoleByName("Admin");
+        if (role == null)
+            return new ResponseToken { Status = 0, msg = "Role not found" };
+
+        var user = new User
         {
-            _userRepositry = userRepositry;
-            _roleRepositry = roleRepositry;
-            _tokenHandler = tokenHandler;
-        }
+            Id = Guid.NewGuid(),
+            Name = u.Name,
+            Email = u.Email,
+            Password = new PasswordHasher<User>().HashPassword(null, u.Password),
+            CreatedAt = DateTime.Now,
+            UserType = "Admin",
+            RoleID = role.Id,
+            Role = role
+        };
 
-        //        *********** Setters ***********
+        var token = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, role.RoleName);
+        var refreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
 
-        //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
-
-        public async Task<ResponseToken> CreateAdmin(UserCreationDTO u)
+        await _unitOfWork.Users.Create(user);
+        
+        var refreshTokenEntity = new RefreshTokens
         {
-            //Creating an admin user
-            if (u == null || u.Name == null || u.Email == null || u.Password == null)
-                return new ResponseToken { Status = 0, msg = "Invalid Data" };
+            UserID = user.Id,
+            RefreshToken = refreshToken,
+            Expires = DateTime.Now.AddDays(4)
+        };
+        
+        await _unitOfWork.Tokens.Create(refreshTokenEntity);
+        await _unitOfWork.SaveChangesAsync();
 
-            //Checking for name Validity
-            if (!await isNameValid(u.Name))
-                return new ResponseToken { Status = 0, msg = "Name is already used" };
-            //Checking if Email is valid or not
-            if (!IsEmailValid(u.Email))
-                return new ResponseToken { Status = 0, msg = "Invalid Email" };
-            //Checking if the email already exists
-            if (await EmailExists(u.Email))
-                return new ResponseToken { Status = 0, msg = "Email already in use" };
-            //Checking for password validity
-            if (!IsPasswordValid(u.Password).Result)
-                return new ResponseToken { Status = 0, msg = "Invalid Password" };
-
-            //Creating the admin user
-            var role = await _roleRepositry.GetRoleByName("Admin");
-            if (role == null)
-                return new ResponseToken { Status = 0, msg = "Role not found" };
-
-            //Creating the user 
-            User user = new User
-            {
-                Id = Guid.NewGuid(),
-                Name = u.Name,
-                Email = u.Email,
-                Password = new PasswordHasher<User>().HashPassword(null, u.Password),
-                CreatedAt = DateTime.Now,
-                UserType = "Admin",
-                Role = role
-            };
-
-            //Generating Tokens
-            var Token = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
-
-            //Saving to Database via repository for user
-            await _userRepositry.Create(user);
-
-            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
-            return new ResponseToken
-            {
-                Status = 1,
-                AccessToken = Token,
-                RefreshToken = RefreshToken,
-                msg = "Admin created successfully"
-            };
-        }
-        public async Task<ResponseToken> SignUpUser(UserCreationDTO u)//0 == missing Information. 1 == Name already in use. 2 == Email is in use. 3 == Email not valid. 4 == Password not valid. 
-                                                                      //5 == Succesful signup
+        return new ResponseToken
         {
-            //Signing up the user
-            if (u == null || u.Name == null || u.Email == null || u.Password == null)
-                return new ResponseToken { Status = 0, msg = "Missing Information" };
+            Status = 2,
+            AccessToken = token,
+            RefreshToken = refreshToken,
+            msg = "Admin created successfully"
+        };
+    }
 
-            //Checking for name Validity
-            if (!await isNameValid(u.Name))
-                return new ResponseToken { Status = 0, msg = "Name is already used" };
-            //Checking if Email is valid or not
-            if (!IsEmailValid(u.Email))
-                return new ResponseToken { Status = 0, msg = "Invalid Email" };
-            //Checking if the email already exists
-            if (await EmailExists(u.Email))
-                return new ResponseToken { Status = 0, msg = "Email already in use" };
-            //Checking for password validity
-            if (!await IsPasswordValid(u.Password))
-                return new ResponseToken { Status = 0, msg = "Invalid Password" };
+    public async Task<ResponseToken> SignUpUser(UserCreationDTO u)
+    {
+        if (u == null || u.Name == null || u.Email == null || u.Password == null)
+            return new ResponseToken { Status = 0, msg = "Missing Information" };
 
-            //Getting the role for the user
-            var role = await _roleRepositry.GetRoleByName("User");
-            if (role == null)
-                return new ResponseToken { Status = 0, msg = "Role not found" };
+        if (!await isNameValid(u.Name))
+            return new ResponseToken { Status = 0, msg = "Name is already used" };
 
-            //Creating the user
-            User user = new User
+        if (!IsEmailValid(u.Email))
+            return new ResponseToken { Status = 0, msg = "Invalid Email" };
+
+        if (await _unitOfWork.Users.isUserEmailExist(u.Email))
+            return new ResponseToken { Status = 0, msg = "Email already in use" };
+
+        if (!await IsPasswordValid(u.Password))
+            return new ResponseToken { Status = 0, msg = "Invalid Password" };
+
+        var role = await _unitOfWork.Roles.GetRoleByName("User");
+        if (role == null)
+            return new ResponseToken { Status = 0, msg = "Role not found" };
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Name = u.Name,
+            Email = u.Email,
+            Password = new PasswordHasher<User>().HashPassword(null, u.Password),
+            CreatedAt = DateTime.Now,
+            RoleID = role.Id,
+            Role = role
+        };
+
+        if (!string.IsNullOrEmpty(u.UserType))
+        {
+            user.UserType = u.UserType.ToLower() switch
             {
-                Id = Guid.NewGuid(),
-                Name = u.Name,
-                Email = u.Email,
-                Password = new PasswordHasher<User>().HashPassword(null, u.Password),
-                CreatedAt = DateTime.Now,
-                Role = role
-            };
-
-            //Setting UserType to Coach/Doctor/Trainee
-            if (!string.IsNullOrEmpty(u.UserType))
-            {
-                if (u.UserType!.ToLower() == "coach" || u.UserType.ToLower() == "c")
-                    user.UserType = "Coach";
-                else if (u.UserType.ToLower() == "doctor" || u.UserType.ToLower() == "d")
-                    user.UserType = "Doctor";
-                else
-                    user.UserType = "Trainee";
-            }
-            else
-                user.UserType = "Trainee";
-
-            //Generating Tokens
-            var Token = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
-
-            //Saving to Database via repository for user
-            await _userRepositry.Create(user);
-
-            var RefreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
-            return new ResponseToken
-            {
-                Status = 1,
-                AccessToken = Token,
-                RefreshToken = RefreshToken,
-                msg = "User created successfully"
+                "coach" or "c" => "Coach",
+                "doctor" or "d" => "Doctor",
+                _ => "Trainee"
             };
         }
-        public async Task<ResponseToken> SigninUser(string email, string password) // 0 ==  mail not found. 1 == password is wrong . 2 == succesful login
-        {   //Checking if the user exists
-            var isUserExists = await _userRepositry.GetUserByEmail(email,true);
-
-            //If User does not exist return
-            if (isUserExists is null)
-                return new ResponseToken { Status = 0, msg = "User not found" };
-
-            //Checking password of found User
-            var result = new PasswordHasher<User>().VerifyHashedPassword(isUserExists, isUserExists.Password, password);
-            //If password does not match return
-            if (result == PasswordVerificationResult.Failed)
-                return new ResponseToken { Status = 0, msg = "Invalid Password" };
-            //Successful login and returning new Tokens
-            else
-            {
-                //Creating Tokens
-                var AccessToken = await _tokenHandler.CreateAccessToken(isUserExists.Id, isUserExists.Name, isUserExists.Email, isUserExists.Role.RoleName);
-                var RefreshToken = await _tokenHandler.RefreshingToken(isUserExists.Id);
-
-                //Returning Tokens 
-                return new ResponseToken
-                {
-                    Status = 1,
-                    AccessToken = AccessToken,
-                    RefreshToken = RefreshToken,
-                    msg = "Login successful"
-                };
-            }
-        }
-        public async Task<SettersResponse> UpdateUser(UserUpdateDTO user)//0 == invalid user || 1 == user not found || 2 == name not valid || 3 == succesful update
+        else
         {
-            if (user == null)
-                return new SettersResponse { status = 0, msg = "Invalid user data." };
-
-            //Getting the user from repository
-            var isUserExists = await _userRepositry.GetById(user.Id);
-            //If user does not exist return
-            if (isUserExists is null)
-                return new SettersResponse { status = 0, msg = "User not found." };
-
-            //If user wants to change name check if the name is valid
-            if (!string.IsNullOrEmpty(user.Name))    
-            {
-                //If name is not valid return
-                if (!await isNameValid(user.Name))
-                    return new SettersResponse { status = 0, msg = "Name is not valid." };
-                //Else change to new name
-                isUserExists.Name = user.Name;
-            }
-            //Updating Bio
-            if (!string.IsNullOrEmpty(user.Bio))
-                isUserExists.Bio = user.Bio;
-            //Updating DOB
-            if (user.DOB != default)
-                isUserExists.DOB = user.DOB;
-            //Updating State 
-            if (!string.IsNullOrEmpty(user.State))
-                isUserExists.State = user.State;
-            //Updating City
-            if (!string.IsNullOrEmpty(user.City))
-                isUserExists.City = user.City;
-            //Updating Country
-            if (!string.IsNullOrEmpty(user.Country))
-                isUserExists.Country = user.Country;
-            //Updating PhoneNumber
-            if (!string.IsNullOrEmpty(user.PhoneNumber))
-                isUserExists.PhoneNumber = user.PhoneNumber;
-            //Updating Profile Picture
-            if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
-                isUserExists.ProfilePictureUrl = user.ProfilePictureUrl;
-            //Updating Height
-            if (user.HeightCm > 0)
-                isUserExists.HeightCm = user.HeightCm;
-            //Updating Weight
-            if (user.WeightKg > 0)
-                isUserExists.WeightKg = user.WeightKg;
-
-            //Saving to Database via repository
-            await _userRepositry.Update(isUserExists);
-            return new SettersResponse { status = 1, msg = "User updated successfully." };
-        }
-        public async Task<SettersResponse> ChangeUserType(UserChangeTypeDTO User)//0 == Faulty UserType || 1 == invalid UserType || 2 == user not found || 3 == same user type || 4 == succesful change
-        {
-            //Checking UserType validity
-            if (User == null || User.UserType == null)
-                return new SettersResponse { status = 0, msg = "Invalid user type." };
-
-            //Keywords to check for UserType 
-            string keywords = "coach, c, doctor, d, trainee, t";
-            //If Usertype is none of the keywords return
-            if (!keywords.Contains(User.UserType.ToLower()))
-                return new SettersResponse { status = 0, msg = "Invalid user type." };
-
-            var user = await _userRepositry.GetById(User.Id);
-            //If user not found return
-            if (user is null)
-                return new SettersResponse { status = 0, msg = "Invalid user data." };
-
-            //Making all usertypes into lowercase letters
-            var usertype = (user.UserType ?? string.Empty).ToLower();
-            var incomingUsertype = User.UserType.ToLower();
-
-            // Changing userType from initials to full words to immedietly apply them to the user
-            if (incomingUsertype == "t")
-                incomingUsertype = "trainee";
-
-            if (incomingUsertype == "c")
-                incomingUsertype = "coach";
-
-            if (incomingUsertype == "d")
-                incomingUsertype = "doctor";
-
-            if (usertype == incomingUsertype)
-                return new SettersResponse { status = 0, msg = "Same user type" };//same user type
-            else
-            {
-                //Changing from Trainee to either doctor or coach
-                user.UserType = incomingUsertype;
-                if (incomingUsertype == "coach" || incomingUsertype == "doctor")
-                {
-                    user.Specialty = User.Specialty;
-                    user.ExperienceYears = User.ExperienceYears;
-                    user.Certifications = User.Certifications;
-                }
-                //Changing from coach or doctor to trainee
-                else
-                {
-                    user.Specialty = null;
-                    user.ExperienceYears = null;
-                    user.Certifications = null;
-                }
-            }
-
-            //Saving to Database via repository
-            await _userRepositry.Update(user);
-            return new SettersResponse { status = 1, msg = "User type changed successfully." };
-        }
-        public async Task<SettersResponse> DeleteUser(Guid Id)//0 == error || 1 == successfull
-        {
-            //Checking Id validity
-            if (Id == Guid.Empty)
-                return new SettersResponse { status = 0, msg = "Invalid user ID." };
-
-            //Use repository to delete
-            await _userRepositry.Delete(Id);
-            return new SettersResponse { status = 1, msg = "User deleted successfully." };
+            user.UserType = "Trainee";
         }
 
-        //-----------------------------------------------------------------------
+        var token = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, role.RoleName);
+        var refreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
 
-
-        //        *********** Extra Validation Function ***********
-
-        public async Task<bool> isNameValid(string name)//checks if the name is already taken
+        await _unitOfWork.Users.Create(user);
+        
+        var refreshTokenEntity = new RefreshTokens
         {
-            if (string.IsNullOrWhiteSpace(name)) return false;
-            // repository returns true if name exists; invert to match previous semantics
-            var exists = await _userRepositry.isUserNameExist(name);
-            return !exists;
+            UserID = user.Id,
+            RefreshToken = refreshToken,
+            Expires = DateTime.Now.AddDays(4)
+        };
+        
+        await _unitOfWork.Tokens.Create(refreshTokenEntity);
+        await _unitOfWork.SaveChangesAsync();
+
+        return new ResponseToken
+        {
+            Status = 2,
+            AccessToken = token,
+            RefreshToken = refreshToken,
+            msg = "User created successfully"
+        };
+    }
+
+    public async Task<ResponseToken> SigninUser(string email, string password)
+    {
+        var user = await _unitOfWork.Users.GetUserByEmail(email, true);
+
+        if (user == null)
+            return new ResponseToken { Status = 0, msg = "User not found" };
+
+        var result = new PasswordHasher<User>().VerifyHashedPassword(user, user.Password, password);
+        if (result == PasswordVerificationResult.Failed)
+            return new ResponseToken { Status = 0, msg = "Invalid Password" };
+
+        var accessToken = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
+        var refreshToken = await _tokenHandler.RefreshingToken(user.Id);
+
+        return new ResponseToken
+        {
+            Status = 2,
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            msg = "Login successful"
+        };
+    }
+
+    public async Task<SettersResponse> UpdateUser(UserUpdateDTO user)
+    {
+        if (user == null)
+            return new SettersResponse { status = 0, msg = "Invalid user data." };
+
+        var existingUser = await _unitOfWork.Users.GetById(user.Id);
+        if (existingUser is null)
+            return new SettersResponse { status = 0, msg = "User not found." };
+
+        if (!string.IsNullOrEmpty(user.Name))
+        {
+            if (!await isNameValid(user.Name))
+                return new SettersResponse { status = 0, msg = "Name is not valid." };
+            existingUser.Name = user.Name;
         }
-        public async Task<bool> EmailExists(string email)
+
+        if (!string.IsNullOrEmpty(user.Bio))
+            existingUser.Bio = user.Bio;
+        if (user.DOB != default)
+            existingUser.DOB = user.DOB;
+        if (!string.IsNullOrEmpty(user.State))
+            existingUser.State = user.State;
+        if (!string.IsNullOrEmpty(user.City))
+            existingUser.City = user.City;
+        if (!string.IsNullOrEmpty(user.Country))
+            existingUser.Country = user.Country;
+        if (!string.IsNullOrEmpty(user.PhoneNumber))
+            existingUser.PhoneNumber = user.PhoneNumber;
+        if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+            existingUser.ProfilePictureUrl = user.ProfilePictureUrl;
+        if (user.HeightCm > 0)
+            existingUser.HeightCm = user.HeightCm;
+        if (user.WeightKg > 0)
+            existingUser.WeightKg = user.WeightKg;
+
+        await _unitOfWork.Users.Update(existingUser);
+        await _unitOfWork.SaveChangesAsync();
+        
+        return new SettersResponse { status = 2, msg = "User updated successfully." };
+    }
+
+    public async Task<SettersResponse> ChangeUserType(UserChangeTypeDTO userDto)
+    {
+        if (userDto == null || userDto.UserType == null)
+            return new SettersResponse { status = 0, msg = "Invalid user type." };
+
+        string keywords = "coach, c, doctor, d, trainee, t";
+        if (!keywords.Contains(userDto.UserType.ToLower()))
+            return new SettersResponse { status = 0, msg = "Invalid user type." };
+
+        var user = await _unitOfWork.Users.GetById(userDto.Id);
+        if (user is null)
+            return new SettersResponse { status = 0, msg = "Invalid user data." };
+
+        var newUserType = userDto.UserType.ToLower() switch
         {
-            if (string.IsNullOrWhiteSpace(email)) return false;
-            var exists = await _userRepositry.isUserEmailExist(email);
-            return exists;
+            "t" => "trainee",
+            "c" => "coach",
+            "d" => "doctor",
+            _ => userDto.UserType.ToLower()
+        };
+
+        if ((user.UserType ?? "").ToLower() == newUserType)
+            return new SettersResponse { status = 0, msg = "Same user type" };
+
+        user.UserType = newUserType;
+        if (newUserType == "coach" || newUserType == "doctor")
+        {
+            user.Specialty = userDto.Specialty;
+            user.ExperienceYears = userDto.ExperienceYears;
+            user.Certifications = userDto.Certifications;
         }
-        public bool IsEmailValid(string email)
+        else
         {
-            if (new EmailAddressAttribute().IsValid(email) && email != null)
-            {
-                return true;
-            }
-            else return false;
-        }
-        public async Task<bool> IsPasswordValid(string password)
-        {
-            var PasswordPolicy = new Microsoft.AspNet.Identity.PasswordValidator
-            {
-                RequiredLength = 8,
-                RequireNonLetterOrDigit = false,
-                RequireDigit = true,
-                RequireLowercase = true,
-                RequireUppercase = true,
-            };
-            var result = await PasswordPolicy.ValidateAsync(password);
-            if (result.Succeeded) return true;
-            else return false;
+            user.Specialty = null;
+            user.ExperienceYears = null;
+            user.Certifications = null;
         }
 
-        //-----------------------------------------------------------------------
+        await _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+        
+        return new SettersResponse { status = 2, msg = "User type changed successfully." };
+    }
 
-        //        *********** Getters ***********
+    public async Task<SettersResponse> DeleteUser(Guid id)
+    {
+        if (id == Guid.Empty)
+            return new SettersResponse { status = 0, msg = "Invalid user ID." };
 
-        public async Task<GettersResponse<UserViewDTO>> GetUserByID(Guid Id)
-        {
-            if(Id == Guid.Empty)
-                return new GettersResponse<UserViewDTO>
-                {
-                    status = 0,
-                    msg = "Faulty ID"
-                };
+        await _unitOfWork.Users.Delete(id);
+        await _unitOfWork.SaveChangesAsync();
+        
+        return new SettersResponse { status = 2, msg = "User deleted successfully." };
+    }
 
-            var userEntity = await _userRepositry.GetById(Id);
-            if (userEntity == null)
-                return new GettersResponse<UserViewDTO>
-                {
-                    status = 0,
-                    msg = "User not found"
-                };
+    // ========== Getters ==========
 
-            var user = new UserViewDTO
-            {
-                Id = Id,
-                Name = userEntity.Name,
-                Email = userEntity.Email,
-                Bio = userEntity.Bio,
-                CreatedAt = userEntity.CreatedAt,
-                DOB = userEntity.DOB,
-                State = userEntity.State,
-                City = userEntity.City,
-                Country = userEntity.Country,
-                PhoneNumber = userEntity.PhoneNumber,
-                ProfilePictureUrl = userEntity.ProfilePictureUrl,
-                subscriptionPlan = userEntity.subscriptionPlan,
-                HeightCm = userEntity.HeightCm,
-                WeightKg = userEntity.WeightKg,
-                UserType = userEntity.UserType
-            };
-
+    public async Task<GettersResponse<UserViewDTO>> GetUserByID(Guid id)
+    {
+        if (id == Guid.Empty)
             return new GettersResponse<UserViewDTO>
             {
-                status = 2,
-                msg = "Successful",
-                Value = user
+                status = 0,
+                msg = "Faulty ID"
             };
-        }
-        public async Task<GettersResponse<UserMiniViewDTO>> GetMiniUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+
+        var userEntity = await _unitOfWork.Users.GetById(id);
+        if (userEntity == null)
+            return new GettersResponse<UserViewDTO>
+            {
+                status = 0,
+                msg = "User not found"
+            };
+
+        var user = new UserViewDTO
         {
-            IQueryable<User> userQuery = _userRepositry.GetAll();
+            Id = id,
+            Name = userEntity.Name,
+            Email = userEntity.Email,
+            Bio = userEntity.Bio,
+            CreatedAt = userEntity.CreatedAt,
+            DOB = userEntity.DOB,
+            State = userEntity.State,
+            City = userEntity.City,
+            Country = userEntity.Country,
+            PhoneNumber = userEntity.PhoneNumber,
+            ProfilePictureUrl = userEntity.ProfilePictureUrl,
+            subscriptionPlan = userEntity.subscriptionPlan,
+            HeightCm = userEntity.HeightCm,
+            WeightKg = userEntity.WeightKg,
+            UserType = userEntity.UserType
+        };
 
-            if (userQuery == null || userQuery.Count() == 0)
-                return new GettersResponse<UserMiniViewDTO>
-                {
-                    status = 0,
-                    msg = "no user to be found"
-                };
+        return new GettersResponse<UserViewDTO>
+        {
+            status = 2,
+            msg = "Successful",
+            Value = user
+        };
+    }
 
-            DateTime validStartDate, validEndDate;
-            if(DateTime.TryParse(startDate,out validStartDate) && DateTime.TryParse(endDate, out validEndDate)) 
-                userQuery = _userRepositry.FilterDate(validStartDate, validEndDate,userQuery);
-           
-            if (!string.IsNullOrEmpty(searchTerm)) userQuery = _userRepositry.Search(searchTerm, userQuery);
+    public async Task<GettersResponse<UserMiniViewDTO>> GetMiniUsers(
+        string startDate,
+        string endDate,
+        int page,
+        string sortColumn,
+        string OrderBy,
+        string searchTerm,
+        int pageSize)
+    {
+        var userQuery = _unitOfWork.Users.GetAll();
 
-            if (!string.IsNullOrEmpty(sortColumn)) userQuery = _userRepositry.FilterSortColumn(sortColumn, OrderBy, userQuery);
-            
-            var userResponse = userQuery
-                                .Select(u => new UserMiniViewDTO
-                                {
-                                    Id = u.Id,
-                                    Name = u.Name,
-                                    Email = u.Email,
-                                    ProfilePictureUrl = u.ProfilePictureUrl
-                                });
-            var users = await PagedList<UserMiniViewDTO>.CreateAsync(userResponse, page, pageSize);
+        if (!userQuery.Any())
             return new GettersResponse<UserMiniViewDTO>
             {
-                status = 2,
-                msg = "Successfull",
-                Data = users
+                status = 0,
+                msg = "no user to be found"
             };
-        }
-        public async Task<GettersResponse<UserViewDTO>> GetUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+
+        DateTime validStartDate, validEndDate;
+        if(DateTime.TryParse(startDate, out validStartDate) && DateTime.TryParse(endDate, out validEndDate)) 
+            userQuery = _unitOfWork.Users.FilterDate(validStartDate, validEndDate, userQuery);
+           
+        if (!string.IsNullOrEmpty(searchTerm)) 
+            userQuery = _unitOfWork.Users.Search(searchTerm, userQuery);
+
+        if (!string.IsNullOrEmpty(sortColumn)) 
+            userQuery = _unitOfWork.Users.FilterSortColumn(sortColumn, OrderBy, userQuery);
+        
+        var userResponse = userQuery
+            .Select(u => new UserMiniViewDTO
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Email = u.Email,
+                ProfilePictureUrl = u.ProfilePictureUrl
+            });
+
+        var users = await PagedList<UserMiniViewDTO>.CreateAsync(userResponse, page, pageSize);
+        
+        return new GettersResponse<UserMiniViewDTO>
         {
-            IQueryable<User> userQuery = _userRepositry.GetAll();
+            status = 2,
+            msg = "Successfull",
+            Data = users
+        };
+    }
 
-            if (userQuery == null || userQuery.Count() == 0)
-                return new GettersResponse<UserViewDTO>
-                {
-                    status = 0,
-                    msg = "no user to be found"
-                };
+    public async Task<GettersResponse<UserViewDTO>> GetUsers(
+        string startDate,
+        string endDate,
+        int page,
+        string sortColumn,
+        string OrderBy,
+        string searchTerm,
+        int pageSize)
+    {
+        var userQuery = _unitOfWork.Users.GetAll();
 
-            DateTime validStartDate, validEndDate;
-            if (DateTime.TryParse(startDate, out validStartDate) && DateTime.TryParse(endDate, out validEndDate))
+        if (!userQuery.Any())
+            return new GettersResponse<UserViewDTO>
             {
-                userQuery = _userRepositry.FilterDate(validStartDate, validEndDate, userQuery);
-            }
-            if (!string.IsNullOrEmpty(searchTerm)) userQuery = _userRepositry.Search(searchTerm, userQuery);
+                status = 0,
+                msg = "no user to be found"
+            };
 
-            if (!string.IsNullOrEmpty(sortColumn))
+        DateTime validStartDate, validEndDate;
+        if (DateTime.TryParse(startDate, out validStartDate) && DateTime.TryParse(endDate, out validEndDate))
+        {
+            userQuery = _unitOfWork.Users.FilterDate(validStartDate, validEndDate, userQuery);
+        }
+        
+        if (!string.IsNullOrEmpty(searchTerm)) 
+            userQuery = _unitOfWork.Users.Search(searchTerm, userQuery);
+
+        if (!string.IsNullOrEmpty(sortColumn))
+        {
+            userQuery = _unitOfWork.Users.FilterSortColumn(sortColumn, OrderBy, userQuery);
+        }
+        
+        var userResponse = userQuery
+            .Select(u => new UserViewDTO
             {
-                userQuery = _userRepositry.FilterSortColumn(sortColumn, OrderBy, userQuery);
-            }
-            var userResponse = userQuery
-                                .Select(u => new UserViewDTO
-                                {
-                                    Id = u.Id,
-                                    Name = u.Name,
-                                    Email = u.Email,
-                                    Bio = u.Bio,
-                                    CreatedAt = u.CreatedAt,
-                                    DOB = u.DOB,
-                                    State = u.State,
-                                    City = u.City,
-                                    Country = u.Country,
-                                    PhoneNumber = u.PhoneNumber,
-                                    ProfilePictureUrl = u.ProfilePictureUrl,
-                                    subscriptionPlan = u.subscriptionPlan,
-                                    HeightCm = u.HeightCm,
-                                    WeightKg = u.WeightKg,
-                                    UserType = u.UserType
-                                });
+                Id = u.Id,
+                Name = u.Name,
+                Email = u.Email,
+                Bio = u.Bio,
+                CreatedAt = u.CreatedAt,
+                DOB = u.DOB,
+                State = u.State,
+                City = u.City,
+                Country = u.Country,
+                PhoneNumber = u.PhoneNumber,
+                ProfilePictureUrl = u.ProfilePictureUrl,
+                subscriptionPlan = u.subscriptionPlan,
+                HeightCm = u.HeightCm,
+                WeightKg = u.WeightKg,
+                UserType = u.UserType
+            });
+
             var users = await PagedList<UserViewDTO>.CreateAsync(userResponse, page, pageSize);
-            return new GettersResponse<UserViewDTO>
-            {
-                status = 2,
-                msg = "Successfull",
-                Data = users
-            };
-        }
-        public async Task<GettersResponse<UserViewDTO>> GetAllUsers(int page, int pageSize)
+        
+        return new GettersResponse<UserViewDTO>
         {
-            var userQuery =   from u in _userRepositry.GetAll()
-                              select new UserViewDTO
-                               {
-                                   Id = u.Id,
-                                   Name = u.Name,
-                                   Email = u.Email,
-                                   Bio = u.Bio,
-                                   CreatedAt = u.CreatedAt,
-                                   DOB = u.DOB,
-                                   State = u.State,
-                                   City = u.City,
-                                   Country = u.Country,
-                                   PhoneNumber = u.PhoneNumber,
-                                   ProfilePictureUrl = u.ProfilePictureUrl,
-                                   subscriptionPlan = u.subscriptionPlan,
-                                   HeightCm = u.HeightCm,
-                                   WeightKg = u.WeightKg,
-                                   UserType = u.UserType
-                               };
+            status = 2,
+            msg = "Successfull",
+            Data = users
+        };
+    }
 
-            if (userQuery == null || userQuery.Count() == 0)
-                return new GettersResponse<UserViewDTO>
-                {
-                    status = 0,
-                    msg = "no user to be found"
-                };
+    public async Task<GettersResponse<UserViewDTO>> GetAllUsers(int page, int pageSize)
+    {
+        var userQuery = from u in _unitOfWork.Users.GetAll()
+                        select new UserViewDTO
+                        {
+                            Id = u.Id,
+                            Name = u.Name,
+                            Email = u.Email,
+                            Bio = u.Bio,
+                            CreatedAt = u.CreatedAt,
+                            DOB = u.DOB,
+                            State = u.State,
+                            City = u.City,
+                            Country = u.Country,
+                            PhoneNumber = u.PhoneNumber,
+                            ProfilePictureUrl = u.ProfilePictureUrl,
+                            subscriptionPlan = u.subscriptionPlan,
+                            HeightCm = u.HeightCm,
+                            WeightKg = u.WeightKg,
+                            UserType = u.UserType
+                        };
 
-            var users = await PagedList<UserViewDTO>.CreateAsync(userQuery,page,pageSize);
+        if (!userQuery.Any())
             return new GettersResponse<UserViewDTO>
             {
-                status = 2,
-                msg = "Successfull",
-                Data = users
+                status = 0,
+                msg = "no user to be found"
             };
-        }
 
+        var users = await PagedList<UserViewDTO>.CreateAsync(userQuery, page, pageSize);
+        
+        return new GettersResponse<UserViewDTO>
+        {
+            status = 2,
+            msg = "Successfull",
+            Data = users
+        };
+    }
+
+    // ========== Helper Methods ==========
+
+    private async Task<bool> isNameValid(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) 
+            return false;
+        
+        var exists = await _unitOfWork.Users.isUserNameExist(name);
+        return !exists;
+    }
+
+    private bool IsEmailValid(string email)
+    {
+        return new EmailAddressAttribute().IsValid(email) && email != null;
+    }
+
+    private async Task<bool> IsPasswordValid(string password)
+    {
+        var PasswordPolicy = new Microsoft.AspNet.Identity.PasswordValidator
+        {
+            RequiredLength = 8,
+            RequireNonLetterOrDigit = false,
+            RequireDigit = true,
+            RequireLowercase = true,
+            RequireUppercase = true,
+        };
+        
+        var result = await PasswordPolicy.ValidateAsync(password);
+        return result.Succeeded;
     }
 }

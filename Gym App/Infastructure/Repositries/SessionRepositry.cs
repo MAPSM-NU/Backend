@@ -23,7 +23,6 @@ namespace Gym_App.Infastructure.Repositries
                 if(user != null)
                 {
                     session.Users.Add(user);
-                    await _db.SaveChangesAsync();
                     return true;
                 }
             }
@@ -64,7 +63,6 @@ namespace Gym_App.Infastructure.Repositries
                 if(user != null)
                 {
                     session.Users.Remove(user);
-                    await _db.SaveChangesAsync();
                     return true;
                 }
             }

@@ -1,23 +1,23 @@
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
-using Gym_App.Domain;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-
-//using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text;
 using System.Text.Json.Serialization;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Serilog Configuration
+// ============================================
+// LOGGING CONFIGURATION
+// ============================================
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .WriteTo.File("Infastructure/logs/gymapp.txt", rollingInterval: RollingInterval.Day)
@@ -25,15 +25,19 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Logging.ClearProviders().AddSerilog();
 
-// Add services to the container.
-
+// ============================================
+// CORE SERVICES
+// ============================================
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+
+// ============================================
+// SWAGGER CONFIGURATION
+// ============================================
 builder.Services.AddSwaggerGen(c => {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "JWTToken_Auth_API",
+        Title = "Gym App API",
         Version = "v1"
     });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
@@ -50,7 +54,7 @@ builder.Services.AddSwaggerGen(c => {
             new OpenApiSecurityScheme {
                 Reference = new OpenApiReference {
                     Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
+                    Id = "Bearer"
                 }
             },
             new string[] {}
@@ -58,52 +62,60 @@ builder.Services.AddSwaggerGen(c => {
     });
 });
 
-builder.Services.AddTransient<IEmailSender, EmailSender>();
+// ============================================
+// DATABASE CONFIGURATION
+// ============================================
+    builder.Services.AddDbContext<DbBase>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("ModyConnection")));
+
+// ============================================
+// UNIT OF WORK & REPOSITORIES
+// ============================================
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ISessionRepositry, SessionRepositry>();
+builder.Services.AddScoped<IScheduleRepositry, ScheduleRepositry>();
+builder.Services.AddScoped<IWorkoutRepositry, WorkoutRepositry>();
+builder.Services.AddScoped<IExerciseRepositry, ExerciseRepositry>();
+builder.Services.AddScoped<IMuscleRepositry, MuscleRepositry>();
+builder.Services.AddScoped<IMessageRepositry, MessageRepositry>();
+builder.Services.AddScoped<INotificationRepositry, NotifiacationRepositry>();
+builder.Services.AddScoped<IFeedbackRepositry, FeedbackRepositry>();
+builder.Services.AddScoped<IRoleRepositry, RoleRepositry>();
+builder.Services.AddScoped<IUserRepositry, UserRepositry>();
+
+// ============================================
+// APPLICATION SERVICES
+// ============================================
 builder.Services.AddScoped<IUserServise, UserService>();
-builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHandler>();
+builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IWorkoutService, WorkoutService>();
-builder.Services.AddScoped<IExerciseData, ExerciseData>();
 builder.Services.AddScoped<IExerciseService, ExerciseService>();
 builder.Services.AddScoped<IMuscleService, MuscleService>();
-builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IScheduleService,ScheduleService>();
-builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IUserRepositry, UserRepositry>();
-builder.Services.AddScoped<IBaseRepositry<User>, UserRepositry>();
-builder.Services.AddScoped<IWorkoutRepositry, WorkoutRepositry>();
-builder.Services.AddScoped<IBaseRepositry<Workout>, WorkoutRepositry>();
-builder.Services.AddScoped<IExerciseRepositry, ExerciseRepositry>();
-builder.Services.AddScoped<IBaseRepositry<Exercise>, ExerciseRepositry>();
-builder.Services.AddScoped<IMuscleRepositry, MuscleRepositry>();
-builder.Services.AddScoped<IBaseRepositry<Muscles>, MuscleRepositry>();
-builder.Services.AddScoped<IMessageRepositry, MessageRepositry>();
-builder.Services.AddScoped<IBaseRepositry<Message>, MessageRepositry>();
-builder.Services.AddScoped<ISessionRepositry, SessionRepositry>();
-builder.Services.AddScoped<IBaseRepositry<Session>, SessionRepositry>();
-builder.Services.AddScoped<ITokenRepositry, TokenRepositry>();
-builder.Services.AddScoped<IBaseRepositry<RefreshTokens>, TokenRepositry>();
-builder.Services.AddScoped<IRoleRepositry, RoleRepositry>();
-builder.Services.AddScoped<IBaseRepositry<Role>, RoleRepositry>();
-builder.Services.AddScoped<IFeedbackRepositry, FeedbackRepositry>();
-builder.Services.AddScoped<IBaseRepositry<Feedback>, FeedbackRepositry>();
-builder.Services.AddScoped<INotificationRepositry, NotifiacationRepositry>();
-builder.Services.AddScoped<IBaseRepositry<Notification>, NotifiacationRepositry>();
-builder.Services.AddScoped<IScheduleRepositry, ScheduleRepositry>();
-builder.Services.AddScoped<IBaseRepositry<Schedule>, ScheduleRepositry>();
-//builder.Services.AddScoped<IBaseRepositry<BaseEntity>,BaseRepositry<BaseEntity>>();
+builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHandler>();
+
+// ============================================
+// UTILITY SERVICES
+// ============================================
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddScoped<IExerciseData, ExerciseData>();
+
+// ============================================
+// AUTHORIZATION
+// ============================================
 builder.Services.AddSingleton<IAuthorizationHandler, SameUserHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();
 
-
-builder.Services.AddDbContext<DbBase>(options =>
-{
-    options.UseSqlServer(builder.Configuration["ConnectionStrings:ModyConnection"]);
-});
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
-    AddJwtBearer(options =>
+// ============================================
+// AUTHENTICATION
+// ============================================
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
@@ -116,47 +128,45 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Token"]!)),
             ValidateIssuerSigningKey = true,
-            
-
         };
         options.IncludeErrorDetails = true;
     });
 
-Console.WriteLine("Connection String = " + builder.Configuration["ConnectionStrings:VpsConnection"]);
-Console.WriteLine("Issuer = " + builder.Configuration["JwtSettings:Issuer"]);
-Console.WriteLine("Audience = " + builder.Configuration["JwtSettings:Audience"]);
-Console.WriteLine("Token = " + (builder.Configuration["JwtSettings:Token"]));
-
+// ============================================
+// AUTHORIZATION POLICIES
+// ============================================
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("NormalUsage",
-        policy => policy.RequireRole("Admin","User"));
-});
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("ElevatedPower",
-        policy => policy.RequireRole("Admin"));
-});
-builder.Services.AddAuthorization(options =>
-{
+    options.AddPolicy("NormalUsage", policy => 
+        policy.RequireRole("Admin", "User"));
+    
+    options.AddPolicy("ElevatedPower", policy => 
+        policy.RequireRole("Admin"));
+    
     options.AddPolicy("SameUserPolicy", policy =>
         policy.Requirements.Add(new SameUserRequirement(allowAdmins: true)));
-    // keep other policies (NormalUsage, ElevatedPower) as-is
-});
-builder.Services.AddAuthorization(options =>
-{
+    
     options.AddPolicy("ListUserPolicy", policy =>
         policy.Requirements.Add(new ListUserRequirement(allowAdmins: true)));
 });
-//builder.Services.AddControllersWithViews().AddJsonOptions(x =>
-//   x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);//yezabat error beta3 recurrsion taba3 el json
-builder.Services.ConfigureHttpJsonOptions(x=>
+
+// ============================================
+// JSON SERIALIZATION
+// ============================================
+builder.Services.ConfigureHttpJsonOptions(x =>
 {
     x.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     x.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
+
+// ============================================
+// BUILD APPLICATION
+// ============================================
 var app = builder.Build();
 
+// ============================================
+// DATABASE MIGRATION
+// ============================================
 using (var scope = app.Services.CreateScope())
 {
     try
@@ -166,23 +176,18 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        // Log but don’t crash startup
-        Console.WriteLine($"Migration failed: {ex.Message}");
+        Log.Error($"Migration failed: {ex.Message}");
     }
 }
-// Configure the HTTP request pipeline.
 
+// ============================================
+// MIDDLEWARE PIPELINE
+// ============================================
 app.UseSwagger();
 app.UseSwaggerUI();
-
-//app.UseHttpLogging();
-
 app.UseHttpsRedirection();
-
 app.UseAuthentication();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

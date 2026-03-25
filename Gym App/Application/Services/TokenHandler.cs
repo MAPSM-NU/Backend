@@ -13,14 +13,12 @@ namespace Gym_App.Application.Services
 {
     public class TokenHandler : ITokenHandler
     {
-        private readonly ITokenRepositry _tokenRepositry;
-        private readonly IUserRepositry _userRepositry;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _config;
 
-        public TokenHandler(ITokenRepositry tokenRepositry, IUserRepositry userRepositry, IConfiguration config)
+        public TokenHandler(IUnitOfWork unitOfWork, IConfiguration config)
         {
-            _tokenRepositry = tokenRepositry;
-            _userRepositry = userRepositry;
+            _unitOfWork = unitOfWork;
             _config = config;
         }
 
@@ -60,21 +58,21 @@ namespace Gym_App.Application.Services
                 Expires = DateTime.Now.AddDays(4),
                 UserID = UserID,
             };
-            await _tokenRepositry.Create(refreshToken);
+            await _unitOfWork.Tokens.Create(refreshToken);
             return refreshToken.RefreshToken;
         }
 
         public async Task<string?> RefreshingToken(Guid UserID)
         {
             //Getting refresh token from repository
-            var isTokenExists = await _tokenRepositry.GetRefreshTokenByUserId(UserID);
+            var isTokenExists = await _unitOfWork.Tokens.GetRefreshTokenByUserId(UserID);
             
             if (isTokenExists == null)
                 return null;
 
             //Updating the refresh token
             var newRefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            await _tokenRepositry.UpdateRefreshToken(UserID, newRefreshToken, DateTime.UtcNow.AddDays(4));
+            await _unitOfWork.Tokens.UpdateRefreshToken(UserID, newRefreshToken, DateTime.UtcNow.AddDays(4));
 
             return newRefreshToken;
         }
@@ -86,13 +84,13 @@ namespace Gym_App.Application.Services
         public async Task<ResponseToken?> ValidateAccessToken(string refreshToken)
         {
             //Getting refresh token from repository
-            var result = await _tokenRepositry.GetRefreshTokenByToken(refreshToken);
+            var result = await _unitOfWork.Tokens.GetRefreshTokenByToken(refreshToken);
             
             if (result == null || result.Expires < DateTime.UtcNow)
                 return null;
 
             //Getting user from repository
-            var user = await _userRepositry.GetById(result.Id);
+            var user = await _unitOfWork.Users.GetById(result.Id);
 
             if (user == null)
                 return null;
@@ -102,7 +100,7 @@ namespace Gym_App.Application.Services
 
             //Updating refresh token
             var newRefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-            await _tokenRepositry.UpdateRefreshToken(user.Id, newRefreshToken, DateTime.UtcNow.AddDays(4));
+            await _unitOfWork.Tokens.UpdateRefreshToken(user.Id, newRefreshToken, DateTime.UtcNow.AddDays(4));
 
             var Response = new ResponseToken
             {
@@ -128,7 +126,7 @@ namespace Gym_App.Application.Services
                 pageSize = 10;
 
             //Getting all tokens from repository
-            var tokensQuery = _tokenRepositry.GetAll();
+            var tokensQuery = _unitOfWork.Tokens.GetAll();
 
             var tokens = await PagedList<RefreshTokens>.CreateAsync(tokensQuery, page, pageSize);
             return tokens;

@@ -77,7 +77,6 @@ namespace Gym_App.Infastructure.Repositries
             if (message != null)
             {
                 message.IsRead = true;
-                await _db.SaveChangesAsync();
             }
         }
 
@@ -88,7 +87,6 @@ namespace Gym_App.Infastructure.Repositries
             {
                 message.IsRead = true;
             }
-            await _db.SaveChangesAsync();
         }
 
         public async Task MarkConversationAsRead(Guid senderId, Guid receiverId)
@@ -100,7 +98,6 @@ namespace Gym_App.Infastructure.Repositries
             {
                 message.IsRead = true;
             }
-            await _db.SaveChangesAsync();
         }
 
         public async Task<bool> MessageExists(Guid messageId)

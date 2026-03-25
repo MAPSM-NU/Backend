@@ -22,7 +22,6 @@ namespace Gym_App.Infastructure.Repositries
                 return false;
 
             table.RemoveRange(schedules);
-            await _db.SaveChangesAsync();
             return true;
         }
 

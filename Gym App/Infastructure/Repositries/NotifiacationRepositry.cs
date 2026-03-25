@@ -21,7 +21,7 @@ namespace Gym_App.Infastructure.Repositries
         {
             var notifications = table.Where(n => n.CreatedAt < date);
             table.RemoveRange(notifications);
-            return _db.SaveChangesAsync();
+            return Task.CompletedTask;
         }
 
         public async Task<bool> DeleteUserNotifications(Guid userId)
@@ -29,7 +29,6 @@ namespace Gym_App.Infastructure.Repositries
             var notifications = await table.Where(n => n.User.Id == userId).ToListAsync();
             if (notifications.Count == 0) return false;
             table.RemoveRange(notifications);
-            await _db.SaveChangesAsync();
             return true;
         }
 

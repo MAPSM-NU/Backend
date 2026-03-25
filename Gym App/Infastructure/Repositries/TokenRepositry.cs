@@ -47,7 +47,6 @@ namespace Gym_App.Infastructure.Repositries
             {
                 refreshToken.RefreshToken = newToken;
                 refreshToken.Expires = newExpiry;
-                await _db.SaveChangesAsync();
             }
         }
 

@@ -25,7 +25,6 @@ namespace Gym_App.Infastructure.Repositries
                 throw new ArgumentNullException(nameof(entity));
 
             table.Add(entity);
-            await _db.SaveChangesAsync();
         }
 
         public async Task Delete(Guid id)
@@ -34,14 +33,12 @@ namespace Gym_App.Infastructure.Repositries
             if (entity == null)
                 throw new KeyNotFoundException($"Entity with id {id} not found.");
             table.Remove(entity);
-            await _db.SaveChangesAsync();
         }
         public async Task Delete(T entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
             table.Remove(entity);
-            await _db.SaveChangesAsync();
         }
 
         public IQueryable<T> FilterDate(DateTime startDate, DateTime endDate, IQueryable<T> query)
@@ -82,7 +79,6 @@ namespace Gym_App.Infastructure.Repositries
         public async Task Update(T entity)
         {
             table.Update(entity);
-            await _db.SaveChangesAsync();
         }
     }
 }

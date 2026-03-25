@@ -7,30 +7,20 @@ using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Authorization;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace Gym_App.Application.Services
 {
     public class SessionService : ISessionService
     {
-        private readonly ISessionRepositry _sessionRepositry;
-        private readonly IMessageRepositry _messageRepositry;
-        private readonly IUserRepositry _userRepositry;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IAuthorizationService _authorizationService;
 
-        //        *********** Setters ***********
-
-        //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
         public SessionService(
-            ISessionRepositry sessionRepositry,
-            IMessageRepositry messageRepositry,
-            IUserRepositry userRepositry,
+            IUnitOfWork unitOfWork,
             IAuthorizationService authorizationService)
         {
-            _sessionRepositry = sessionRepositry;
-            _messageRepositry = messageRepositry;
-            _userRepositry = userRepositry;
+            _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
         }
 
@@ -51,7 +41,7 @@ namespace Gym_App.Application.Services
             List<User> users = new List<User>();
             foreach (var ID in userIDs)
             {
-                var user = await _userRepositry.GetById(ID);
+                var user = await _unitOfWork.Users.GetById(ID);
                 if (user == null)
                     return new SettersResponse { status = 0, msg = "User not found" };
                 else
@@ -71,7 +61,8 @@ namespace Gym_App.Application.Services
             };
 
             //Saving to Database via repository
-            await _sessionRepositry.Create(Session);
+            await _unitOfWork.Sessions.Create(Session);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Session created successfully" };
         }
 
@@ -82,7 +73,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid session ID" };
 
             //Getting the session with users from repository
-            var session = await _sessionRepositry.GetSessionWithUsers(sessionID);
+            var session = await _unitOfWork.Sessions.GetSessionWithUsers(sessionID);
 
             //Return if session was not found
             if (session == null)
@@ -97,7 +88,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Removing from Database via repository
-            await _sessionRepositry.Delete(sessionID);
+            await _unitOfWork.Sessions.Delete(sessionID);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Session deleted successfully" };
         }
 
@@ -108,7 +100,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid session ID or messages" };
 
             //Getting the session with users and messages from repository
-            var Session = await _sessionRepositry.GetSessionWithUsers(sessionID);
+            var Session = await _unitOfWork.Sessions.GetSessionWithUsers(sessionID);
 
             //Return if session was not found
             if (Session == null)
@@ -132,7 +124,7 @@ namespace Gym_App.Application.Services
                 
                 foreach (var messageId in messageIds)
                 {
-                    var message = await _messageRepositry.GetMessageById(messageId);
+                    var message = await _unitOfWork.Messages.GetMessageById(messageId);
                     if (message != null)
                         messagesToAdd.Add(message);
                 }
@@ -151,7 +143,7 @@ namespace Gym_App.Application.Services
                 messagesToAdd = new List<Message>();
                 foreach (var messageId in messagesIDsToAdd)
                 {
-                    var message = await _messageRepositry.GetMessageById(messageId);
+                    var message = await _unitOfWork.Messages.GetMessageById(messageId);
                     if (message != null)
                         messagesToAdd.Add(message);
                 }
@@ -168,7 +160,8 @@ namespace Gym_App.Application.Services
             }
 
             //Saving to Database via repository
-            await _sessionRepositry.Update(Session);
+            await _unitOfWork.Sessions.Update(Session);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Messages added successfully" };
         }
 
@@ -179,7 +172,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid session ID or messages" };
 
             //Getting the session with users and messages from repository
-            var Session = await _sessionRepositry.GetSessionWithUsers(sessionID);
+            var Session = await _unitOfWork.Sessions.GetSessionWithUsers(sessionID);
 
             //Return if session was not found
             if (Session == null)
@@ -217,7 +210,7 @@ namespace Gym_App.Application.Services
                 messagesToRemove = new List<Message>();
                 foreach (var messageId in messagesIDsToRemove)
                 {
-                    var message = await _messageRepositry.GetMessageById(messageId);
+                    var message = await _unitOfWork.Messages.GetMessageById(messageId);
                     if (message != null)
                         messagesToRemove.Add(message);
                 }
@@ -238,7 +231,8 @@ namespace Gym_App.Application.Services
             }
 
             //Saving to Database via repository
-            await _sessionRepositry.Update(Session);
+            await _unitOfWork.Sessions.Update(Session);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Messages removed successfully" };
         }
 
@@ -249,7 +243,7 @@ namespace Gym_App.Application.Services
 
         public async Task<bool> isMessageBelongUser(Guid messageID, Guid userID)
         {
-            var message = await _messageRepositry.GetMessageById(messageID);
+            var message = await _unitOfWork.Messages.GetMessageById(messageID);
             if (message == null)
                 return false;
             return message.Sender.Id == userID;
@@ -258,12 +252,11 @@ namespace Gym_App.Application.Services
         public Guid GettingSenderID(ClaimsPrincipal User)
         {
             var userID = User.FindFirst(ClaimTypes.NameIdentifier)
-                        ?? User.FindFirst(JwtRegisteredClaimNames.Sub)
                         ?? User.FindFirst("sub")
                         ?? User.FindFirst("userId")
                         ?? User.FindFirst("id");
 
-            if (Guid.TryParse(userID!.Value, out var validID))
+            if (userID != null && Guid.TryParse(userID.Value, out var validID))
                 return validID;
             else
                 return Guid.Empty;
@@ -276,7 +269,7 @@ namespace Gym_App.Application.Services
         public async Task<List<Guid>?> GetSessionUsersIDs(ClaimsPrincipal User, Guid sessionID)
         {
             //Getting the users of the session from repository
-            var Users = await _sessionRepositry.GetSessionUsers(sessionID);
+            var Users = await _unitOfWork.Sessions.GetSessionUsers(sessionID);
 
             //Return null if session not found
             if (Users == null || !Users.Any())
@@ -305,7 +298,7 @@ namespace Gym_App.Application.Services
             int pageSize)
         {
             //Getting the session with users from repository
-            var Session = await _sessionRepositry.GetSessionWithUsers(sessionID);
+            var Session = await _unitOfWork.Sessions.GetSessionWithUsers(sessionID);
             
             //Return null if session not found
             if (Session == null)
@@ -328,20 +321,20 @@ namespace Gym_App.Application.Services
                 };
 
             //Getting messages from repository
-            var messageQuery = _messageRepositry.GetSessionMessagesQueryable(sessionID);
+            var messageQuery = _unitOfWork.Messages.GetSessionMessagesQueryable(sessionID);
 
             //Filtering by search Term
             if (!string.IsNullOrEmpty(searchTerm))
-                messageQuery = _messageRepositry.Search(searchTerm, messageQuery);
+                messageQuery = _unitOfWork.Messages.Search(searchTerm, messageQuery);
 
             //filter by start and end date
             DateTime validStartDate, validEndDate;
             if (DateTime.TryParse(startDate, out validStartDate) && DateTime.TryParse(endDate, out validEndDate))
-                messageQuery = _messageRepositry.FilterDate(validStartDate, validEndDate, messageQuery);
+                messageQuery = _unitOfWork.Messages.FilterDate(validStartDate, validEndDate, messageQuery);
 
             //Order by given column
             if (!string.IsNullOrEmpty(sortColumn))
-                messageQuery = _messageRepositry.FilterSortColumn(sortColumn, OrderBy, messageQuery);
+                messageQuery = _unitOfWork.Messages.FilterSortColumn(sortColumn, OrderBy, messageQuery);
 
             //Projecting the resultant message queries to messageDTO
             var messageResponse = messageQuery
@@ -368,7 +361,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<UserViewDTO>> GetUsersOfSession(ClaimsPrincipal User, Guid sessionID, int page, int pageSize)
         {
             //Getting session with users from repository
-            var session = await _sessionRepositry.GetSessionWithUsers(sessionID);
+            var session = await _unitOfWork.Sessions.GetSessionWithUsers(sessionID);
             
             if (session == null)
                 return new GettersResponse<UserViewDTO>
@@ -413,7 +406,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<SessionViewDTO>> GetAllSessions(int page, int pageSize)
         {
             //Getting all sessions from repository
-            var sessionsQuery = _sessionRepositry.GetAll()
+            var sessionsQuery = _unitOfWork.Sessions.GetAll()
                 .Select(s => new SessionViewDTO
                 {
                     SessionID = s.Id,

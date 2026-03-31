@@ -1,7 +1,6 @@
 ﻿using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.DTOs.Muscle;
 using Gym_App.Infastructure.Transfer_Classes;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Infastructure.Interfaces.Services
 {

@@ -1,7 +1,7 @@
 ﻿using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infastructure.Interfaces.Services;
 using MimeKit;
 using MimeKit.Text;
-using Org.BouncyCastle.Crypto.Macs;
 
 namespace Gym_App.Application.Services
 {

@@ -5,6 +5,7 @@ using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
@@ -49,7 +50,7 @@ public class UserService : IUserServise
             Id = Guid.NewGuid(),
             Name = u.Name,
             Email = u.Email,
-            Password = new PasswordHasher<User>().HashPassword(null, u.Password),
+            Password = new Microsoft.AspNetCore.Identity.PasswordHasher<User>().HashPassword(null, u.Password),
             CreatedAt = DateTime.Now,
             UserType = "Admin",
             RoleID = role.Id,
@@ -158,7 +159,7 @@ public class UserService : IUserServise
             return new ResponseToken { Status = 0, msg = "User not found" };
 
         var result = new PasswordHasher<User>().VerifyHashedPassword(user, user.Password, password);
-        if (result == PasswordVerificationResult.Failed)
+        if (result == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed)
             return new ResponseToken { Status = 0, msg = "Invalid Password" };
 
         var accessToken = await _tokenHandler.CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);
@@ -481,7 +482,7 @@ public class UserService : IUserServise
 
     private async Task<bool> IsPasswordValid(string password)
     {
-        var PasswordPolicy = new Microsoft.AspNet.Identity.PasswordValidator
+        var PasswordPolicy = new PasswordValidator
         {
             RequiredLength = 8,
             RequireNonLetterOrDigit = false,

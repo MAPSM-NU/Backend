@@ -2,8 +2,6 @@
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
-using Microsoft.OpenApi.Any;
 using System.Linq.Expressions;
 
 namespace Gym_App.Infastructure.Repositries

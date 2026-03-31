@@ -2,6 +2,7 @@
 using Gym_App.Domain.DTOs;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Services;
+using Microsoft.AspNetCore.Hosting;
 using System.Globalization;
 
 namespace Gym_App.Application.Services

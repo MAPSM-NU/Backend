@@ -73,16 +73,6 @@ builder.Services.AddSwaggerGen(c => {
 // UNIT OF WORK & REPOSITORIES
 // ============================================
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<ISessionRepositry, SessionRepositry>();
-builder.Services.AddScoped<IScheduleRepositry, ScheduleRepositry>();
-builder.Services.AddScoped<IWorkoutRepositry, WorkoutRepositry>();
-builder.Services.AddScoped<IExerciseRepositry, ExerciseRepositry>();
-builder.Services.AddScoped<IMuscleRepositry, MuscleRepositry>();
-builder.Services.AddScoped<IMessageRepositry, MessageRepositry>();
-builder.Services.AddScoped<INotificationRepositry, NotifiacationRepositry>();
-builder.Services.AddScoped<IFeedbackRepositry, FeedbackRepositry>();
-builder.Services.AddScoped<IRoleRepositry, RoleRepositry>();
-builder.Services.AddScoped<IUserRepositry, UserRepositry>();
 
 // ============================================
 // APPLICATION SERVICES

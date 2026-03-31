@@ -32,6 +32,7 @@ namespace Gym_App.Application.Services
             role.RoleName = roleName;
             role.UpdatedAt = DateTime.Now;
             await _unitOfWork.Roles.Update(role);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Role updated", status = 2 };
         }
 
@@ -41,6 +42,7 @@ namespace Gym_App.Application.Services
             if (role == null)
                 return new SettersResponse { msg = "Role not found", status = 0 };
             await _unitOfWork.Roles.Delete(role);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Role deleted", status = 2 };
         }
 

@@ -12,21 +12,13 @@ namespace Gym_App.Application.Services
 {
     public class MessageService : IMessageService
     {
-        private readonly IMessageRepositry _messageRepositry;
-        private readonly IUserRepositry _userRepositry;
-        private readonly ISessionRepositry _sessionRepositry;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IAuthorizationService _authorizationService;
 
-        public MessageService(
-            IMessageRepositry messageRepositry,
-            IUserRepositry userRepositry,
-            IAuthorizationService authorizationService,
-            ISessionRepositry sessionRepositry)
+        public MessageService(IUnitOfWork unitOfWork,IAuthorizationService authorizationService)
         {
-            _messageRepositry = messageRepositry;
-            _userRepositry = userRepositry;
+            _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
-            _sessionRepositry = sessionRepositry;
         }
 
         //        *********** Setters ***********
@@ -39,7 +31,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
             //Getting user from repository
-            var user = await _userRepositry.GetById(senderID);
+            var user = await _unitOfWork.Users.GetById(senderID);
             //if user not found return 
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
@@ -50,7 +42,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Getting session with users included from repository
-            var session = await _sessionRepositry.GetSessionWithUsers(message.SessionID);
+            var session = await _unitOfWork.Sessions.GetSessionWithUsers(message.SessionID);
             if (session == null)
                 return new SettersResponse { status = 0, msg = "Session not found" };
             
@@ -70,7 +62,8 @@ namespace Gym_App.Application.Services
             };
 
             //Saving to Database via repository
-            await _messageRepositry.Create(newMessage);
+            await _unitOfWork.Messages.Create(newMessage);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Success" };
         }
 
@@ -81,7 +74,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid DTO" };
 
             //Getting message from repository
-            var messageEntity = await _messageRepositry.GetMessageById(messageID);
+            var messageEntity = await _unitOfWork.Messages.GetMessageById(messageID);
             //if message not found return
             if (messageEntity == null)
                 return new SettersResponse { status = 0, msg = "Message not found" };
@@ -96,7 +89,8 @@ namespace Gym_App.Application.Services
             messageEntity.IsRead = message.IsRead;
 
             //Saving to Database via repository
-            await _messageRepositry.Update(messageEntity);
+            await _unitOfWork.Messages.Update(messageEntity);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Success" };
         }
 
@@ -107,7 +101,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid messageID" };
 
             //Getting message from repository
-            var messageEntity = await _messageRepositry.GetMessageById(messageID);
+            var messageEntity = await _unitOfWork.Messages.GetMessageById(messageID);
             //if message not found return
             if (messageEntity == null)
                 return new SettersResponse { status = 0, msg = "Message not found" };
@@ -118,7 +112,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Deleting from Database via repository
-            await _messageRepositry.Delete(messageID);
+            await _unitOfWork.Messages.Delete(messageID);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Success" };
         }
 
@@ -128,7 +123,7 @@ namespace Gym_App.Application.Services
 
         public async Task<Guid> GetMessageUserID(Guid messageID)
         {
-            var messageEntity = await _messageRepositry.GetMessageById(messageID);
+            var messageEntity = await _unitOfWork.Messages.GetMessageById(messageID);
             return messageEntity?.Sender.Id ?? Guid.Empty;
         }
 
@@ -139,7 +134,7 @@ namespace Gym_App.Application.Services
                 return null;
 
             //Note: This requires ISessionRepositry implementation
-            var Users = await _sessionRepositry.GetSessionUsers(sessionID);
+            var Users = await _unitOfWork.Sessions.GetSessionUsers(sessionID);
             if (Users == null)
                 return null;
 
@@ -164,7 +159,7 @@ namespace Gym_App.Application.Services
             int pageSize)
         {
             //Note: This requires ISessionRepositry implementation
-            var users = await _sessionRepositry.GetSessionUsers(sessionID);
+            var users = await _unitOfWork.Sessions.GetSessionUsers(sessionID);
             if (users == null || !users.Any())
                 return new GettersResponse<MessageMiniViewDTO>
                 {
@@ -182,20 +177,18 @@ namespace Gym_App.Application.Services
                 };
 
             //Getting messages from repository
-            var messageQuery = _messageRepositry.GetSessionMessagesQueryable(sessionID);
+            var messageQuery = _unitOfWork.Messages.GetSessionMessagesQueryable(sessionID);
 
 
             if (DateTime.TryParse(startDate, out DateTime parsedStartDate) && DateTime.TryParse(endDate, out DateTime parsedEndDate))
-                messageQuery = _messageRepositry.FilterDate(parsedStartDate, parsedEndDate, messageQuery);
-
+                messageQuery = _unitOfWork.Messages.FilterDate(parsedStartDate, parsedEndDate, messageQuery);
             //filtering by search term
             if (!string.IsNullOrEmpty(searchTerm))
-                messageQuery = _messageRepositry.Search(searchTerm, messageQuery);
+                messageQuery = _unitOfWork.Messages.Search(searchTerm, messageQuery);
 
             //ordering by a given column
             if (!string.IsNullOrEmpty(sortColumn))
-                messageQuery = _messageRepositry.FilterSortColumn(sortColumn, OrderBy, messageQuery);
-
+                messageQuery = _unitOfWork.Messages.FilterSortColumn(sortColumn, OrderBy, messageQuery);    
             //Projecting the resultant message queries to messageDTO
             var messageResponse = messageQuery.Select(m => new MessageMiniViewDTO
             {
@@ -226,7 +219,7 @@ namespace Gym_App.Application.Services
             int pageSize)
         {
             //Getting messages from repository
-            var messageQuery = _messageRepositry.GetAllMessagesQueryable();
+            var messageQuery = _unitOfWork.Messages.GetAllMessagesQueryable();
 
             if (messageQuery == null || !messageQuery.Any())
                 return new GettersResponse<MessageViewDTO>
@@ -236,16 +229,15 @@ namespace Gym_App.Application.Services
                 };
 
             if (DateTime.TryParse(startDate, out DateTime parsedStartDate) && DateTime.TryParse(endDate, out DateTime parsedEndDate))
-                messageQuery = _messageRepositry.FilterDate(parsedStartDate, parsedEndDate, messageQuery);
+                messageQuery = _unitOfWork.Messages.FilterDate(parsedStartDate, parsedEndDate, messageQuery);
 
             //filtering by search term
             if (!string.IsNullOrEmpty(searchTerm))
-                messageQuery = _messageRepositry.Search(searchTerm, messageQuery);
+                messageQuery = _unitOfWork.Messages.Search(searchTerm, messageQuery);
 
             //ordering by a given column
             if (!string.IsNullOrEmpty(sortColumn))
-                messageQuery = _messageRepositry.FilterSortColumn(sortColumn, OrderBy, messageQuery);
-
+                messageQuery = _unitOfWork.Messages.FilterSortColumn(sortColumn, OrderBy, messageQuery);
             //Projecting the resultant message queries to messageDTO
             var messageResponse = messageQuery.Select(m => new MessageViewDTO
             {
@@ -270,7 +262,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<MessageViewDTO>> GetMessages(int page, int pageSize)
         {
             //Getting messages from repository
-            var messagesQuery = _messageRepositry.GetAllMessagesQueryable()
+            var messagesQuery = _unitOfWork.Messages.GetAllMessagesQueryable()
                 .Select(m => new MessageViewDTO
                 {
                     SenderID = m.Sender.Id,

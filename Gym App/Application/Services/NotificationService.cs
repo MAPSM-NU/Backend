@@ -57,6 +57,7 @@ namespace Gym_App.Application.Services
 
             //Saving to the Database
             await _unitOfWork.Notifications.Create(newNotification);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Successful" };
 
         }
@@ -79,6 +80,7 @@ namespace Gym_App.Application.Services
 
             //Saving to the Database
             await _unitOfWork.Notifications.Delete(Notification);
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Successful" };
         }
         public async Task<SettersResponse> DeleteAllNotifications(ClaimsPrincipal User, Guid UserID)//0 == Invalid UserID || 1 == User not found || 2 == Unauthorized || 3 == Successful
@@ -102,6 +104,7 @@ namespace Gym_App.Application.Services
             var deleted = await _unitOfWork.Notifications.DeleteUserNotifications(UserID);
             if(!deleted)
                 return new SettersResponse { status = 0, msg = "No Notifications" };
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Successful" };
         }
         public Task<SettersResponse> MarkAllAsRead(Guid UserID)

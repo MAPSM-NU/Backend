@@ -12,14 +12,12 @@ namespace Gym_App.Application.Services
 
     public class NotificationService : INotificationService // Fuck this class. Needs a change again. relationship with users should not be many to many GRAAAAAA
     {
-        private readonly INotificationRepositry _notificationRepositry;
-        private readonly IUserRepositry _userRepositry;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IAuthorizationService _authorizationService;
-        public NotificationService(INotificationRepositry notificationRepositry, IAuthorizationService authorizationService, IUserRepositry userRepositry)
+        public NotificationService(IUnitOfWork unitOfWork,IAuthorizationService authorizationService)
         {
-            _notificationRepositry = notificationRepositry;
+            _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
-            _userRepositry = userRepositry;
         }
 
         //        *********** Setters ***********
@@ -37,7 +35,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Faulty DTO" };
 
             //Getting User from Database
-            var user = await _userRepositry.GetById(userID);
+            var user = await _unitOfWork.Users.GetById(userID);
             //If user not found return 
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
@@ -58,7 +56,7 @@ namespace Gym_App.Application.Services
             };
 
             //Saving to the Database
-            await _notificationRepositry.Create(newNotification);
+            await _unitOfWork.Notifications.Create(newNotification);
             return new SettersResponse { status = 2, msg = "Successful" };
 
         }
@@ -69,7 +67,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid NotificationID" };
 
             //Getting notification from Database
-            var Notification = await _notificationRepositry.GetNotificationById(NotificationID);
+            var Notification = await _unitOfWork.Notifications.GetNotificationById(NotificationID);
             //If notification not found return
             if (Notification == null)
                 return new SettersResponse { status = 0, msg = "Notification not found" };
@@ -80,7 +78,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to the Database
-            await _notificationRepositry.Delete(Notification);
+            await _unitOfWork.Notifications.Delete(Notification);
             return new SettersResponse { status = 2, msg = "Successful" };
         }
         public async Task<SettersResponse> DeleteAllNotifications(ClaimsPrincipal User, Guid UserID)//0 == Invalid UserID || 1 == User not found || 2 == Unauthorized || 3 == Successful
@@ -91,7 +89,7 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Invalid UserID" };
 
             //Getting User from Database
-            var user = await _userRepositry.GetById(UserID);
+            var user = await _unitOfWork.Users.GetById(UserID);
             //If user not found return
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
@@ -101,7 +99,7 @@ namespace Gym_App.Application.Services
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Faulty DTO" };
 
-            var deleted = await _notificationRepositry.DeleteUserNotifications(UserID);
+            var deleted = await _unitOfWork.Notifications.DeleteUserNotifications(UserID);
             if(!deleted)
                 return new SettersResponse { status = 0, msg = "No Notifications" };
             return new SettersResponse { status = 2, msg = "Successful" };
@@ -121,7 +119,7 @@ namespace Gym_App.Application.Services
         public async Task<Guid> GetNotificationUserID(Guid NotificationID)//not used anymore
         {
             //Getting UserID from Database
-            var notif = await _notificationRepositry.GetNotificationById(NotificationID);
+            var notif = await _unitOfWork.Notifications.GetNotificationById(NotificationID);
             return notif.User.Id;
         }
         public async Task<GettersResponse<NotificationMiniViewDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
@@ -136,7 +134,7 @@ namespace Gym_App.Application.Services
                 };
 
             //Getting notifications from Database and projecting to DTO
-            var notificationsQuery = _notificationRepositry.GetUserNotificationsQueryable(UserID);
+            var notificationsQuery = _unitOfWork.Notifications.GetUserNotificationsQueryable(UserID);
             //if no notifications found return null
             if (notificationsQuery == null || notificationsQuery.Count() == 0)
                 return new GettersResponse<NotificationMiniViewDTO>
@@ -148,15 +146,14 @@ namespace Gym_App.Application.Services
             //Filtering by start date and end date
             DateTime validStartDate, validEndDate;
             if (DateTime.TryParse(startDate, out validStartDate) && DateTime.TryParse(endDate, out validEndDate))
-                _notificationRepositry.FilterDate(validStartDate, validEndDate, notificationsQuery);
+                _unitOfWork.Notifications.FilterDate(validStartDate, validEndDate, notificationsQuery);
 
             //Filtering by search term in title or content
-            if (!string.IsNullOrEmpty(searchTerm)) notificationsQuery = _notificationRepositry.Search(searchTerm, notificationsQuery);
+            if (!string.IsNullOrEmpty(searchTerm)) notificationsQuery = _unitOfWork.Notifications.Search(searchTerm, notificationsQuery);
 
             //Ordering by a given column
             if (!string.IsNullOrEmpty(sortColumn))//Either sort by custom given inputs
-                _notificationRepositry.FilterSortColumn(sortColumn, OrderBy, notificationsQuery);
-
+                _unitOfWork.Notifications.FilterSortColumn(sortColumn, OrderBy, notificationsQuery);
             var notificationsProjection = notificationsQuery.Select(n => new NotificationMiniViewDTO
             {
                 NotificationID = n.Id,
@@ -177,7 +174,7 @@ namespace Gym_App.Application.Services
         public async Task<GettersResponse<NotificationViewDTO>> GetAllNotifications(int page, int pageSize)
         {
             //Getting notifications from Database and projecting to DTO
-            var notificationsQuery = _notificationRepositry.GetAll().Select(n => new NotificationViewDTO
+            var notificationsQuery = _unitOfWork.Notifications.GetAll().Select(n => new NotificationViewDTO
             {
                 NotificationID = n.Id,
                 Date = n.CreatedAt,

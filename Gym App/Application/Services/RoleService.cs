@@ -9,16 +9,14 @@ namespace Gym_App.Application.Services
 {
     public class RoleService : IRoleService
     {
-        private readonly IRoleRepositry _roleRepositry;
-        private readonly IUserRepositry _userRepositry;
-        public RoleService(IRoleRepositry roleRepositry, IUserRepositry userRepositry) 
+        private readonly IUnitOfWork _unitOfWork;
+        public RoleService(IUnitOfWork unitOfWork) 
         {
-            _roleRepositry = roleRepositry;
-            _userRepositry = userRepositry;
+            _unitOfWork = unitOfWork;
         }
         public async Task<SettersResponse> createRole(string roleName)
         {
-            await _roleRepositry.Create(new Role 
+            await _unitOfWork.Roles.Create(new Role 
             { 
                 RoleName = roleName,
                 CreatedAt = DateTime.Now,
@@ -28,27 +26,27 @@ namespace Gym_App.Application.Services
         }
         public async Task<SettersResponse> updateRole(Guid roleId, string roleName)
         {
-            var role = await _roleRepositry.GetById(roleId);
+            var role = await _unitOfWork.Roles.GetById(roleId);
             if(role == null) 
                 return new SettersResponse { msg = "Role not found", status = 0 };
             role.RoleName = roleName;
             role.UpdatedAt = DateTime.Now;
-            await _roleRepositry.Update(role);
+            await _unitOfWork.Roles.Update(role);
             return new SettersResponse { msg = "Role updated", status = 2 };
         }
 
         public async Task<SettersResponse> deleteRole(Guid roleId)
         {
-            var role = await _roleRepositry.GetById(roleId);
+            var role = await _unitOfWork.Roles.GetById(roleId);
             if (role == null)
                 return new SettersResponse { msg = "Role not found", status = 0 };
-            await _roleRepositry.Delete(role);
+            await _unitOfWork.Roles.Delete(role);
             return new SettersResponse { msg = "Role deleted", status = 2 };
         }
 
         public async Task<GettersResponse<Role>> getRoles()
         {
-            var roles = _roleRepositry.GetAll();
+            var roles = _unitOfWork.Roles.GetAll();
             var pagedRoles = await PagedList<Role>.CreateAsync(roles, 1, roles.Count());
             return new GettersResponse<Role>
             {
@@ -60,11 +58,11 @@ namespace Gym_App.Application.Services
 
         public async Task<GettersResponse<UserMiniViewDTO>> getUsersOfRole(Guid roleId, string roleName)
         {
-            bool isRoleExist = await _roleRepositry.IsRoleExist(roleId);
+            bool isRoleExist = await _unitOfWork.Roles.IsRoleExist(roleId);
             if (!isRoleExist)
                 return new GettersResponse<UserMiniViewDTO> { msg = "Role not found", status = 0 };
 
-            var users = await _userRepositry.GetUsersByRoleAsQueryable(roleId);
+            var users = await _unitOfWork.Users.GetUsersByRoleAsQueryable(roleId);
             var userDTOs = users.Select(u => new UserMiniViewDTO
             {
                 Id = u.Id,

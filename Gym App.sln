@@ -3,13 +3,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gym App.Core", "Gym App.Core\Gym App.Core.csproj", "{8EA35145-98ED-443C-85C1-9773A830834C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GymApp.Core", "Gym App.Core\GymApp.Core.csproj", "{8EA35145-98ED-443C-85C1-9773A830834C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gym App.Application", "Gym App.Application\Gym App.Application.csproj", "{1186B22E-3A73-4EF1-9DE5-2F5700021F72}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GymApp.Application", "Gym App.Application\GymApp.Application.csproj", "{1186B22E-3A73-4EF1-9DE5-2F5700021F72}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gym App.Infrastructure", "Gym App.Infrastructure\Gym App.Infrastructure.csproj", "{8670FBFF-0C06-4340-8FBD-DBF8B778E2F7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GymApp.Infrastructure", "Gym App.Infrastructure\GymApp.Infrastructure.csproj", "{8670FBFF-0C06-4340-8FBD-DBF8B778E2F7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gym App.API", "Gym App.API\Gym App.API.csproj", "{5A2E78F9-AA21-4979-A0CC-41639D399073}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GymApp.Tests", "GymApp.Tests\GymApp.Tests.csproj", "{405A58A6-E072-66EE-7288-E6A963843DA0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1186B22E-3A73-4EF1-9DE5-2F5700021F72} = {1186B22E-3A73-4EF1-9DE5-2F5700021F72}
+		{8670FBFF-0C06-4340-8FBD-DBF8B778E2F7} = {8670FBFF-0C06-4340-8FBD-DBF8B778E2F7}
+		{8EA35145-98ED-443C-85C1-9773A830834C} = {8EA35145-98ED-443C-85C1-9773A830834C}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +76,18 @@ Global
 		{5A2E78F9-AA21-4979-A0CC-41639D399073}.Release|x64.Build.0 = Release|Any CPU
 		{5A2E78F9-AA21-4979-A0CC-41639D399073}.Release|x86.ActiveCfg = Release|Any CPU
 		{5A2E78F9-AA21-4979-A0CC-41639D399073}.Release|x86.Build.0 = Release|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Debug|x64.Build.0 = Debug|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Debug|x86.Build.0 = Debug|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Release|x64.ActiveCfg = Release|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Release|x64.Build.0 = Release|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Release|x86.ActiveCfg = Release|Any CPU
+		{405A58A6-E072-66EE-7288-E6A963843DA0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

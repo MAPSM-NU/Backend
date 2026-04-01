@@ -12,13 +12,13 @@
     <PackageReference Include="Microsoft.AspNet.Identity.Core" Version="2.2.4" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.20" />
     <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.0" />
-    <PackageReference Include="MimeKit" Version="4.4.0" />
+    <PackageReference Include="MimeKit" Version="4.15.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Gym App.Core\Gym App.Core.csproj" />
-    <ProjectReference Include="..\Gym App.Infrastructure\Gym App.Infrastructure.csproj" />
+    <ProjectReference Include="..\Gym App.Core\GymApp.Core.csproj" />
+    <ProjectReference Include="..\Gym App.Infrastructure\GymApp.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

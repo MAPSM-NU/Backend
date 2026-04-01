@@ -1,0 +1,183 @@
+using Gym_App.Application.Authorization;
+using Gym_App.Application.Services;
+using Gym_App.Infastructure.Context;
+using Gym_App.Infastructure.Interfaces.Repositries;
+using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infastructure.Repositries;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Serilog;
+using System.Text;
+using System.Text.Json.Serialization;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// ============================================
+// LOGGING CONFIGURATION
+// ============================================
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("Infastructure/logs/gymapp.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+builder.Logging.ClearProviders().AddSerilog();
+
+// ============================================
+// CORE SERVICES
+// ============================================
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+// ============================================
+// SWAGGER CONFIGURATION
+// ============================================
+builder.Services.AddSwaggerGen(c => {
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Gym App API",
+        Version = "v1"
+    });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 1safsfsdfdfd\"",
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+        {
+            new OpenApiSecurityScheme {
+                Reference = new OpenApiReference {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
+
+// ============================================
+// DATABASE CONFIGURATION
+// ============================================
+    builder.Services.AddDbContext<DbBase>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("ModyConnection")));
+
+// ============================================
+// UNIT OF WORK & REPOSITORIES
+// ============================================
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// ============================================
+// APPLICATION SERVICES
+// ============================================
+builder.Services.AddScoped<IUserServise, UserService>();
+builder.Services.AddScoped<ISessionService, SessionService>();
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<IWorkoutService, WorkoutService>();
+builder.Services.AddScoped<IExerciseService, ExerciseService>();
+builder.Services.AddScoped<IMuscleService, MuscleService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHandler>();
+
+// ============================================
+// UTILITY SERVICES
+// ============================================
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddScoped<IExerciseData, ExerciseData>();
+
+// ============================================
+// AUTHORIZATION
+// ============================================
+builder.Services.AddSingleton<IAuthorizationHandler, SameUserHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();
+
+// ============================================
+// AUTHENTICATION
+// ============================================
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            ValidateLifetime = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Token"]!)),
+            ValidateIssuerSigningKey = true,
+        };
+        options.IncludeErrorDetails = true;
+    });
+
+// ============================================
+// AUTHORIZATION POLICIES
+// ============================================
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("NormalUsage", policy => 
+        policy.RequireRole("Admin", "User"));
+    
+    options.AddPolicy("ElevatedPower", policy => 
+        policy.RequireRole("Admin"));
+    
+    options.AddPolicy("SameUserPolicy", policy =>
+        policy.Requirements.Add(new SameUserRequirement(allowAdmins: true)));
+    
+    options.AddPolicy("ListUserPolicy", policy =>
+        policy.Requirements.Add(new ListUserRequirement(allowAdmins: true)));
+});
+
+// ============================================
+// JSON SERIALIZATION
+// ============================================
+builder.Services.ConfigureHttpJsonOptions(x =>
+{
+    x.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    x.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+});
+
+// ============================================
+// BUILD APPLICATION
+// ============================================
+var app = builder.Build();
+
+// ============================================
+// DATABASE MIGRATION
+// ============================================
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<DbBase>();
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        Log.Error($"Migration failed: {ex.Message}");
+    }
+}
+
+// ============================================
+// MIDDLEWARE PIPELINE
+// ============================================
+app.UseSwagger();
+app.UseSwaggerUI();
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();

@@ -30,7 +30,6 @@
     <ProjectReference Include="..\Gym App.Core\Gym App.Core.csproj" />
     <ProjectReference Include="..\Gym App.Application\Gym App.Application.csproj" />
     <ProjectReference Include="..\Gym App.Infrastructure\Gym App.Infrastructure.csproj" />
-    <ProjectReference Include="..\Gym App.Presentation\Gym App.Presentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -211,7 +211,7 @@ public class AuthTests
     {
         var dto = new UserCreationDTO
         {
-            Name = "Test",
+            Name = "InvalidEmailTest",
             Email = "InvalidEmail",
             Password = "Test_2004",
             UserType = "T"

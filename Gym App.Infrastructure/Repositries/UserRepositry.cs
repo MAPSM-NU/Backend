@@ -8,9 +8,9 @@ namespace Gym_App.Infastructure.Repositries
 {
     public class UserRepositry : BaseRepositry<User>, IUserRepositry
     {
-        private readonly DbBase _db;
+        private readonly DbContext _db;
         private readonly DbSet<User> table;
-        public UserRepositry(DbBase db) : base(db)
+        public UserRepositry(DbContext db) : base(db)
         {
             _db = db ?? throw new ArgumentNullException(nameof(db));
             table = _db.Set<User>();
@@ -74,6 +74,7 @@ namespace Gym_App.Infastructure.Repositries
                 "city" or "ci" => u => u.City!,
                 "height" or "h" => u => u.HeightCm!,
                 "weight" or "w" => u => u.WeightKg!,
+                "createdat" or "ca" => u => u.CreatedAt,
                 _ => u => u.Id,
             };
 
@@ -87,7 +88,7 @@ namespace Gym_App.Infastructure.Repositries
             if (string.IsNullOrEmpty(searchTerm))
                 return query;
             searchTerm = searchTerm.ToLower();
-            return query.Where(u => u.Name.ToLower().Contains(searchTerm) || u.Email.ToLower().Contains(searchTerm));
+            return query.Where(u => u.Name.ToLower().Contains(searchTerm) || u.Email.ToLower().Contains(searchTerm) || u.City.ToLower().Contains(searchTerm) || u.State.ToLower().Contains(searchTerm) || u.Country.ToLower().Contains(searchTerm));
         }
     }
 }

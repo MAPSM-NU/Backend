@@ -264,10 +264,16 @@ public class UserService : IUserServise
         if (id == Guid.Empty)
             return new SettersResponse { status = 0, msg = "Invalid user ID." };
 
-        await _unitOfWork.Users.Delete(id);
-        await _unitOfWork.SaveChangesAsync();
-        
-        return new SettersResponse { status = 2, msg = "User deleted successfully." };
+        try
+        {
+            await _unitOfWork.Users.Delete(id);
+            await _unitOfWork.SaveChangesAsync();
+            return new SettersResponse { status = 2, msg = "User deleted successfully." };
+        }
+        catch(Exception ex)
+        {
+            return new SettersResponse { status = 0, msg = "User Not Found" };
+        }
     }
 
     // ========== Getters ==========

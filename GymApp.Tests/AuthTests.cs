@@ -21,7 +21,7 @@ public class AuthTests
     public AuthTests()
     {
         var options = new DbContextOptionsBuilder<DbBase>()
-            .UseInMemoryDatabase(databaseName: "TestDatabase")
+            .UseInMemoryDatabase(databaseName: $"AuthTestDatabase-{Guid.NewGuid()}")
             .Options;
         _db = new DbBase(options);
         _unitOfWork = new UnitOfWork(_db);

@@ -10,10 +10,10 @@ namespace Gym_App.Infastructure.Repositries
 {
     public class BaseRepositry<T> : IBaseRepositry<T> where T : BaseEntity
     {
-        private readonly DbBase _db;
+        private readonly DbContext _db;
         private readonly DbSet<T> table;
 
-        public BaseRepositry(DbBase db)
+        public BaseRepositry(DbContext db)
         {
             _db = db ?? throw new ArgumentNullException(nameof(db));
             table = _db.Set<T>();

@@ -197,7 +197,7 @@ namespace Gym_App.Application.Services
             //Saving to Database via repository
             await _unitOfWork.Workouts.Update(isWorkoutExist);
             await _unitOfWork.SaveChangesAsync();
-            return new SettersResponse { status = 2, msg = "Exercises added successfully" };
+            return new SettersResponse { status = 2, msg = "Exercises set successfully" };
         }
 
         public async Task<SettersResponse> DeleteExercisesFromWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)
@@ -295,6 +295,7 @@ namespace Gym_App.Application.Services
 
             var workoutDTO = new WorkoutViewDTO
             {
+                UserID = workout.User.Id,
                 WorkoutID = workout.Id,
                 Name = workout.Name,
                 Description = workout.Description,
@@ -323,7 +324,7 @@ namespace Gym_App.Application.Services
                     msg = "No Exercises in given workout"
                 };
 
-            var exercisesQuery = workout.Exercises.AsQueryable();
+            IQueryable<Exercise> exercisesQuery = workout.Exercises.AsQueryable();
 
             //If the searchTerm is not null, filter by name, description, or difficulty
             if (!string.IsNullOrEmpty(searchTerm))
@@ -333,8 +334,8 @@ namespace Gym_App.Application.Services
             if (!string.IsNullOrEmpty(sortColumn))
                 exercisesQuery = _unitOfWork.Exercises.FilterSortColumn(sortColumn, OrderBy, exercisesQuery);
 
-            //Projecting the resultant exercise queries as exerciseDTO
-            var exerciseResult = exercisesQuery
+            //Projecting the resultant exercise queries as exerciseDTO and materialize to list
+            var allExercises = exercisesQuery
                 .Select(e => new ExerciseViewDTO
                 {
                     ExerciseID = e.Id,
@@ -344,10 +345,19 @@ namespace Gym_App.Application.Services
                     Grip = e.Grip,
                     Category = e.Category,
                     VideoUrl = e.VideoUrl,
-                });
+                })
+                .ToList(); // Materialize to list here
 
-            //Making the result as a paged list
-            var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exerciseResult, page, pageSize);
+            //Querying a ICollection seems to result in an error when applying asynchrounous functions so had to do it manually
+            //Manual paging for in-memory data
+            int totalCount = allExercises.Count;
+            var pagedItems = allExercises
+                .Skip(pageSize * (page - 1))
+                .Take(pageSize)
+                .ToList();
+
+            var exercises = new PagedList<ExerciseViewDTO>(pagedItems, page, pageSize, totalCount);
+            
             return new GettersResponse<ExerciseViewDTO>
             {
                 status = 2,

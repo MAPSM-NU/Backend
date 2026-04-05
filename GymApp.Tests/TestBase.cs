@@ -1,0 +1,61 @@
+﻿using Gym_App.Domain;
+using Gym_App.Infastructure.Context;
+using Gym_App.Infastructure.Interfaces.Repositries;
+using Gym_App.Infastructure.Repositries;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
+namespace GymApp.Tests
+{
+    public abstract class TestBase
+    {
+        protected readonly DbBase _db;
+        protected readonly IUnitOfWork _unitOfWork;
+
+        protected TestBase(string databaseName)
+        {
+            var options = new DbContextOptionsBuilder<DbBase>()
+                .UseInMemoryDatabase(databaseName: $"{databaseName}-{Guid.NewGuid()}")
+                .Options;
+            _db = new DbBase(options);
+            _unitOfWork = new UnitOfWork(_db);
+        }
+
+        // Standard cleanup methods
+        protected async Task CleanupAsync()
+        {
+            if (_db.Users.Any())
+                _db.Users.RemoveRange(_db.Users);
+            if (_db.Roles.Any())
+                _db.Roles.RemoveRange(_db.Roles);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        // Factory methods for common test entities
+        protected User CreateTestUser(Role role, string email = "test@gmail.com", string password = "Test_2004", string userType = "T", string name = "Test User")
+        {
+            var user = new User
+            {
+                Name = name,
+                Email = email,
+                UserType = userType,
+                Password = new PasswordHasher<User>().HashPassword(null, password),
+                Role = role,
+                Id = Guid.NewGuid()
+            };
+            _unitOfWork.Users.Create(user);
+            return user;
+        }
+
+        protected Role CreateTestRole(string roleName = "User")
+        {
+            var role =  new Role
+            {
+                RoleName = roleName,
+                Id = Guid.NewGuid()
+            };
+            _unitOfWork.Roles.Create(role);
+            return role;
+        }
+    }
+}

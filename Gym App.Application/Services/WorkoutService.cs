@@ -122,8 +122,8 @@ namespace Gym_App.Application.Services
         public async Task<SettersResponse> AddExercisesToWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)
         {
             //Checking the validity of the DTO
-            if (workoutExercises == null || workoutID == Guid.Empty)
-                return new SettersResponse { status = 0, msg = "Invalid workout ID" };
+            if (workoutExercises == null || workoutID == Guid.Empty || workoutExercises.ExercisesID == null)
+                return new SettersResponse { status = 0, msg = "Invalid data" };
 
             //Searching for the Workout
             var workout = await _unitOfWork.Workouts.GetWorkoutById(workoutID);
@@ -133,7 +133,7 @@ namespace Gym_App.Application.Services
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, workout.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return new SettersResponse { status = 1, msg = "Invalid workout data" };
+                return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Determining if there are new exercises to add
             var existingExerciseIds = new HashSet<Guid>(workout.Exercises!.Select(e => e.Id));
@@ -162,8 +162,8 @@ namespace Gym_App.Application.Services
         public async Task<SettersResponse> SetExercisesOfWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)
         {
             //Checking the validity of the DTO
-            if (workoutExercises == null || workoutID == Guid.Empty)
-                return new SettersResponse { status = 0, msg = "Invalid workout ID" };
+            if (workoutExercises == null || workoutID == Guid.Empty || workoutExercises.ExercisesID == null)
+                return new SettersResponse { status = 0, msg = "Invalid data" };
 
             //Searching for the Workout
             var isWorkoutExist = await _unitOfWork.Workouts.GetWorkoutById(workoutID);
@@ -173,20 +173,15 @@ namespace Gym_App.Application.Services
             //Authorization
             var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.Id, "SameUserPolicy");
             if (!authResult.Succeeded)
-                return new SettersResponse { status = 1, msg = "Invalid workout data" };
+                return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Clearing existing exercises to add new ones
             isWorkoutExist.Exercises!.Clear();
 
-            //Determining if there are new exercises to add
-            var exerciseIDsToAdd = workoutExercises.ExercisesID.ToList();
-            if (exerciseIDsToAdd == null || exerciseIDsToAdd.Count == 0)
-                return new SettersResponse { status = 0, msg = "No new exercises to add" };
-
             //Getting the exercises to add from the repository
-            var ExercisesToAdd = await _unitOfWork.Exercises.GetExercisesByIds(exerciseIDsToAdd);
+            var ExercisesToAdd = await _unitOfWork.Exercises!.GetExercisesByIds(workoutExercises.ExercisesID);
             if (ExercisesToAdd == null || !ExercisesToAdd.Any())
-                return new SettersResponse { status = 0, msg = "No new exercises found" };
+                return new SettersResponse { status = 0, msg = "No exercises found" };
 
             //saving the new exercises to the workout
             foreach (var exercise in ExercisesToAdd)
@@ -224,8 +219,6 @@ namespace Gym_App.Application.Services
 
             //Getting the exercises to delete from the Repository
             var ExercisesToRemove = await _unitOfWork.Exercises.GetExercisesByIds(exerciseIDsToRemove);
-            if (ExercisesToRemove == null || !ExercisesToRemove.Any())
-                return new SettersResponse { status = 0, msg = "No exercises found" };
 
             //Removing from the Workout
             foreach (var exercise in ExercisesToRemove)
@@ -324,18 +317,49 @@ namespace Gym_App.Application.Services
                     msg = "No Exercises in given workout"
                 };
 
-            IQueryable<Exercise> exercisesQuery = workout.Exercises.AsQueryable();
+            // Start with exercises as an enumerable for in-memory operations
+            var exercises = workout.Exercises.AsEnumerable();
 
             //If the searchTerm is not null, filter by name, description, or difficulty
             if (!string.IsNullOrEmpty(searchTerm))
-                exercisesQuery = _unitOfWork.Exercises.Search(searchTerm, exercisesQuery);
+            {
+                searchTerm = searchTerm.ToLower();
+                exercises = exercises.Where(e =>
+                    e.Name.ToLower().Contains(searchTerm) ||
+                    e.Description?.ToLower().Contains(searchTerm) == true ||
+                    e.Category?.ToLower().Contains(searchTerm) == true ||
+                    e.Difficulty?.ToLower().Contains(searchTerm) == true);
+            }
 
             //If the sortColumn is not null, sort the data
             if (!string.IsNullOrEmpty(sortColumn))
-                exercisesQuery = _unitOfWork.Exercises.FilterSortColumn(sortColumn, OrderBy, exercisesQuery);
+            {
+                var orderLower = (OrderBy ?? string.Empty).ToLowerInvariant();
+                bool descending = orderLower == "desc" || orderLower == "descending" || orderLower == "descend" || orderLower == "d";
+                
+                exercises = sortColumn.ToLower() switch
+                {
+                    "name" or "n" => descending 
+                        ? exercises.OrderByDescending(e => e.Name)
+                        : exercises.OrderBy(e => e.Name),
+                    "difficulty" or "dif" => descending
+                        ? exercises.OrderByDescending(e => e.Difficulty)
+                        : exercises.OrderBy(e => e.Difficulty),
+                    "description" or "desc" => descending
+                        ? exercises.OrderByDescending(e => e.Description)
+                        : exercises.OrderBy(e => e.Description),
+                    "category" or "cat" => descending
+                        ? exercises.OrderByDescending(e => e.Category)
+                        : exercises.OrderBy(e => e.Category),
+                    "date" or "createdat" or "created" => descending
+                        ? exercises.OrderByDescending(e => e.CreatedAt)
+                        : exercises.OrderBy(e => e.CreatedAt),
+                    _ => exercises
+                };
+            }
 
-            //Projecting the resultant exercise queries as exerciseDTO and materialize to list
-            var allExercises = exercisesQuery
+            //Projecting the resultant exercises to ExerciseViewDTO
+            var allExercises = exercises
                 .Select(e => new ExerciseViewDTO
                 {
                     ExerciseID = e.Id,
@@ -346,9 +370,8 @@ namespace Gym_App.Application.Services
                     Category = e.Category,
                     VideoUrl = e.VideoUrl,
                 })
-                .ToList(); // Materialize to list here
+                .ToList(); // Materialize to list
 
-            //Querying a ICollection seems to result in an error when applying asynchrounous functions so had to do it manually
             //Manual paging for in-memory data
             int totalCount = allExercises.Count;
             var pagedItems = allExercises
@@ -356,13 +379,13 @@ namespace Gym_App.Application.Services
                 .Take(pageSize)
                 .ToList();
 
-            var exercises = new PagedList<ExerciseViewDTO>(pagedItems, page, pageSize, totalCount);
+            var pagedExercises = new PagedList<ExerciseViewDTO>(pagedItems, page, pageSize, totalCount);
             
             return new GettersResponse<ExerciseViewDTO>
             {
                 status = 2,
                 msg = "Successful",
-                Data = exercises
+                Data = pagedExercises
             };
         }
 

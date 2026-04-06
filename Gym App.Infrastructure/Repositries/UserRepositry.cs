@@ -79,7 +79,7 @@ namespace Gym_App.Infastructure.Repositries
             };
 
             var orderLower = (sortOrder ?? string.Empty).ToLowerInvariant();
-            bool descending = orderLower == "desc" || orderLower == "descending";
+            bool descending = orderLower == "desc" || orderLower == "descending" || orderLower == "descend" || orderLower == "d";
 
             return descending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
         }

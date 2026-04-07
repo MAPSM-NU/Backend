@@ -198,8 +198,8 @@ namespace Gym_App.Application.Services
         public async Task<SettersResponse> DeleteExercisesFromWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)
         {
             //checking the Validity of the DTO
-            if (workoutExercises == null || workoutID == Guid.Empty)
-                return new SettersResponse { status = 0, msg = "Invalid workout ID" };
+            if (workoutExercises == null || workoutID == Guid.Empty || workoutExercises.ExercisesID == null || !workoutExercises.ExercisesID.Any())
+                return new SettersResponse { status = 0, msg = "Invalid data" };
 
             //Searching for the Workout
             var isWorkoutExist = await _unitOfWork.Workouts.GetWorkoutById(workoutID);

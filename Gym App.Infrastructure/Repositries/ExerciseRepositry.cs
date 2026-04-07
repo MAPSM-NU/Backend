@@ -34,10 +34,11 @@ namespace Gym_App.Infastructure.Repositries
                 "difficulty" or "dif" => e => e.Difficulty!,
                 "description" or "desc" => e => e.Description!,
                 "category" or "cat" => e => e.Category!,
+                "createdat" or "created" or "c" or "date" or "d" => e => e.CreatedAt,
                 _ => e => e.Id,
             };
             var orderLower = (sortOrder ?? string.Empty).ToLowerInvariant();
-            bool descending = orderLower == "desc" || orderLower == "descending";
+            bool descending = orderLower == "desc" || orderLower == "descending" || orderLower == "descend" || orderLower == "d";
             return descending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
         }
         public override IQueryable<Exercise> Search(string searchTerm, IQueryable<Exercise> query)

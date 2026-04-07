@@ -32,6 +32,16 @@ namespace GymApp.Tests
         }
 
         // Factory methods for common test entities
+        protected RefreshTokens CreateTestRefreshToken()
+        {
+            var refreshToken = new RefreshTokens
+            {
+                RefreshToken = "refresh-token",
+                Expires = DateTime.Now.AddDays(7)
+            };
+            _unitOfWork.Tokens!.Create(refreshToken);
+            return refreshToken;
+        }
         protected Role CreateTestRole(string roleName = "User")
         {
             var role = new Role
@@ -42,7 +52,10 @@ namespace GymApp.Tests
             _unitOfWork.Roles.Create(role);
             return role;
         }
-        protected User CreateTestUser(Role role, string email = "test@gmail.com", string password = "Test_2004", string userType = "T", string name = "Test User")
+        protected User CreateTestUser(Role role, string email = "test@gmail.com", string password = "Test_2004",
+            string userType = "T", string name = "Test User", string phoneNumber = "testNum", string state = "TestState",
+            string city = "TestCity", string country = "TestCountry", string bio = "TestBio", DateTime? dob = null, int heightCm = 0, int weightKg = 0,
+            bool isEmailConfirmed = false)
         {
             var user = new User
             {
@@ -51,7 +64,16 @@ namespace GymApp.Tests
                 UserType = userType,
                 Password = new PasswordHasher<User>().HashPassword(null, password),
                 Role = role,
-                Id = Guid.NewGuid()
+                Id = Guid.NewGuid(),
+                PhoneNumber = phoneNumber,
+                State = state,
+                City = city,
+                Country = country,
+                Bio = bio,
+                DOB = dob,
+                HeightCm = heightCm,
+                WeightKg = weightKg,
+                isEmailConfirmed = isEmailConfirmed
             };
             _unitOfWork.Users.Create(user);
             return user;

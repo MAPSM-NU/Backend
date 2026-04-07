@@ -83,7 +83,7 @@ public class UserService : IUserServise
 
     public async Task<ResponseToken> SignUpUser(UserCreationDTO u)
     {
-        if (u == null || u.Name == null || u.Email == null || u.Password == null)
+        if (u == null || string.IsNullOrEmpty(u.Name) || string.IsNullOrEmpty(u.Email) || string.IsNullOrEmpty(u.Password))
             return new ResponseToken { Status = 0, msg = "Missing Information" };
 
         if (!await isNameValid(u.Name))
@@ -177,16 +177,16 @@ public class UserService : IUserServise
     public async Task<SettersResponse> UpdateUser(UserUpdateDTO user)
     {
         if (user == null)
-            return new SettersResponse { status = 0, msg = "Invalid user data." };
+            return new SettersResponse { status = 0, msg = "Invalid user data" };
 
         var existingUser = await _unitOfWork.Users.GetById(user.Id);
         if (existingUser is null)
-            return new SettersResponse { status = 0, msg = "User not found." };
+            return new SettersResponse { status = 0, msg = "User not found" };
 
         if (!string.IsNullOrEmpty(user.Name))
         {
             if (!await isNameValid(user.Name))
-                return new SettersResponse { status = 0, msg = "Name is not valid." };
+                return new SettersResponse { status = 0, msg = "Name is not valid" };
             existingUser.Name = user.Name;
         }
 
@@ -262,7 +262,7 @@ public class UserService : IUserServise
     public async Task<SettersResponse> DeleteUser(Guid id)
     {
         if (id == Guid.Empty)
-            return new SettersResponse { status = 0, msg = "Invalid user ID." };
+            return new SettersResponse { status = 0, msg = "Invalid user ID" };
 
         try
         {
@@ -272,7 +272,7 @@ public class UserService : IUserServise
         }
         catch(Exception ex)
         {
-            return new SettersResponse { status = 0, msg = "User Not Found" };
+            return new SettersResponse { status = 0, msg = "User not found" };
         }
     }
 

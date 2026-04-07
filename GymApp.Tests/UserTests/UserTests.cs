@@ -7,63 +7,27 @@ using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 using Moq;
 
-namespace GymApp.Tests;
+namespace GymApp.Tests.UserTests;
 
-public class UserTests
+public class UserTests : TestBase
 {
-    private readonly DbBase _db;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IUserServise _userServiceMock;
     private readonly Mock<ITokenHandler> _tokenHandlerMock;
-    public UserTests()
+    public UserTests() : base("UserTestDatabase")
     {
-        var options = new DbContextOptionsBuilder<DbBase>()
-            .UseInMemoryDatabase(databaseName: $"UserTestDatabase-{Guid.NewGuid()}")
-            .Options;
-        _db = new DbBase(options);
-        _unitOfWork = new UnitOfWork(_db);
         _tokenHandlerMock = new Mock<ITokenHandler>();
         _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object);
     }
     [Fact]
     public async Task UserUpdateTest()
     {
-        var role = new Role
-        {
-            Id = Guid.NewGuid(),
-            RoleName = "User"
-        };
-        await _unitOfWork.Roles.Create(role);
-        await _unitOfWork.SaveChangesAsync();
-        var userId = Guid.NewGuid();
-        var user = new User
-        {
-            Role = role,
-            Name = "Test",
-            Email = "Test@gmail.com",
-            Password = new PasswordHasher<User>().HashPassword(null, "Test_2004"),
-            State = "TestState",
-            City = "TestCity",
-            Country = "TestCountry",
-            DOB = DateTime.Now,
-            Bio = "TestBio",
-            CreatedAt = DateTime.Now,
-            HeightCm = 0,
-            WeightKg = 0,
-            Id = userId,
-            isEmailConfirmed = false,
-            PhoneNumber = "testNum",
-            UserType = "Trainee",
-            UpdatedAt = DateTime.Now
-        };
-        await _unitOfWork.Users.Create(user);
+        var user = CreateTestUser(CreateTestRole());
         await _unitOfWork.SaveChangesAsync();
         var dto = new UserUpdateDTO
         {
-            Id = userId,
+            Id = user.Id,
             Name = "UpdatedTest",
             State = "UpdatedTestState",
             City = "UpdatedTestCity",
@@ -76,7 +40,7 @@ public class UserTests
         var result = await _userServiceMock.UpdateUser(dto);
         Assert.Equal(2, result.status);
 
-        var userFromDatabase = await _unitOfWork.Users.GetById(userId);
+        var userFromDatabase = await _unitOfWork.Users.GetById(user.Id);
         Assert.NotNull(userFromDatabase);
         Assert.Equal("UpdatedTest", userFromDatabase.Name);
         Assert.Equal("UpdatedTestState", userFromDatabase.State);
@@ -86,6 +50,67 @@ public class UserTests
         Assert.Equal(1, userFromDatabase.HeightCm);
         Assert.Equal(1, userFromDatabase.WeightKg);
         Assert.Equal("UpdatedtestNum", userFromDatabase.PhoneNumber);
+    }
+    [Fact]
+    public async Task UserUpdateNotFoundTest()
+    {
+        var dto = new UserUpdateDTO
+        {
+            Id = Guid.NewGuid(),
+            Name = "UpdatedTest",
+            State = "UpdatedTestState",
+            City = "UpdatedTestCity",
+            Country = "UpdatedTestCountry",
+            Bio = "UpdatedTestBio",
+            HeightCm = 1,
+            WeightKg = 1,
+            PhoneNumber = "UpdatedtestNum",
+        };
+        var result = await _userServiceMock.UpdateUser(dto);
+        Assert.NotNull(result);
+        Assert.Equal("User not found", result.msg);
+        Assert.Equal(0, result.status);
+    }
+    [Fact]
+    public async Task UserUpdateNameInvalidTest()
+    {
+        var dto = new UserUpdateDTO
+        {
+            Id = Guid.NewGuid(),
+            Name = "",
+            State = "UpdatedTestState",
+            City = "UpdatedTestCity",
+            Country = "UpdatedTestCountry",
+            Bio = "UpdatedTestBio",
+            HeightCm = 1,
+            WeightKg = 1,
+            PhoneNumber = "UpdatedtestNum",
+        };
+        var result = await _userServiceMock.UpdateUser(dto);
+        Assert.NotNull(result);
+        Assert.Equal("User not found", result.msg);
+        Assert.Equal(0, result.status);
+
+        var user = CreateTestUser(CreateTestRole());
+        var user2 = CreateTestUser(CreateTestRole(),"test@gmail.com","Test_2004","T","Test2");//the second user
+        await _unitOfWork.SaveChangesAsync();
+
+        var dto2 = new UserUpdateDTO
+        {
+            Id = user.Id,
+            Name = "Test2", // Name already exists
+            State = "UpdatedTestState",
+            City = "UpdatedTestCity",
+            Country = "UpdatedTestCountry",
+            Bio = "UpdatedTestBio",
+            HeightCm = 1,
+            WeightKg = 1,
+            PhoneNumber = "UpdatedtestNum",
+        };
+        var result2 = await _userServiceMock.UpdateUser(dto2);
+        Assert.NotNull(result2);
+        Assert.Equal("Name is not valid", result2.msg);
+        Assert.Equal(0, result2.status);
     }
     [Fact]
     public async Task UserDeleteTest()
@@ -113,6 +138,22 @@ public class UserTests
         Assert.Null(user.Value);
     }
     [Fact]
+    public async Task UserDeleteNotFoundTest()
+    {
+        var result = await _userServiceMock.DeleteUser(Guid.NewGuid());
+        Assert.NotNull(result);
+        Assert.Equal("User not found", result.msg);
+        Assert.Equal(0, result.status);
+    }
+    [Fact]
+    public async Task UserDeleteInvalidIdTest()
+    {
+        var result = await _userServiceMock.DeleteUser(Guid.Empty);
+        Assert.NotNull(result);
+        Assert.Equal("Invalid user ID", result.msg);
+        Assert.Equal(0, result.status);
+    }
+    [Fact]
     public async Task UserGetByIdTest()
     {
         var role = new Role
@@ -135,6 +176,13 @@ public class UserTests
         var result = await _userServiceMock.GetUserByID(userId);
         Assert.NotNull(result.Value);
         Assert.Equal(2, result.status);
+    }
+    public async Task UserGetByIdNotFoundTest()
+    {
+        var result = await _userServiceMock.GetUserByID(Guid.NewGuid());
+        Assert.Null(result.Value);
+        Assert.Equal("User not found", result.msg);
+        Assert.Equal(0, result.status);
     }
     [Fact]
     public async Task UserGetAllTest()

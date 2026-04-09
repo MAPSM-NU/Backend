@@ -82,7 +82,7 @@ namespace GymApp.Tests.NotificationTests
             Assert.Equal(2, result.status);
             Assert.Equal("Successful", result.msg);
             Assert.NotNull(result.Data);
-            Assert.True(result.Data.Count >= 2);
+            Assert.True(result.Data.TotalCount >= 2);
         }
 
         /// <summary>
@@ -220,7 +220,8 @@ namespace GymApp.Tests.NotificationTests
             // ASSERT
             Assert.Equal(2, result.status);
             Assert.NotNull(result.Data);
-            Assert.True(result.Data.Count <= 10);
+            Assert.Equal(15, result.Data.TotalCount);  // Total count should be 15
+            Assert.True(result.Data.Items.Count <= 10);      // Current page should have <= 10 items
         }
 
         /// <summary>
@@ -325,7 +326,7 @@ namespace GymApp.Tests.NotificationTests
             Assert.Equal(2, result.status);
             Assert.Equal("Successful", result.msg);
             Assert.NotNull(result.Data);
-            Assert.True(result.Data.Count >= 2);
+            Assert.True(result.Data.TotalCount >= 2);
         }
 
         /// <summary>
@@ -431,7 +432,7 @@ namespace GymApp.Tests.NotificationTests
             // ASSERT
             Assert.Equal(2, result.status);
             Assert.NotNull(result.Data);
-            Assert.True(result.Data.Count >= 1);
+            Assert.True(result.Data.TotalCount >= 1);
         }
 
         /// <summary>

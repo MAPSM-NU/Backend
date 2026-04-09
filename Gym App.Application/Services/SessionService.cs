@@ -203,7 +203,7 @@ namespace Gym_App.Application.Services
                 var messagesIDsToRemove = sessionMessages.messagesID.Where(id => existingMessagesIDs.Contains(id)).ToList();
                 
                 if (messagesIDsToRemove == null || messagesIDsToRemove.Count == 0)
-                    return new SettersResponse { status = 0, msg = "No messages found in the database" };
+                    return new SettersResponse { status = 0, msg = "One or more messages not found in the session" };
                 
                 messagesToRemove = new List<Message>();
                 foreach (var messageId in messagesIDsToRemove)

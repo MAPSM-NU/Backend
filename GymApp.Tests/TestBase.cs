@@ -92,8 +92,8 @@ namespace GymApp.Tests
             _unitOfWork.Workouts.Create(workout);
             return workout;
         }
-        protected Exercise CreateTestExercise( string exerciseName = "Test Exercise",
-            string description = "Test Description",DateTime createdAt = default, string category = "Strength", string difficulty = "Medium",
+        protected Exercise CreateTestExercise(string exerciseName = "Test Exercise",
+            string description = "Test Description", DateTime createdAt = default, string category = "Strength", string difficulty = "Medium",
             string grip = "Overhand", Guid Id = default)
         {
             var exercise = new Exercise
@@ -110,6 +110,32 @@ namespace GymApp.Tests
             };
             _unitOfWork.Exercises.Create(exercise);
             return exercise;
+        }
+        protected Message CreateTestMessage(User sender, Session session, string content = "Test Message", DateTime sentAt = default)
+        {
+            var message = new Message
+            {
+                Sender = sender,
+                Session = session,
+                CreatedAt = DateTime.Now,
+                IsRead = false,
+                Content = content,
+                UpdatedAt = DateTime.Now,
+            };
+            _unitOfWork.Messages.Create(message);
+            return message;
+        }
+        protected Session CreateTestSession(List<User> users, DateTime date = default)
+        {
+            var session = new Session
+            {
+                Users = users,
+                SessionType = "Live Feedback",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = date == default ? DateTime.Now : date
+            };
+            _unitOfWork.Sessions.Create(session);
+            return session;
         }
     }
 }

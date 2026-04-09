@@ -229,8 +229,8 @@ namespace GymApp.Tests.ScheduleTests
             Assert.NotNull(result);
             Assert.Equal(2, result.status);
             Assert.Equal("Successful", result.msg);
-            Assert.NotNull(result.Value);
-            Assert.True(result.Value.Count >= 3);
+            Assert.NotNull(result.Data);
+            Assert.True(result.Data.TotalCount >= 3);
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace GymApp.Tests.ScheduleTests
             // ASSERT
             Assert.NotNull(result);
             Assert.Equal(2, result.status);
-            var userSchedules = result.Value.Where(s => s.UserID == user.Id).ToList();
+            var userSchedules = result.Data.Items.Where(s => s.UserID == user.Id).ToList();
             Assert.NotEmpty(userSchedules);
         }
 

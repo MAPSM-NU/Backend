@@ -17,9 +17,9 @@ namespace Gym_App.Api.Controllers
             _sessionService = sessionService;
         }
         [HttpPost("create/{user1}/{user2}")]
-        public async Task<IActionResult> CreateSession([FromRoute] Guid user1,[FromRoute] Guid user2)
+        public async Task<IActionResult> CreateSession([FromBody] List<Guid> userIds)
         {
-            var result = await _sessionService.CreateSession(User,user1,user2);
+            var result = await _sessionService.CreateSession(User,userIds);
 
             if(result.status == 0)
                 return BadRequest(new { message = result.msg });

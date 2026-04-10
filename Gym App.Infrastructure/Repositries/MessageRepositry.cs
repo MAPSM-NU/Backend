@@ -110,16 +110,14 @@ namespace Gym_App.Infastructure.Repositries
             Expression<Func<Message, object>> keySelector = columnName.ToLower() switch
             {
                 "message" or "content" => m => m.Content,
-                "time" or "t" or "timestamp" => m => m.CreatedAt,
+                "time" or "t" or "timestamp" or "date" or "d" => m => m.CreatedAt,
                 _ => m => m.Id,
             };
 
-            if (!string.IsNullOrEmpty(sortOrder))
-                query = query.OrderBy(keySelector);
-            else
-                query = query.OrderByDescending(keySelector);
+            var orderLower = (sortOrder ?? string.Empty).ToLowerInvariant();
+            bool descending = orderLower == "desc" || orderLower == "descending" || orderLower == "descend" || orderLower == "d";
 
-            return query;
+            return descending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
         }
 
         public override IQueryable<Message> Search(string searchTerm, IQueryable<Message> query)

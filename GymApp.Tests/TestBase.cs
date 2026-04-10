@@ -117,7 +117,7 @@ namespace GymApp.Tests
             {
                 Sender = sender,
                 Session = session,
-                CreatedAt = DateTime.Now,
+                CreatedAt = sentAt == default ? DateTime.Now : sentAt,
                 IsRead = false,
                 Content = content,
                 UpdatedAt = DateTime.Now,

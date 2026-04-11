@@ -67,11 +67,10 @@ namespace Gym_App.Infastructure.Repositries
                 "type" or "t" => Schedule => Schedule.Type, // order by type
                 _ => Schedule => Schedule.Id //failsafe: order by Id
             };
-            //If no orderby was inputed, then we sort ascending
-            if (!string.IsNullOrEmpty(sortOrder)) query = query.OrderBy(keySelector);
-            //else if anything was inputted we sort descending
-            else query = query.OrderByDescending(keySelector);
-            return query;
+            var orderLower = (sortOrder ?? string.Empty).ToLowerInvariant();
+            bool descending = orderLower == "desc" || orderLower == "descending" || orderLower == "descend" || orderLower == "d";
+
+            return descending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
         }
     }
 }

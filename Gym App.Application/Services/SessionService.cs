@@ -24,26 +24,24 @@ namespace Gym_App.Application.Services
             _authorizationService = authorizationService;
         }
 
-        public async Task<SettersResponse> CreateSession(ClaimsPrincipal User, Guid user1, Guid user2)
+        public async Task<SettersResponse> CreateSession(ClaimsPrincipal User, List<Guid> userIds)
         {
             //checking the validity of the DTO
-            if (user1 == Guid.Empty || user2 == Guid.Empty)
+            if (userIds == null || userIds.Any(id => id == Guid.Empty))
                 return new SettersResponse { status = 0, msg = "Invalid user IDs" };
 
-            List<Guid> userIDs = new List<Guid> { user1, user2 };
-
             //Authorization check
-            var authResult = await _authorizationService.AuthorizeAsync(User, userIDs, "ListUserPolicy");
+            var authResult = await _authorizationService.AuthorizeAsync(User, userIds, "ListUserPolicy");
             if (!authResult.Succeeded)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Finding the users from the repository
             List<User> users = new List<User>();
-            foreach (var ID in userIDs)
+            foreach (var ID in userIds)
             {
                 var user = await _unitOfWork.Users.GetById(ID);
                 if (user == null)
-                    return new SettersResponse { status = 0, msg = "User not found" };
+                    return new SettersResponse { status = 0, msg = "User(s) not found" };
                 else
                 {
                     users.Add(user);
@@ -205,7 +203,7 @@ namespace Gym_App.Application.Services
                 var messagesIDsToRemove = sessionMessages.messagesID.Where(id => existingMessagesIDs.Contains(id)).ToList();
                 
                 if (messagesIDsToRemove == null || messagesIDsToRemove.Count == 0)
-                    return new SettersResponse { status = 0, msg = "No messages found in the database" };
+                    return new SettersResponse { status = 0, msg = "One or more messages not found in the session" };
                 
                 messagesToRemove = new List<Message>();
                 foreach (var messageId in messagesIDsToRemove)

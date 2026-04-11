@@ -8,7 +8,7 @@ namespace Gym_App.Infastructure.Interfaces.Services
 {
     public interface ISessionService
     {
-        Task<SettersResponse> CreateSession(ClaimsPrincipal User, Guid user1,Guid user2);
+        Task<SettersResponse> CreateSession(ClaimsPrincipal User, List<Guid> userIds);
         Task<SettersResponse> DeleteSession(ClaimsPrincipal User, Guid sessionID);
         Task<SettersResponse> AddMessages(ClaimsPrincipal User, Guid sessionID,SessionMessagesDTO sessionMessages);
         Task<SettersResponse> DeleteMessages(ClaimsPrincipal User, Guid sessionID, SessionMessagesDTO sessionMessages);

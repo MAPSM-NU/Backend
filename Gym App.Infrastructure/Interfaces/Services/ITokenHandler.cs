@@ -9,7 +9,7 @@ namespace Gym_App.Infastructure.Interfaces.Services
         public Task<string> CreateAccessToken(Guid userID, string name, string email, string role);
         public Task<string> CreateRefreshToken(Guid UserID);
         public Task<string?> RefreshingToken(Guid UserID);
-        public Task<ResponseToken?> ValidateAccessToken(string token);
+        public Task<ResponseToken?> ValidateRefreshToken(string token);
         public Task<PagedList<RefreshTokens>> GetAllRefreshTokens(int page,int pageSize);
     }
 }

@@ -53,10 +53,14 @@ namespace Gym_App.Application.Services
 
         public async Task<string> CreateRefreshToken(Guid UserID)
         {
+            var user = await _unitOfWork.Users.GetById(UserID);
+            if (user == null)
+                return null;
             var refreshToken = new RefreshTokens
             {
                 RefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
                 Expires = DateTime.Now.AddDays(4),
+                User = user,
                 UserID = UserID,
             };
             await _unitOfWork.Tokens.Create(refreshToken);
@@ -82,19 +86,22 @@ namespace Gym_App.Application.Services
 
         //        *********** Extra Validation Function ***********
 
-        public async Task<ResponseToken?> ValidateAccessToken(string refreshToken)
+        public async Task<ResponseToken?> ValidateRefreshToken(string refreshToken)
         {
             //Getting refresh token from repository
             var result = await _unitOfWork.Tokens.GetRefreshTokenByToken(refreshToken);
             
-            if (result == null || result.Expires < DateTime.UtcNow)
-                return null;
+            if (result == null)
+                return new ResponseToken { Status = 0, msg = "Refresh token not found" };
+
+            if (result.Expires < DateTime.UtcNow)
+                return new ResponseToken { Status = 0, msg = "Refresh token has expired" };
 
             //Getting user from repository
-            var user = await _unitOfWork.Users.GetById(result.Id);
+            var user = await _unitOfWork.Users.GetById(result.UserID);
 
             if (user == null)
-                return null;
+                return new ResponseToken { Status = 0, msg = "User not found" };
 
             //Creating new access token
             var Token = await CreateAccessToken(user.Id, user.Name, user.Email, user.Role.RoleName);

@@ -52,6 +52,20 @@ namespace GymApp.Tests
             _unitOfWork.Roles.Create(role);
             return role;
         }
+        protected RefreshTokens CreateTestRefreshToken(User user)
+        {
+            var refreshToken = new RefreshTokens
+            {
+                RefreshToken = "Test RefreshToken",
+                Expires = DateTime.Now.AddDays(7),
+                User = user,
+                UserID = user.Id,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            _unitOfWork.Tokens!.Create(refreshToken);
+            return refreshToken;
+        }
         protected User CreateTestUser(Role role, string email = "test@gmail.com", string password = "Test_2004",
             string userType = "T", string name = "Test User", string phoneNumber = "testNum", string state = "TestState",
             string city = "TestCity", string country = "TestCountry", string bio = "TestBio", DateTime? dob = null, int heightCm = 0, int weightKg = 0,

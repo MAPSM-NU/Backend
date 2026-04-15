@@ -48,7 +48,7 @@ namespace Gym_App.Api.Controllers
         [HttpPost("token-login")]
         public async Task<IActionResult> LoginByToken([FromQuery] string Refreshtoken)
         {
-            var result = await _tokenHandler.ValidateAccessToken(Refreshtoken);
+            var result = await _tokenHandler.ValidateRefreshToken(Refreshtoken);
             if (result == null)
                 return BadRequest(new { message = "Invalid Token" });
             else

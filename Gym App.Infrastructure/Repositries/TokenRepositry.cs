@@ -20,7 +20,7 @@ namespace Gym_App.Infastructure.Repositries
         {
             return await table
                 .Include(rt => rt.User)
-                .FirstOrDefaultAsync(rt => rt.Id == userId);
+                .FirstOrDefaultAsync(rt => rt.UserID == userId);
         }
 
         public async Task<RefreshTokens> GetRefreshTokenByToken(string token)
@@ -37,12 +37,12 @@ namespace Gym_App.Infastructure.Repositries
 
         public async Task<bool> UserHasRefreshToken(Guid userId)
         {
-            return await table.AnyAsync(rt => rt.Id == userId);
+            return await table.AnyAsync(rt => rt.UserID == userId);
         }
 
         public async Task UpdateRefreshToken(Guid userId, string newToken, DateTime newExpiry)
         {
-            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.Id == userId);
+            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.UserID == userId);
             if (refreshToken != null)
             {
                 refreshToken.RefreshToken = newToken;
@@ -52,7 +52,7 @@ namespace Gym_App.Infastructure.Repositries
 
         public async Task RevokeRefreshToken(Guid userId)
         {
-            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.Id == userId);
+            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.UserID == userId);
             if (refreshToken != null)
             {
                 await Delete(refreshToken.Id);

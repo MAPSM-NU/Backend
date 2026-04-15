@@ -16,6 +16,8 @@ namespace GymApp.Tests.TokenTests
             config["JwtSettings:Audience"] = "TestAudience";
             _tokenHandler = new Gym_App.Application.Services.TokenHandler(_unitOfWork, config);
         }
+
+        //Creating of refresh tokens
         [Fact]
         public async Task CreateRefreshTokenTest()
         {
@@ -24,6 +26,24 @@ namespace GymApp.Tests.TokenTests
             Assert.NotNull(refreshToken);
             Assert.Equal(88, refreshToken.Length);
         }
+        [Fact]
+        public async Task RefreshTokenIsSavedInDatabase()
+        {
+            var user = CreateTestUser(CreateTestRole());
+            var refreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
+            await _unitOfWork.SaveChangesAsync();
+            var tokenInDb = _unitOfWork.Tokens!.GetAll().FirstOrDefault(t => t.RefreshToken == refreshToken);
+            Assert.NotNull(tokenInDb);
+            Assert.Equal(user.Id, tokenInDb.UserID);
+        }
+        [Fact]
+        public async Task CreateRefreshTokenWithInvalidUserId()
+        {
+            var refreshToken = await _tokenHandler.CreateRefreshToken(Guid.NewGuid());
+            Assert.Null(refreshToken);
+        }
+
+        //Refreshing the token with new values
         [Fact]
         public async Task RefreshingToken()
         {
@@ -35,21 +55,27 @@ namespace GymApp.Tests.TokenTests
             Assert.Equal(88, newAccessToken.Length);
         }
         [Fact]
-        public async Task RefreshTokenNotFound()
-        {
-            var user = CreateTestUser(CreateTestRole());
-            var newAccessToken = await _tokenHandler.RefreshingToken(user.Id);
-            Assert.Null(newAccessToken);
-        }
-        [Fact]
-        public async Task RefreshTokenIsValid()
+        public async Task RefreshingTokenIsChangeSaved()
         {
             var user = CreateTestUser(CreateTestRole());
             var refreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
             await _unitOfWork.SaveChangesAsync();
             var newAccessToken = await _tokenHandler.RefreshingToken(user.Id);
             Assert.NotNull(newAccessToken);
+            Assert.NotEqual(refreshToken, newAccessToken);
+
+            var token = await _unitOfWork.Tokens.GetRefreshTokenByUserId(user.Id);
+            Assert.NotEqual(refreshToken, token.RefreshToken);
         }
+        [Fact]
+        public async Task RefreshTokenNotFound()
+        {
+            var user = CreateTestUser(CreateTestRole());
+            var newAccessToken = await _tokenHandler.RefreshingToken(user.Id);
+            Assert.Null(newAccessToken);
+        }
+
+        //Validating the refresh token
         [Fact]
         public async Task ValidatingRefreshToken()
         {
@@ -64,7 +90,7 @@ namespace GymApp.Tests.TokenTests
             Assert.NotNull(response.AccessToken);
         }
         [Fact]
-        public async Task RefreshTokenIsInvalidAfterUse()
+        public async Task ValidatingRefreshTokenIsInvalidAfterUse()
         {
             var user = CreateTestUser(CreateTestRole());
             string token = await _tokenHandler.CreateRefreshToken(user.Id);
@@ -79,21 +105,12 @@ namespace GymApp.Tests.TokenTests
             Assert.Equal(0, response!.Status);
         }
         [Fact]
-        public async Task ValidatingNotFoundToken()
+        public async Task ValidatingRefreshTokenNotFound()
         {
             var response = await _tokenHandler.ValidateRefreshToken("non-existent-token");
             Assert.Equal("Refresh token not found", response!.msg);
             Assert.Equal(0, response!.Status);
         }
-        [Fact]
-        public async Task RefreshTokenIsSavedInDatabase()
-        {
-            var user = CreateTestUser(CreateTestRole());
-            var refreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
-            await _unitOfWork.SaveChangesAsync();
-            var tokenInDb = _unitOfWork.Tokens!.GetAll().FirstOrDefault(t => t.RefreshToken == refreshToken);
-            Assert.NotNull(tokenInDb);
-            Assert.Equal(user.Id, tokenInDb.UserID);
-        }
+        
     }
 }

@@ -8,6 +8,7 @@ using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -31,6 +32,8 @@ builder.Logging.ClearProviders().AddSerilog();
 // ============================================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
 
 // ============================================
 // SWAGGER CONFIGURATION
@@ -185,3 +188,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+

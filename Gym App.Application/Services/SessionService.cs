@@ -1,4 +1,5 @@
-﻿using Gym_App.Domain;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.DTOs.Message;
 using Gym_App.Infastructure.DTOs.Session;
@@ -6,6 +7,7 @@ using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
+using Gym_App.Infrastructure.DTOs.Session;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
@@ -14,30 +16,33 @@ namespace Gym_App.Application.Services
     public class SessionService : ISessionService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IAuthorizationService _authorizationService;
+        private readonly ICachedAuthorizationService _authorizationService;
+        private readonly ICurrentUser _currentUser;
 
         public SessionService(
             IUnitOfWork unitOfWork,
-            IAuthorizationService authorizationService)
+            ICachedAuthorizationService authorizationService,
+            ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
+            _currentUser = currentUser;
         }
 
-        public async Task<SettersResponse> CreateSession(ClaimsPrincipal User, List<Guid> userIds)
+        public async Task<SettersResponse> CreateSession(SessionUsersDTO userIds)
         {
             //checking the validity of the DTO
-            if (userIds == null || userIds.Any(id => id == Guid.Empty))
+            if (userIds == null || userIds.Users.Any(id => id == Guid.Empty))
                 return new SettersResponse { status = 0, msg = "Invalid user IDs" };
 
             //Authorization check
-            var authResult = await _authorizationService.AuthorizeAsync(User, userIds, "ListUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsInListAsync(userIds.Users);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Finding the users from the repository
             List<User> users = new List<User>();
-            foreach (var ID in userIds)
+            foreach (var ID in userIds.Users)
             {
                 var user = await _unitOfWork.Users.GetById(ID);
                 if (user == null)
@@ -64,7 +69,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Session created successfully" };
         }
 
-        public async Task<SettersResponse> DeleteSession(ClaimsPrincipal User, Guid sessionID)
+        public async Task<SettersResponse> DeleteSession(Guid sessionID)
         {
             //checking the validity of the given Guid
             if (sessionID == Guid.Empty)
@@ -81,8 +86,8 @@ namespace Gym_App.Application.Services
             List<Guid> UserIDs = session.Users.Select(u => u.Id).ToList();
 
             //Authorization check
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsInListAsync(UserIDs);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Removing from Database via repository
@@ -91,7 +96,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Session deleted successfully" };
         }
 
-        public async Task<SettersResponse> AddMessages(ClaimsPrincipal User, Guid sessionID, SessionMessagesDTO sessionMessages)
+        public async Task<SettersResponse> AddMessages(Guid sessionID, SessionMessagesDTO sessionMessages)
         {
             //checking the validity of the DTO
             if (sessionMessages == null || sessionID == Guid.Empty)
@@ -108,8 +113,8 @@ namespace Gym_App.Application.Services
             List<Guid> UserIDs = Session.Users.Select(u => u.Id).ToList();
 
             //Authorization check
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsInListAsync(UserIDs);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //checking the messages to add
@@ -163,7 +168,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Messages added successfully" };
         }
 
-        public async Task<SettersResponse> DeleteMessages(ClaimsPrincipal User, Guid sessionID, SessionMessagesDTO sessionMessages)
+        public async Task<SettersResponse> DeleteMessages(Guid sessionID, SessionMessagesDTO sessionMessages)
         {
             //checking the validity of the DTO
             if (sessionMessages == null || sessionID == Guid.Empty)
@@ -180,12 +185,12 @@ namespace Gym_App.Application.Services
             List<Guid> UserIDs = Session.Users.Select(u => u.Id).ToList();
 
             //Authorization check
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsInListAsync(UserIDs);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Getting Sender ID
-            var senderID = GettingSenderID(User);
+            var senderID = _currentUser.UserID;
             if (senderID == Guid.Empty)
                 return new SettersResponse { status = 0, msg = "Invalid sender ID" };
 
@@ -264,7 +269,7 @@ namespace Gym_App.Application.Services
 
         //        *********** Getters ***********
 
-        public async Task<List<Guid>?> GetSessionUsersIDs(ClaimsPrincipal User, Guid sessionID)
+        public async Task<List<Guid>?> GetSessionUsersIDs(Guid sessionID)
         {
             //Getting the users of the session from repository
             var Users = await _unitOfWork.Sessions.GetSessionUsers(sessionID);
@@ -277,15 +282,14 @@ namespace Gym_App.Application.Services
             var UserIDs = Users.Select(u => u.Id).ToList();
 
             //Authorization check
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsInListAsync(UserIDs);
+            if (!authResult)
                 return null;
 
             return UserIDs;
         }
 
         public async Task<GettersResponse<MessageViewDTO>> GetSessionMessages(
-            ClaimsPrincipal User,
             Guid sessionID,
             string startDate,
             string endDate,
@@ -310,8 +314,8 @@ namespace Gym_App.Application.Services
             List<Guid> UserIDs = Session.Users.Select(u => u.Id).ToList();
 
             //Authorization check
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsInListAsync(UserIDs);
+            if (!authResult)
                 return new GettersResponse<MessageViewDTO>
                 {
                     status = 1,
@@ -356,7 +360,7 @@ namespace Gym_App.Application.Services
             };
         }
 
-        public async Task<GettersResponse<UserViewDTO>> GetUsersOfSession(ClaimsPrincipal User, Guid sessionID, int page, int pageSize)
+        public async Task<GettersResponse<UserViewDTO>> GetUsersOfSession(Guid sessionID, int page, int pageSize)
         {
             //Getting session with users from repository
             var session = await _unitOfWork.Sessions.GetSessionWithUsers(sessionID);
@@ -372,8 +376,8 @@ namespace Gym_App.Application.Services
             List<Guid> UserIDs = session.Users.Select(u => u.Id).ToList();
 
             //Authorization check
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsInListAsync(UserIDs);
+            if (!authResult)
                 return new GettersResponse<UserViewDTO>
                 {
                     status = 1,

@@ -59,6 +59,10 @@ namespace Gym_App.Application.Authorization
         {
             return await IsAuthorizedAsync("SameUserPolicy", userId);
         }
+        public async Task<bool> IsInListAsync(List<Guid> Ids)
+        {
+            return await IsAuthorizedAsync("SameListPolicy", Ids);
+        }
 
         public async Task<bool> IsInRoleAsync(string role)
         {

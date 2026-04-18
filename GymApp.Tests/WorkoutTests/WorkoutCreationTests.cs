@@ -1,4 +1,5 @@
-﻿using Gym_App.Application.Services;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Application.Services;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -10,10 +11,10 @@ namespace GymApp.Tests.WorkoutTests
     public class WorkoutCreationTests : TestBase
     {
         private readonly IWorkoutService _workoutService;
-        private readonly Mock<IAuthorizationService> _authorizationService;
+        private readonly Mock<ICachedAuthorizationService> _authorizationService;
         public WorkoutCreationTests() : base("WorkoutTestsDatabase")
         {
-            _authorizationService = new Mock<IAuthorizationService>();
+            _authorizationService = new Mock<ICachedAuthorizationService>();
             _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object);
         }
         //Creating workout with all its possibilities of failure
@@ -30,12 +31,8 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Monday",
                 Difficulty = "Medium"
             };
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _workoutService.CreateWorkout(new ClaimsPrincipal(), workout);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            var result = await _workoutService.CreateWorkout(workout);
             Assert.NotNull(result);
             Assert.Equal("Workout created successfully", result.msg);
             Assert.Equal(2, result.status);
@@ -52,12 +49,8 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Monday",
                 Difficulty = "Medium"
             };
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _workoutService.CreateWorkout(new ClaimsPrincipal(), workout);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            var result = await _workoutService.CreateWorkout(workout);
             Assert.NotNull(result);
             Assert.Equal("User not found", result.msg);
             Assert.Equal(0, result.status);
@@ -75,12 +68,8 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Monday",
                 Difficulty = "Medium"
             };
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
-            var result = await _workoutService.CreateWorkout(new ClaimsPrincipal(), workout);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(false);
+            var result = await _workoutService.CreateWorkout(workout);
             Assert.NotNull(result);
             Assert.Equal("Forbidden from access", result.msg);
             Assert.Equal(1, result.status);
@@ -98,12 +87,8 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Monday",
                 Difficulty = "Medium"
             };
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _workoutService.CreateWorkout(new ClaimsPrincipal(), workout);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            var result = await _workoutService.CreateWorkout(workout);
             Assert.NotNull(result);
             Assert.Equal("Invalid workout data", result.msg);
             Assert.Equal(0, result.status);

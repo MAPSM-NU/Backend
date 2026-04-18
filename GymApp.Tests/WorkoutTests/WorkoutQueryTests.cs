@@ -1,4 +1,5 @@
-﻿using Gym_App.Application.Services;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
@@ -11,10 +12,10 @@ namespace GymApp.Tests.WorkoutTests
     public class WorkoutQueryTests : TestBase
     {
         private readonly IWorkoutService _workoutService;
-        private readonly Mock<IAuthorizationService> _authorizationService;
+        private readonly Mock<ICachedAuthorizationService> _authorizationService;
         public WorkoutQueryTests() : base("WorkoutTestsDatabase")
         {
-            _authorizationService = new Mock<IAuthorizationService>();
+            _authorizationService = new Mock<ICachedAuthorizationService>();
             _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object);
         }
         [Fact]
@@ -57,12 +58,8 @@ namespace GymApp.Tests.WorkoutTests
             {
                 ExercisesID = exercises.Select(e => e.Id).ToList()
             };
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-               It.IsAny<ClaimsPrincipal>(),
-               It.IsAny<object>(),
-               It.IsAny<string>()))
-               .ReturnsAsync(AuthorizationResult.Success());
-            await _workoutService.AddExercisesToWorkout(new ClaimsPrincipal(), workout.Id, workoutExercises);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            await _workoutService.AddExercisesToWorkout(workout.Id, workoutExercises);
             var NameResult = await _workoutService.GetExercisesOfWorkout(workout.Id, 1, "", "", "Test Exercise 3", 10);
             Assert.NotNull(NameResult);
             Assert.Equal(1, NameResult.Data!.TotalCount);
@@ -95,12 +92,8 @@ namespace GymApp.Tests.WorkoutTests
             {
                 ExercisesID = exercises.Select(e => e.Id).ToList()
             };
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-               It.IsAny<ClaimsPrincipal>(),
-               It.IsAny<object>(),
-               It.IsAny<string>()))
-               .ReturnsAsync(AuthorizationResult.Success());
-            await _workoutService.AddExercisesToWorkout(new ClaimsPrincipal(), workout.Id, workoutExercises);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            await _workoutService.AddExercisesToWorkout(workout.Id, workoutExercises);
 
             var NameAscResult = await _workoutService.GetExercisesOfWorkout(workout.Id, 1, "Name", "asc", "", 10);
             Assert.NotNull(NameAscResult);

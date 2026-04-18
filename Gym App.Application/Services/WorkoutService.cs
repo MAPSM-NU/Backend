@@ -1,4 +1,5 @@
-﻿using Gym_App.Domain;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.DTOs.Exercise;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
@@ -14,9 +15,9 @@ namespace Gym_App.Application.Services
     public class WorkoutService : IWorkoutService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IAuthorizationService _authorizationService;
+        private readonly ICachedAuthorizationService _authorizationService;
 
-        public WorkoutService(IUnitOfWork unitOfWork, IAuthorizationService authorizationService)
+        public WorkoutService(IUnitOfWork unitOfWork, ICachedAuthorizationService authorizationService)
         {
             _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
@@ -24,7 +25,7 @@ namespace Gym_App.Application.Services
 
         //        *********** Setters ***********
 
-        public async Task<SettersResponse> CreateWorkout(ClaimsPrincipal User, WorkoutCreationDTO workout)
+        public async Task<SettersResponse> CreateWorkout(WorkoutCreationDTO workout)
         {
             //Checking the validity of the DTO
             if (workout == null || string.IsNullOrEmpty(workout.Name) || workout.UserID == Guid.Empty)
@@ -36,8 +37,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, isUserExist.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(isUserExist.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Creating the new Workout
@@ -59,7 +60,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Workout created successfully" };
         }
 
-        public async Task<SettersResponse> UpdateWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutUpdateDTO workout)
+        public async Task<SettersResponse> UpdateWorkout(Guid workoutID, WorkoutUpdateDTO workout)
         {
             //Checking the validity of the DTO
             if (workout == null || workoutID == Guid.Empty)
@@ -71,8 +72,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, WorkoutToBeUpdated.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(WorkoutToBeUpdated.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Updating the Workout
@@ -97,7 +98,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Workout updated successfully" };
         }
 
-        public async Task<SettersResponse> DeleteWorkout(ClaimsPrincipal User, Guid workoutID)
+        public async Task<SettersResponse> DeleteWorkout(Guid workoutID)
         {
             //Checking the workoutID
             if (workoutID == Guid.Empty)
@@ -109,8 +110,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(isWorkoutExist.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Deleting from Database via repository
@@ -119,7 +120,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Workout deleted successfully" };
         }
 
-        public async Task<SettersResponse> AddExercisesToWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)
+        public async Task<SettersResponse> AddExercisesToWorkout(Guid workoutID, WorkoutExerciseDTO workoutExercises)
         {
             //Checking the validity of the DTO
             if (workoutExercises == null || workoutID == Guid.Empty || workoutExercises.ExercisesID == null)
@@ -131,8 +132,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, workout.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(workout.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Determining if there are new exercises to add
@@ -159,7 +160,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Exercises added successfully" };
         }
 
-        public async Task<SettersResponse> SetExercisesOfWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)
+        public async Task<SettersResponse> SetExercisesOfWorkout(   Guid workoutID, WorkoutExerciseDTO workoutExercises)
         {
             //Checking the validity of the DTO
             if (workoutExercises == null || workoutID == Guid.Empty || workoutExercises.ExercisesID == null)
@@ -171,8 +172,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(isWorkoutExist.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Clearing existing exercises to add new ones
@@ -195,7 +196,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Exercises set successfully" };
         }
 
-        public async Task<SettersResponse> DeleteExercisesFromWorkout(ClaimsPrincipal User, Guid workoutID, WorkoutExerciseDTO workoutExercises)
+        public async Task<SettersResponse> DeleteExercisesFromWorkout(Guid workoutID, WorkoutExerciseDTO workoutExercises)
         {
             //checking the Validity of the DTO
             if (workoutExercises == null || workoutID == Guid.Empty || workoutExercises.ExercisesID == null || !workoutExercises.ExercisesID.Any())
@@ -207,8 +208,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Workout not found" };
 
             //Authentication
-            var authResult = await _authorizationService.AuthorizeAsync(User, isWorkoutExist.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(isWorkoutExist.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Forbidden from access" };
 
             //Determining if there are exercises to Delete

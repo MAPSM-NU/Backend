@@ -1,4 +1,5 @@
-﻿using Gym_App.Application.Services;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
@@ -11,10 +12,10 @@ namespace GymApp.Tests.WorkoutTests
     public class WorkoutUpdateTests : TestBase
     {
         private readonly IWorkoutService _workoutService;
-        private readonly Mock<IAuthorizationService> _authorizationService;
+        private readonly Mock<ICachedAuthorizationService> _authorizationService;
         public WorkoutUpdateTests() : base("WorkoutTestsDatabase")
         {
-            _authorizationService = new Mock<IAuthorizationService>();
+            _authorizationService = new Mock<ICachedAuthorizationService>();
             _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object);
         }
         //Updating workout with all its possibilities of failure
@@ -33,12 +34,8 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Tuesday",
                 Difficulty = "Hard",
             };
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _workoutService.UpdateWorkout(new ClaimsPrincipal(), workout.Id, workoutUpdate);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            var result = await _workoutService.UpdateWorkout(workout.Id, workoutUpdate);
             Assert.NotNull(result);
             Assert.Equal("Workout updated successfully", result.msg);
             Assert.Equal(2, result.status);
@@ -54,12 +51,8 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Tuesday",
                 Difficulty = "Hard",
             };
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _workoutService.UpdateWorkout(new ClaimsPrincipal(), Guid.NewGuid(), workoutUpdate);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            var result = await _workoutService.UpdateWorkout(Guid.NewGuid(), workoutUpdate);
             Assert.NotNull(result);
             Assert.Equal("Workout not found", result.msg);
             Assert.Equal(0, result.status);
@@ -78,12 +71,8 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Tuesday",
                 Difficulty = "Hard",
             };
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
-            var result = await _workoutService.UpdateWorkout(new ClaimsPrincipal(), workout.Id, workoutUpdate);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(false);
+            var result = await _workoutService.UpdateWorkout(workout.Id, workoutUpdate);
             Assert.NotNull(result);
             Assert.Equal("Forbidden from access", result.msg);
             Assert.Equal(1, result.status);
@@ -102,12 +91,8 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Tuesday",
                 Difficulty = "Hard",
             };
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _workoutService.UpdateWorkout(new ClaimsPrincipal(), Guid.Empty, workoutUpdate);//Passing an empty id to check If it will pass validation checks
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            var result = await _workoutService.UpdateWorkout(Guid.Empty, workoutUpdate);//Passing an empty id to check If it will pass validation checks
             Assert.NotNull(result);
             Assert.Equal("Invalid workout data", result.msg);
             Assert.Equal(0, result.status);

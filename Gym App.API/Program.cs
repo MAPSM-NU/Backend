@@ -1,4 +1,5 @@
 using Gym_App.Application.Authorization;
+using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
@@ -89,6 +90,7 @@ builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHandler>();
 
+
 // ============================================
 // UTILITY SERVICES
 // ============================================
@@ -100,6 +102,8 @@ builder.Services.AddScoped<IExerciseData, ExerciseData>();
 // ============================================
 builder.Services.AddSingleton<IAuthorizationHandler, SameUserHandler>();
 builder.Services.AddSingleton<IAuthorizationHandler, ListUserHandler>();
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+builder.Services.AddScoped<ICachedAuthorizationService, CachedAuthorizationService>();
 
 // ============================================
 // AUTHENTICATION

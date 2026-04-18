@@ -8,24 +8,20 @@ namespace Gym_App.Application.Authorization
     {
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SameUserRequirement requirement, Guid resource)
         {
-            if (context.User?.Identity?.IsAuthenticated != true)
+            // Check if user is authenticated
+            if (!context.User.IsAuthenticated())
                 return Task.CompletedTask;
 
             // Admin bypass
-            if (requirement.AllowAdmins && context.User.IsInRole("Admin"))
+            if (requirement.AllowAdmins && context.User.HasRole("Admin"))
             {
                 context.Succeed(requirement);
                 return Task.CompletedTask;
             }
 
-            // Try common claim names for user id
-            var claim = context.User.FindFirst(ClaimTypes.NameIdentifier)
-                        ?? context.User.FindFirst(JwtRegisteredClaimNames.Sub)
-                        ?? context.User.FindFirst("sub")
-                        ?? context.User.FindFirst("userId")
-                        ?? context.User.FindFirst("id");
-
-            if (claim != null && Guid.TryParse(claim.Value, out var tokenUserID) && tokenUserID == resource)
+            // Check if user ID matches resource
+            var userId = context.User.GetUserIdFromClaims();
+            if (userId.HasValue && userId.Value == resource)
                 context.Succeed(requirement);
 
             return Task.CompletedTask;

@@ -1,4 +1,5 @@
-﻿using Gym_App.Domain;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.DTOs.Notification;
 using Gym_App.Infastructure.Interfaces.Repositries;
@@ -13,8 +14,8 @@ namespace Gym_App.Application.Services
     public class NotificationService : INotificationService // Fuck this class. Needs a change again. relationship with users should not be many to many GRAAAAAA
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IAuthorizationService _authorizationService;
-        public NotificationService(IUnitOfWork unitOfWork,IAuthorizationService authorizationService)
+        private readonly ICachedAuthorizationService _authorizationService;
+        public NotificationService(IUnitOfWork unitOfWork,ICachedAuthorizationService authorizationService)
         {
             _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
@@ -28,7 +29,7 @@ namespace Gym_App.Application.Services
         {
             throw new NotImplementedException();
         }
-        public async Task<SettersResponse> CreateNotification(ClaimsPrincipal User, Guid userID, NotificationCreationDTO notification)
+        public async Task<SettersResponse> CreateNotification(Guid userID, NotificationCreationDTO notification)
         {
             //Checking for DTO validity
             if (notification == null)
@@ -41,8 +42,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(user.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Faulty DTO" };
 
             //Creating Notification
@@ -61,7 +62,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Successful" };
 
         }
-        public async Task<SettersResponse> DeleteNotification(ClaimsPrincipal User, Guid NotificationID)//0 == Invalid NotificationID || 1 == Notification not found || 2 == Unauthorized || 3 == Successful
+        public async Task<SettersResponse> DeleteNotification( Guid NotificationID)//0 == Invalid NotificationID || 1 == Notification not found || 2 == Unauthorized || 3 == Successful
         {
             //Checking for NotificationID validty
             if (NotificationID == Guid.Empty)
@@ -74,8 +75,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Notification not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, Notification.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(Notification.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to the Database
@@ -83,7 +84,7 @@ namespace Gym_App.Application.Services
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Successful" };
         }
-        public async Task<SettersResponse> DeleteAllNotifications(ClaimsPrincipal User, Guid UserID)//0 == Invalid UserID || 1 == User not found || 2 == Unauthorized || 3 == Successful
+        public async Task<SettersResponse> DeleteAllNotifications(Guid UserID)//0 == Invalid UserID || 1 == User not found || 2 == Unauthorized || 3 == Successful
                                                                                                     //This leaves the notification with no user!
         {
             //Checking for UserID validty
@@ -97,8 +98,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(user.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Faulty DTO" };
 
             var deleted = await _unitOfWork.Notifications.DeleteUserNotifications(UserID);
@@ -125,11 +126,11 @@ namespace Gym_App.Application.Services
             var notif = await _unitOfWork.Notifications.GetNotificationById(NotificationID);
             return notif.User.Id;
         }
-        public async Task<GettersResponse<NotificationMiniViewDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<GettersResponse<NotificationMiniViewDTO>> GetNotifications(Guid UserID, string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserID, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(UserID);
+            if (!authResult)
                 return new GettersResponse<NotificationMiniViewDTO>
                 {
                     status = 1,

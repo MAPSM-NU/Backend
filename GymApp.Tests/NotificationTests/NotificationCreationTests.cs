@@ -1,3 +1,4 @@
+using Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.Notification;
@@ -11,11 +12,11 @@ namespace GymApp.Tests.NotificationTests
     public class NotificationCreationTests : TestBase
     {
         private readonly INotificationService _notificationService;
-        private readonly Mock<IAuthorizationService> _authorizationServiceMock;
+        private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
 
         public NotificationCreationTests() : base("NotificationCreationTestDatabase")
         {
-            _authorizationServiceMock = new Mock<IAuthorizationService>();
+            _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
             _notificationService = new NotificationService(_unitOfWork, _authorizationServiceMock.Object);
         }
 
@@ -36,9 +37,7 @@ namespace GymApp.Tests.NotificationTests
             var user = CreateTestUser(role, email: "testuser@gmail.com");
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var notificationDto = new NotificationCreationDTO
             {
@@ -50,7 +49,7 @@ namespace GymApp.Tests.NotificationTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.CreateNotification(principal, user.Id, notificationDto);
+            var result = await _notificationService.CreateNotification(user.Id, notificationDto);
 
             // ASSERT
             Assert.NotNull(result);
@@ -77,7 +76,7 @@ namespace GymApp.Tests.NotificationTests
             NotificationCreationDTO nullNotification = null;
 
             // ACT
-            var result = await _notificationService.CreateNotification(principal, user.Id, nullNotification);
+            var result = await _notificationService.CreateNotification(user.Id, nullNotification);
 
             // ASSERT
             Assert.NotNull(result);
@@ -106,7 +105,7 @@ namespace GymApp.Tests.NotificationTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.CreateNotification(principal, nonExistentUserId, notificationDto);
+            var result = await _notificationService.CreateNotification(nonExistentUserId, notificationDto);
 
             // ASSERT
             Assert.NotNull(result);
@@ -128,9 +127,7 @@ namespace GymApp.Tests.NotificationTests
             var unauthorizedUser = CreateTestUser(role, email: "other@gmail.com");
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(false);
 
             var notificationDto = new NotificationCreationDTO
             {
@@ -142,7 +139,7 @@ namespace GymApp.Tests.NotificationTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.CreateNotification(principal, user.Id, notificationDto);
+            var result = await _notificationService.CreateNotification(user.Id, notificationDto);
 
             // ASSERT
             Assert.NotNull(result);
@@ -163,9 +160,7 @@ namespace GymApp.Tests.NotificationTests
             var user = CreateTestUser(role);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var notificationDto = new NotificationCreationDTO
             {
@@ -177,7 +172,7 @@ namespace GymApp.Tests.NotificationTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.CreateNotification(principal, user.Id, notificationDto);
+            var result = await _notificationService.CreateNotification(user.Id, notificationDto);
 
             // ASSERT
             Assert.Equal(2, result.status);
@@ -197,9 +192,7 @@ namespace GymApp.Tests.NotificationTests
             var user = CreateTestUser(role);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var notificationDto = new NotificationCreationDTO
             {
@@ -211,7 +204,7 @@ namespace GymApp.Tests.NotificationTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.CreateNotification(principal, user.Id, notificationDto);
+            var result = await _notificationService.CreateNotification(user.Id, notificationDto);
 
             // ASSERT
             Assert.Equal(2, result.status);
@@ -231,9 +224,7 @@ namespace GymApp.Tests.NotificationTests
             var user = CreateTestUser(role);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
@@ -243,9 +234,9 @@ namespace GymApp.Tests.NotificationTests
             var notification3Dto = new NotificationCreationDTO { Title = "Notification 3", Content = "Content 3" };
 
             // ACT
-            var result1 = await _notificationService.CreateNotification(principal, user.Id, notification1Dto);
-            var result2 = await _notificationService.CreateNotification(principal, user.Id, notification2Dto);
-            var result3 = await _notificationService.CreateNotification(principal, user.Id, notification3Dto);
+            var result1 = await _notificationService.CreateNotification(user.Id, notification1Dto);
+            var result2 = await _notificationService.CreateNotification(user.Id, notification2Dto);
+            var result3 = await _notificationService.CreateNotification(user.Id, notification3Dto);
 
             // ASSERT
             Assert.Equal(2, result1.status);
@@ -266,9 +257,7 @@ namespace GymApp.Tests.NotificationTests
             var user = CreateTestUser(role);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var longTitle = new string('A', 100);
             var longContent = new string('B', 1000);
@@ -283,7 +272,7 @@ namespace GymApp.Tests.NotificationTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.CreateNotification(principal, user.Id, notificationDto);
+            var result = await _notificationService.CreateNotification(user.Id, notificationDto);
 
             // ASSERT
             Assert.Equal(2, result.status);

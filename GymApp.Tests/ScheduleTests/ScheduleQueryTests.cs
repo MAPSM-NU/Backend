@@ -1,3 +1,4 @@
+using Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.Schedule;
@@ -10,11 +11,11 @@ namespace GymApp.Tests.ScheduleTests
     public class ScheduleGetTests : TestBase
     {
         private readonly IScheduleService _scheduleService;
-        private readonly Mock<IAuthorizationService> _authorizationServiceMock;
+        private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
 
-        public ScheduleGetTests() : base("ScheduleGetTestDatabase")
+        public ScheduleGetTests() : base("ScheduleCreationTestDatabase")
         {
-            _authorizationServiceMock = new Mock<IAuthorizationService>();
+            _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
             _scheduleService = new ScheduleService(_unitOfWork, _authorizationServiceMock.Object);
         }
 

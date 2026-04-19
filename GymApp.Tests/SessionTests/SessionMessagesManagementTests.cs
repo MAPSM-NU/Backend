@@ -3,7 +3,6 @@ using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.Session;
 using Gym_App.Infastructure.Interfaces.Services;
-using Microsoft.AspNetCore.Authorization;
 using Moq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

@@ -6,12 +6,12 @@ namespace Gym_App.Infastructure.Interfaces.Services
 {
     public interface IScheduleService
     {
-        public Task<SettersResponse> AddSchedule(ClaimsPrincipal User,Guid userID, ScheduleCreationAndEditDTO schedule);
-        public Task<SettersResponse> UpdateSchedule(ClaimsPrincipal User,Guid scheduleID, ScheduleCreationAndEditDTO schedule);
-        public Task<SettersResponse> DeleteSchedule(ClaimsPrincipal User, Guid scheduleID);
-        public Task<SettersResponse> AddWorkoutsToSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout);
-        public Task<SettersResponse> SetWorkoutsOfSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout);
-        public Task<SettersResponse> DeleteWorkoutsFromSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout);
+        public Task<SettersResponse> AddSchedule(Guid userID, ScheduleCreationAndEditDTO schedule);
+        public Task<SettersResponse> UpdateSchedule(Guid scheduleID, ScheduleCreationAndEditDTO schedule);
+        public Task<SettersResponse> DeleteSchedule(Guid scheduleID);
+        public Task<SettersResponse> AddWorkoutsToSchedule(Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout);
+        public Task<SettersResponse> SetWorkoutsOfSchedule(Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout);
+        public Task<SettersResponse> DeleteWorkoutsFromSchedule(Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout);
         public Task<GettersResponse<ScheduleViewDTO>> GetScheduleById(Guid scheduleID);
         public Task<GettersResponse<ScheduleWorkoutDTO>> GetScheduleWorkouts(Guid scheduleID);
         public Task<GettersResponse<ScheduleViewDTO>> GetSchedulesByOfUser(Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm,int pageSize);

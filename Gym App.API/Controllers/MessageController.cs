@@ -21,7 +21,7 @@ namespace Gym_App.Api.Controllers
         [HttpPost("send/{userID}")]
         public async Task<IActionResult> AddMessage([FromRoute]Guid userID,[FromBody] MessageCreationDTO message)
         {
-            var result = await _messageService.AddMessage(User,userID, message);
+            var result = await _messageService.AddMessage(userID, message);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -33,7 +33,7 @@ namespace Gym_App.Api.Controllers
         [HttpPut("update/{messageID}")]
         public async Task<IActionResult> UpdateMessage([FromRoute] Guid messageID, [FromBody] MessageUpdateDTO message)
         {
-            var result = await _messageService.UpdateMessage(User, messageID, message);
+            var result = await _messageService.UpdateMessage(messageID, message);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -45,7 +45,7 @@ namespace Gym_App.Api.Controllers
         [HttpDelete("delete/{messageID}")]
         public async Task<IActionResult> DeleteMessage([FromRoute] Guid messageID)
         {
-            var result = await _messageService.DeleteMessage(User, messageID);
+            var result = await _messageService.DeleteMessage(messageID);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -57,7 +57,7 @@ namespace Gym_App.Api.Controllers
         [HttpGet("session-messages/{sessionID}")]
         public async Task<IActionResult> GetSessionMessages([FromRoute] Guid sessionID, string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page = 1, int pageSize = 10)
         {
-            var result = await _messageService.GetSessionMessages(User,sessionID, startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
+            var result = await _messageService.GetSessionMessages(sessionID, startDate, endDate, page, sortColumn, OrderBy, searchTerm, pageSize);
             if(result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)

@@ -1,6 +1,5 @@
 ﻿using Gym_App.Infastructure.DTOs.Message;
 using Gym_App.Infastructure.Transfer_Classes;
-using System.Security.Claims;
 
 namespace Gym_App.Infastructure.Interfaces.Services
 {

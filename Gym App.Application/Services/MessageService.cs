@@ -1,21 +1,19 @@
-﻿using Gym_App.Domain;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.DTOs.Message;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
-using Microsoft.AspNetCore.Authorization;
-using System.Linq.Expressions;
-using System.Security.Claims;
 
 namespace Gym_App.Application.Services
 {
     public class MessageService : IMessageService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IAuthorizationService _authorizationService;
+        private readonly ICachedAuthorizationService _authorizationService;
 
-        public MessageService(IUnitOfWork unitOfWork,IAuthorizationService authorizationService)
+        public MessageService(IUnitOfWork unitOfWork,ICachedAuthorizationService authorizationService)
         {
             _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
@@ -24,7 +22,7 @@ namespace Gym_App.Application.Services
         //        *********** Setters ***********
 
         //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
-        public async Task<SettersResponse> AddMessage(ClaimsPrincipal User, Guid senderID, MessageCreationDTO message)
+        public async Task<SettersResponse> AddMessage(Guid senderID, MessageCreationDTO message)
         {
             //checking for DTO validity
             if (message == null || message.SessionID == Guid.Empty)
@@ -37,8 +35,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(user.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Getting session with users included from repository
@@ -67,7 +65,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Success" };
         }
 
-        public async Task<SettersResponse> UpdateMessage(ClaimsPrincipal User, Guid messageID, MessageUpdateDTO message)
+        public async Task<SettersResponse> UpdateMessage(Guid messageID, MessageUpdateDTO message)
         {
             //checking for DTO validity
             if (message == null)
@@ -80,8 +78,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Message not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, messageEntity.Sender.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(messageEntity.Sender.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Updating message
@@ -94,7 +92,7 @@ namespace Gym_App.Application.Services
             return new SettersResponse { status = 2, msg = "Success" };
         }
 
-        public async Task<SettersResponse> DeleteMessage(ClaimsPrincipal User, Guid messageID)
+        public async Task<SettersResponse> DeleteMessage(Guid messageID)
         {
             //checking for messageID validity
             if (messageID == Guid.Empty)
@@ -107,8 +105,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Message not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, messageEntity.Sender.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(messageEntity.Sender.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Deleting from Database via repository
@@ -127,7 +125,7 @@ namespace Gym_App.Application.Services
             return messageEntity?.Sender.Id ?? Guid.Empty;
         }
 
-        public async Task<List<Guid>?> GetSessionUsersIDs(ClaimsPrincipal User, Guid sessionID)
+        public async Task<List<Guid>?> GetSessionUsersIDs(Guid sessionID)
         {
             //checking for sessionID validity
             if (sessionID == Guid.Empty)
@@ -140,15 +138,14 @@ namespace Gym_App.Application.Services
 
             var UserIDs = Users.Select(u => u.Id).ToList();
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsInListAsync(UserIDs);
+            if (!authResult)
                 return null;
 
             return UserIDs;
         }
 
         public async Task<GettersResponse<MessageMiniViewDTO>> GetSessionMessages(
-            ClaimsPrincipal User,
             Guid sessionID,
             string startDate,
             string endDate,
@@ -168,8 +165,8 @@ namespace Gym_App.Application.Services
                 };
 
             var UserIDs = users.Select(u => u.Id).ToList();
-            var authResult = await _authorizationService.AuthorizeAsync(User, UserIDs, "ListUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsInListAsync(UserIDs);
+            if (!authResult)
                 return new GettersResponse<MessageMiniViewDTO>
                 {
                     status = 1,

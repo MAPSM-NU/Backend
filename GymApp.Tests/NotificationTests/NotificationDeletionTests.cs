@@ -1,3 +1,4 @@
+using Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Services;
@@ -10,11 +11,11 @@ namespace GymApp.Tests.NotificationTests
     public class NotificationDeletionTests : TestBase
     {
         private readonly INotificationService _notificationService;
-        private readonly Mock<IAuthorizationService> _authorizationServiceMock;
+        private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
 
-        public NotificationDeletionTests() : base("NotificationDeletionTestDatabase")
+        public NotificationDeletionTests() : base("NotificationCreationTestDatabase")
         {
-            _authorizationServiceMock = new Mock<IAuthorizationService>();
+            _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
             _notificationService = new NotificationService(_unitOfWork, _authorizationServiceMock.Object);
         }
 
@@ -44,15 +45,13 @@ namespace GymApp.Tests.NotificationTests
             _unitOfWork.Notifications.Create(notification);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.DeleteNotification(principal, notification.Id);
+            var result = await _notificationService.DeleteNotification(notification.Id);
 
             // ASSERT
             Assert.NotNull(result);
@@ -77,7 +76,7 @@ namespace GymApp.Tests.NotificationTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.DeleteNotification(principal, Guid.Empty);
+            var result = await _notificationService.DeleteNotification(Guid.Empty);
 
             // ASSERT
             Assert.NotNull(result);
@@ -104,7 +103,7 @@ namespace GymApp.Tests.NotificationTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.DeleteNotification(principal, nonExistentNotificationId);
+            var result = await _notificationService.DeleteNotification(nonExistentNotificationId);
 
             // ASSERT
             Assert.NotNull(result);
@@ -136,15 +135,13 @@ namespace GymApp.Tests.NotificationTests
             var unauthorizedUser = CreateTestUser(role, email: "other@gmail.com");
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(false);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, unauthorizedUser.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.DeleteNotification(principal, notification.Id);
+            var result = await _notificationService.DeleteNotification(notification.Id);
 
             // ASSERT
             Assert.NotNull(result);
@@ -185,16 +182,14 @@ namespace GymApp.Tests.NotificationTests
             _unitOfWork.Notifications.Create(notification2);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result1 = await _notificationService.DeleteNotification(principal, notification1.Id);
-            var result2 = await _notificationService.DeleteNotification(principal, notification2.Id);
+            var result1 = await _notificationService.DeleteNotification(notification1.Id);
+            var result2 = await _notificationService.DeleteNotification(notification2.Id);
 
             // ASSERT
             Assert.Equal(2, result1.status);
@@ -234,15 +229,13 @@ namespace GymApp.Tests.NotificationTests
             _unitOfWork.Notifications.Create(notification2);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.DeleteAllNotifications(principal, user.Id);
+            var result = await _notificationService.DeleteAllNotifications(user.Id);
 
             // ASSERT
             Assert.NotNull(result);
@@ -267,7 +260,7 @@ namespace GymApp.Tests.NotificationTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.DeleteAllNotifications(principal, Guid.Empty);
+            var result = await _notificationService.DeleteAllNotifications(Guid.Empty);
 
             // ASSERT
             Assert.NotNull(result);
@@ -290,7 +283,7 @@ namespace GymApp.Tests.NotificationTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.DeleteAllNotifications(principal, nonExistentUserId);
+            var result = await _notificationService.DeleteAllNotifications(nonExistentUserId);
 
             // ASSERT
             Assert.NotNull(result);
@@ -312,15 +305,13 @@ namespace GymApp.Tests.NotificationTests
             var unauthorizedUser = CreateTestUser(role, email: "other@gmail.com");
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(false);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, unauthorizedUser.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _notificationService.DeleteAllNotifications(principal, user.Id);
+            var result = await _notificationService.DeleteAllNotifications(user.Id);
 
             // ASSERT
             Assert.NotNull(result);
@@ -350,18 +341,16 @@ namespace GymApp.Tests.NotificationTests
             _unitOfWork.Notifications.Create(notification);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT - Delete once
-            var result1 = await _notificationService.DeleteNotification(principal, notification.Id);
+            var result1 = await _notificationService.DeleteNotification(notification.Id);
 
             // Try to delete again
-            var result2 = await _notificationService.DeleteNotification(principal, notification.Id);
+            var result2 = await _notificationService.DeleteNotification(notification.Id);
 
             // ASSERT
             Assert.Equal(2, result1.status);

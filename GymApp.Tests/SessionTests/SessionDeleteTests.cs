@@ -1,25 +1,21 @@
-﻿using Gym_App.Application.Services;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Services;
-using Microsoft.AspNetCore.Authorization;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GymApp.Tests.SessionTests
 {
     public class SessionDeleteTests : TestBase
     {
         private readonly ISessionService _sessionService;
-        private readonly Mock<IAuthorizationService> _authorizationService;
+        private readonly Mock<ICachedAuthorizationService> _authorizationService;
+        private readonly Mock<ICurrentUser> _currentUser;
         public SessionDeleteTests() : base("SessionTestDatabase")
         {
-            _authorizationService = new Mock<IAuthorizationService>();
-            _sessionService = new SessionService(_unitOfWork, _authorizationService.Object);
+            _authorizationService = new Mock<ICachedAuthorizationService>();
+            _currentUser = new Mock<ICurrentUser>();
+            _sessionService = new SessionService(_unitOfWork, _authorizationService.Object,_currentUser.Object);
         }
         [Fact]
         public async Task DeleteSessionTest()
@@ -29,12 +25,8 @@ namespace GymApp.Tests.SessionTests
             var users = new List<User> { user1, user2 };
             var session = CreateTestSession(users);
             await _unitOfWork.SaveChangesAsync();
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _sessionService.DeleteSession(new ClaimsPrincipal(), session.Id);
+            _authorizationService.Setup(x => x.IsInListAsync(It.IsAny<List<Guid>>())).ReturnsAsync(true);
+            var result = await _sessionService.DeleteSession(session.Id);
             Assert.NotNull(result);
             Assert.Equal("Session deleted successfully", result.msg);
             Assert.Equal(2, result.status);
@@ -42,12 +34,8 @@ namespace GymApp.Tests.SessionTests
         [Fact]
         public async Task DeleteSessionNotFoundTest()
         {
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _sessionService.DeleteSession(new ClaimsPrincipal(), Guid.NewGuid());
+            _authorizationService.Setup(x => x.IsInListAsync(It.IsAny<List<Guid>>())).ReturnsAsync(true);
+            var result = await _sessionService.DeleteSession(Guid.NewGuid());
             Assert.NotNull(result);
             Assert.Equal("Session not found", result.msg);
             Assert.Equal(0, result.status);
@@ -60,12 +48,8 @@ namespace GymApp.Tests.SessionTests
             var users = new List<User> { user1, user2 };
             var session = CreateTestSession(users);
             await _unitOfWork.SaveChangesAsync();
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
-            var result = await _sessionService.DeleteSession(new ClaimsPrincipal(), session.Id);
+            _authorizationService.Setup(x => x.IsInListAsync(It.IsAny<List<Guid>>())).ReturnsAsync(false);
+            var result = await _sessionService.DeleteSession(session.Id);
             Assert.NotNull(result);
             Assert.Equal("Unauthorized", result.msg);
             Assert.Equal(1, result.status);

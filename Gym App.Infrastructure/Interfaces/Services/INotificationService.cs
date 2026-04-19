@@ -9,13 +9,13 @@ namespace Gym_App.Infastructure.Interfaces.Services
     public interface INotificationService 
     {
         Task<SettersResponse> SendNotificationAsync(NotificationViewDTO notification);// Not implemented yet
-        Task<SettersResponse> CreateNotification(ClaimsPrincipal User,Guid userID, NotificationCreationDTO notification);
-        Task<SettersResponse> DeleteNotification(ClaimsPrincipal User, Guid NotificationID);
+        Task<SettersResponse> CreateNotification(Guid userID, NotificationCreationDTO notification);
+        Task<SettersResponse> DeleteNotification(Guid NotificationID);
         Task<SettersResponse> MarkAsRead(Guid NotificationID);// Not implemented yet
         Task<SettersResponse> MarkAllAsRead(Guid UserID);// Not implemented yet
-        Task<SettersResponse> DeleteAllNotifications(ClaimsPrincipal User, Guid UserID);
+        Task<SettersResponse> DeleteAllNotifications(Guid UserID);
         Task<Guid> GetNotificationUserID( Guid NotificationID);
-        Task<GettersResponse<NotificationMiniViewDTO>> GetNotifications(ClaimsPrincipal User, Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm,int pageSize);
+        Task<GettersResponse<NotificationMiniViewDTO>> GetNotifications(Guid UserID,string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm,int pageSize);
         //Task<PagedList<NotificationDTO>> GetNotificationsByFilter(int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
         Task<GettersResponse<NotificationViewDTO>> GetAllNotifications(int page, int pageSize);
 

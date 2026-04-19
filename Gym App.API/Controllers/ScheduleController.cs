@@ -18,7 +18,7 @@ namespace Gym_App.Api.Controllers
         [HttpPost("create/{userID}")]
         public async Task<IActionResult> AddSchedule([FromRoute]Guid userID,[FromBody] ScheduleCreationAndEditDTO schedule)
         {
-            var result = await _scheduleService.AddSchedule(User, userID, schedule);
+            var result = await _scheduleService.AddSchedule(userID, schedule);
             
             if(result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -30,7 +30,7 @@ namespace Gym_App.Api.Controllers
         [HttpPut("update/{scheduleID}")]
         public async Task<IActionResult> UpdateSchedule([FromRoute] Guid scheduleID,[FromBody] ScheduleCreationAndEditDTO schedule)
         {
-            var result = await _scheduleService.UpdateSchedule(User, scheduleID, schedule);
+            var result = await _scheduleService.UpdateSchedule(scheduleID, schedule);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -42,7 +42,7 @@ namespace Gym_App.Api.Controllers
         [HttpDelete("delete/{scheduleID}")]
         public async Task<IActionResult> DeleteSchedule([FromRoute] Guid scheduleID)
         {
-            var result = await _scheduleService.DeleteSchedule(User, scheduleID);
+            var result = await _scheduleService.DeleteSchedule(scheduleID);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -54,7 +54,7 @@ namespace Gym_App.Api.Controllers
         [HttpPost("add-workouts/{scheduleID}")]
         public async Task<IActionResult> AddWorkoutsToSchedule([FromRoute] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            var result = await _scheduleService.AddWorkoutsToSchedule(User, scheduleID, scheduleWorkout);
+            var result = await _scheduleService.AddWorkoutsToSchedule(scheduleID, scheduleWorkout);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -66,7 +66,7 @@ namespace Gym_App.Api.Controllers
         [HttpPost("set-workouts/{scheduleID}")]
         public async Task<IActionResult> SetWorkoutsOfSchedule([FromRoute] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            var result = await _scheduleService.SetWorkoutsOfSchedule(User, scheduleID, scheduleWorkout);
+            var result = await _scheduleService.SetWorkoutsOfSchedule(scheduleID, scheduleWorkout);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -78,7 +78,7 @@ namespace Gym_App.Api.Controllers
         [HttpDelete("delete-workouts/{scheduleID}")]
         public async Task<IActionResult> DeleteWorkoutsFromSchedule([FromRoute] Guid scheduleID, [FromBody] ScheduleWorkoutDTO scheduleWorkout)
         {
-            var result = await _scheduleService.DeleteWorkoutsFromSchedule(User, scheduleID, scheduleWorkout);
+            var result = await _scheduleService.DeleteWorkoutsFromSchedule(scheduleID, scheduleWorkout);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });

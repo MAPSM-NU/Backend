@@ -20,7 +20,7 @@ namespace Gym_App.Api.Controllers
         public async Task<IActionResult> CreateNotification([FromRoute]Guid userID,[FromBody] NotificationCreationDTO notification)
         {
 
-            var result = await _notificationService.CreateNotification(User, userID, notification);
+            var result = await _notificationService.CreateNotification(userID, notification);
             
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -32,7 +32,7 @@ namespace Gym_App.Api.Controllers
         [HttpDelete("delete/{notificationID}")]
         public async Task<IActionResult> DeleteNotification([FromRoute]Guid notificationID)//As in deleting the whole notif. there should be one were we delete the notif from the user's list
         {
-            var result = await _notificationService.DeleteNotification(User, notificationID);
+            var result = await _notificationService.DeleteNotification(notificationID);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -44,7 +44,7 @@ namespace Gym_App.Api.Controllers
         [HttpDelete("delete-all/{userID}")]//Note to self. Dont put unnecassary space in the route. Will result in error
         public async Task<IActionResult> DeleteAllNotifications([FromRoute] Guid userID)
         {
-            var result = await _notificationService.DeleteAllNotifications(User, userID);
+            var result = await _notificationService.DeleteAllNotifications(userID);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -56,7 +56,7 @@ namespace Gym_App.Api.Controllers
         [HttpGet("user-notifs/{userID}")]
         public async Task<IActionResult> GetNotifications([FromRoute]Guid userID,[FromQuery] string startDate, string endDate, string sortColumn, string OrderBy, string searchTerm, int page = 1, int pageSize = 10)
         {
-            var result = await _notificationService.GetNotifications(User,userID,startDate,endDate,page,sortColumn,OrderBy,searchTerm,pageSize);
+            var result = await _notificationService.GetNotifications(userID,startDate,endDate,page,sortColumn,OrderBy,searchTerm,pageSize);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)

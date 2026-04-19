@@ -1,3 +1,4 @@
+using Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.Schedule;
@@ -11,11 +12,11 @@ namespace GymApp.Tests.ScheduleTests
     public class ScheduleCreationTests : TestBase
     {
         private readonly IScheduleService _scheduleService;
-        private readonly Mock<IAuthorizationService> _authorizationServiceMock;
+        private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
 
         public ScheduleCreationTests() : base("ScheduleCreationTestDatabase")
         {
-            _authorizationServiceMock = new Mock<IAuthorizationService>();
+            _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
             _scheduleService = new ScheduleService(_unitOfWork, _authorizationServiceMock.Object);
         }
 
@@ -37,9 +38,7 @@ namespace GymApp.Tests.ScheduleTests
             await _unitOfWork.SaveChangesAsync();
 
             // Mock authorization to succeed
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var scheduleDto = new ScheduleCreationAndEditDTO
             {
@@ -53,7 +52,7 @@ namespace GymApp.Tests.ScheduleTests
             var principal = new ClaimsPrincipal(identity);
 
             // ACT - Execute the method being tested
-            var result = await _scheduleService.AddSchedule(principal, user.Id, scheduleDto);
+            var result = await _scheduleService.AddSchedule(user.Id, scheduleDto);
 
             // ASSERT - Verify the result
             Assert.NotNull(result);
@@ -87,7 +86,7 @@ namespace GymApp.Tests.ScheduleTests
             ScheduleCreationAndEditDTO nullSchedule = null;
 
             // ACT
-            var result = await _scheduleService.AddSchedule(principal, user.Id, nullSchedule);
+            var result = await _scheduleService.AddSchedule(user.Id, nullSchedule);
 
             // ASSERT
             Assert.NotNull(result);
@@ -116,7 +115,7 @@ namespace GymApp.Tests.ScheduleTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _scheduleService.AddSchedule(principal, nonExistentUserId, scheduleDto);
+            var result = await _scheduleService.AddSchedule(nonExistentUserId, scheduleDto);
 
             // ASSERT
             Assert.NotNull(result);
@@ -139,9 +138,7 @@ namespace GymApp.Tests.ScheduleTests
             await _unitOfWork.SaveChangesAsync();
 
             // Mock authorization to fail
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(false);
 
             var scheduleDto = new ScheduleCreationAndEditDTO
             {
@@ -153,7 +150,7 @@ namespace GymApp.Tests.ScheduleTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _scheduleService.AddSchedule(principal, user.Id, scheduleDto);
+            var result = await _scheduleService.AddSchedule(user.Id, scheduleDto);
 
             // ASSERT
             Assert.NotNull(result);
@@ -174,9 +171,7 @@ namespace GymApp.Tests.ScheduleTests
             var user = CreateTestUser(role);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var scheduleDto = new ScheduleCreationAndEditDTO
             {
@@ -188,7 +183,7 @@ namespace GymApp.Tests.ScheduleTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _scheduleService.AddSchedule(principal, user.Id, scheduleDto);
+            var result = await _scheduleService.AddSchedule(user.Id, scheduleDto);
 
             // ASSERT - Service creates schedule even with empty values
             Assert.NotNull(result);
@@ -209,9 +204,7 @@ namespace GymApp.Tests.ScheduleTests
             var user = CreateTestUser(role);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
@@ -220,8 +213,8 @@ namespace GymApp.Tests.ScheduleTests
             var schedule2Dto = new ScheduleCreationAndEditDTO { Name = "Schedule 2", Type = "Type 2" };
 
             // ACT
-            var result1 = await _scheduleService.AddSchedule(principal, user.Id, schedule1Dto);
-            var result2 = await _scheduleService.AddSchedule(principal, user.Id, schedule2Dto);
+            var result1 = await _scheduleService.AddSchedule(user.Id, schedule1Dto);
+            var result2 = await _scheduleService.AddSchedule(user.Id, schedule2Dto);
 
             // ASSERT
             Assert.Equal(2, result1.status);

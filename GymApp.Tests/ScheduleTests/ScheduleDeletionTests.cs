@@ -1,3 +1,4 @@
+using Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.Schedule;
@@ -11,11 +12,11 @@ namespace GymApp.Tests.ScheduleTests
     public class ScheduleDeletionTests : TestBase
     {
         private readonly IScheduleService _scheduleService;
-        private readonly Mock<IAuthorizationService> _authorizationServiceMock;
+        private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
 
-        public ScheduleDeletionTests() : base("ScheduleDeletionTestDatabase")
+        public ScheduleDeletionTests() : base("ScheduleCreationTestDatabase")
         {
-            _authorizationServiceMock = new Mock<IAuthorizationService>();
+            _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
             _scheduleService = new ScheduleService(_unitOfWork, _authorizationServiceMock.Object);
         }
 
@@ -46,15 +47,13 @@ namespace GymApp.Tests.ScheduleTests
             await _unitOfWork.SaveChangesAsync();
 
             // Mock authorization to succeed
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT - Execute the method being tested
-            var result = await _scheduleService.DeleteSchedule(principal, schedule.Id);
+            var result = await _scheduleService.DeleteSchedule(schedule.Id);
 
             // ASSERT - Verify the result
             Assert.NotNull(result);
@@ -83,7 +82,7 @@ namespace GymApp.Tests.ScheduleTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _scheduleService.DeleteSchedule(principal, Guid.Empty);
+            var result = await _scheduleService.DeleteSchedule(Guid.Empty);
 
             // ASSERT
             Assert.NotNull(result);
@@ -110,7 +109,7 @@ namespace GymApp.Tests.ScheduleTests
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _scheduleService.DeleteSchedule(principal, nonExistentScheduleId);
+            var result = await _scheduleService.DeleteSchedule(nonExistentScheduleId);
 
             // ASSERT
             Assert.NotNull(result);
@@ -143,15 +142,13 @@ namespace GymApp.Tests.ScheduleTests
             await _unitOfWork.SaveChangesAsync();
 
             // Mock authorization to fail
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(false);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, unauthorizedUser.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _scheduleService.DeleteSchedule(principal, schedule.Id);
+            var result = await _scheduleService.DeleteSchedule(schedule.Id);
 
             // ASSERT
             Assert.NotNull(result);
@@ -190,15 +187,13 @@ namespace GymApp.Tests.ScheduleTests
             _unitOfWork.Schedules.Create(schedule);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result = await _scheduleService.DeleteSchedule(principal, schedule.Id);
+            var result = await _scheduleService.DeleteSchedule(schedule.Id);
 
             // ASSERT
             Assert.Equal(2, result.status);
@@ -250,17 +245,15 @@ namespace GymApp.Tests.ScheduleTests
             _unitOfWork.Schedules.Create(schedule3);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
-            var result1 = await _scheduleService.DeleteSchedule(principal, schedule1.Id);
-            var result2 = await _scheduleService.DeleteSchedule(principal, schedule2.Id);
-            var result3 = await _scheduleService.DeleteSchedule(principal, schedule3.Id);
+            var result1 = await _scheduleService.DeleteSchedule(schedule1.Id);
+            var result2 = await _scheduleService.DeleteSchedule(schedule2.Id);
+            var result3 = await _scheduleService.DeleteSchedule(schedule3.Id);
 
             // ASSERT
             Assert.Equal(2, result1.status);
@@ -293,18 +286,16 @@ namespace GymApp.Tests.ScheduleTests
             _unitOfWork.Schedules.Create(schedule);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT - Delete once
-            var result1 = await _scheduleService.DeleteSchedule(principal, schedule.Id);
+            var result1 = await _scheduleService.DeleteSchedule(schedule.Id);
 
             // Try to delete again
-            var result2 = await _scheduleService.DeleteSchedule(principal, schedule.Id);
+            var result2 = await _scheduleService.DeleteSchedule(schedule.Id);
 
             // ASSERT
             Assert.Equal(2, result1.status);

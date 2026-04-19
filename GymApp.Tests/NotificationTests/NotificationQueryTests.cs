@@ -1,3 +1,4 @@
+using Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Services;
@@ -10,11 +11,11 @@ namespace GymApp.Tests.NotificationTests
     public class NotificationQueryTests : TestBase
     {
         private readonly INotificationService _notificationService;
-        private readonly Mock<IAuthorizationService> _authorizationServiceMock;
+        private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
 
-        public NotificationQueryTests() : base("NotificationQueryTestDatabase")
+        public NotificationQueryTests() : base("NotificationCreationTestDatabase")
         {
-            _authorizationServiceMock = new Mock<IAuthorizationService>();
+            _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
             _notificationService = new NotificationService(_unitOfWork, _authorizationServiceMock.Object);
         }
 
@@ -55,9 +56,7 @@ namespace GymApp.Tests.NotificationTests
             _unitOfWork.Notifications.Create(notification2);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
@@ -66,7 +65,6 @@ namespace GymApp.Tests.NotificationTests
 
             // ACT
             var result = await _notificationService.GetNotifications(
-                principal,
                 user.Id,
                 startDate: now.AddDays(-1).ToString("yyyy-MM-dd"),
                 endDate: now.AddDays(1).ToString("yyyy-MM-dd"),
@@ -99,9 +97,7 @@ namespace GymApp.Tests.NotificationTests
             var unauthorizedUser = CreateTestUser(role, email: "other@gmail.com");
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(false);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, unauthorizedUser.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
@@ -110,7 +106,6 @@ namespace GymApp.Tests.NotificationTests
 
             // ACT
             var result = await _notificationService.GetNotifications(
-                principal,
                 user.Id,
                 startDate: now.AddDays(-1).ToString("yyyy-MM-dd"),
                 endDate: now.AddDays(1).ToString("yyyy-MM-dd"),
@@ -140,9 +135,7 @@ namespace GymApp.Tests.NotificationTests
             var user = CreateTestUser(role);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
@@ -151,7 +144,6 @@ namespace GymApp.Tests.NotificationTests
 
             // ACT
             var result = await _notificationService.GetNotifications(
-                principal,
                 user.Id,
                 startDate: now.AddDays(-1).ToString("yyyy-MM-dd"),
                 endDate: now.AddDays(1).ToString("yyyy-MM-dd"),
@@ -195,9 +187,7 @@ namespace GymApp.Tests.NotificationTests
             }
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
@@ -206,7 +196,6 @@ namespace GymApp.Tests.NotificationTests
 
             // ACT - Get first page with 10 items per page
             var result = await _notificationService.GetNotifications(
-                principal,
                 user.Id,
                 startDate: now.AddDays(-1).ToString("yyyy-MM-dd"),
                 endDate: now.AddDays(1).ToString("yyyy-MM-dd"),
@@ -257,9 +246,7 @@ namespace GymApp.Tests.NotificationTests
             _unitOfWork.Notifications.Create(notif2);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
@@ -268,7 +255,6 @@ namespace GymApp.Tests.NotificationTests
 
             // ACT - Search for "Workout"
             var result = await _notificationService.GetNotifications(
-                principal,
                 user.Id,
                 startDate: now.AddDays(-1).ToString("yyyy-MM-dd"),
                 endDate: now.AddDays(1).ToString("yyyy-MM-dd"),
@@ -409,16 +395,13 @@ namespace GymApp.Tests.NotificationTests
             _unitOfWork.Notifications.Create(notif2);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT - Get only recent notifications (last 5 days)
             var result = await _notificationService.GetNotifications(
-                principal,
                 user.Id,
                 startDate: now.AddDays(-5).ToString("yyyy-MM-dd"),
                 endDate: now.AddDays(1).ToString("yyyy-MM-dd"),
@@ -469,16 +452,13 @@ namespace GymApp.Tests.NotificationTests
             _unitOfWork.Notifications.Create(notif2);
             await _unitOfWork.SaveChangesAsync();
 
-            _authorizationServiceMock
-                .Setup(a => a.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
+            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) };
             var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
 
             // ACT
             var result = await _notificationService.GetNotifications(
-                principal,
                 user.Id,
                 startDate: now.AddDays(-1).ToString("yyyy-MM-dd"),
                 endDate: now.AddDays(1).ToString("yyyy-MM-dd"),

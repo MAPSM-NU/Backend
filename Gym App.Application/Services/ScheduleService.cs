@@ -1,4 +1,5 @@
-﻿using Gym_App.Domain;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.DTOs.Schedule;
 using Gym_App.Infastructure.Interfaces.Repositries;
@@ -13,15 +14,15 @@ namespace Gym_App.Application.Services
     public class ScheduleService : IScheduleService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IAuthorizationService _authorizationService;
+        private readonly ICachedAuthorizationService _authorizationService;
 
-        public ScheduleService(IUnitOfWork unitOfWork, IAuthorizationService authorizationService)
+        public ScheduleService(IUnitOfWork unitOfWork, ICachedAuthorizationService authorizationService)
         {
             _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
         }
 
-        public async Task<SettersResponse> AddSchedule(ClaimsPrincipal User, Guid userID, ScheduleCreationAndEditDTO schedule)
+        public async Task<SettersResponse> AddSchedule( Guid userID, ScheduleCreationAndEditDTO schedule)
         {
             //Checking for DTO validity
             if (schedule == null)
@@ -33,8 +34,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "User not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(user.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Creating schedule
@@ -53,7 +54,7 @@ namespace Gym_App.Application.Services
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Schedule created successfully" };
         }
-        public async Task<SettersResponse> UpdateSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleCreationAndEditDTO schedule)
+        public async Task<SettersResponse> UpdateSchedule( Guid scheduleID, ScheduleCreationAndEditDTO schedule)
         {
             //Checking for DTO validity
             if (schedule == null)
@@ -65,8 +66,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, existingSchedule.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(existingSchedule.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Updating fields
@@ -78,7 +79,7 @@ namespace Gym_App.Application.Services
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Schedule updated successfully" };
         }
-        public async Task<SettersResponse> DeleteSchedule(ClaimsPrincipal User, Guid scheduleID)
+        public async Task<SettersResponse> DeleteSchedule(Guid scheduleID)
         {
             //Checking for scheduleID validity
             if (scheduleID == Guid.Empty)
@@ -90,8 +91,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(schedule.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Saving to Database
@@ -99,7 +100,7 @@ namespace Gym_App.Application.Services
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Schedule deleted successfully" };
         }
-        public async Task<SettersResponse> AddWorkoutsToSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
+        public async Task<SettersResponse> AddWorkoutsToSchedule(Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
         {
             //checking DTO
             if (scheduleWorkout == null)
@@ -111,8 +112,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(schedule.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Adding workouts
@@ -135,7 +136,7 @@ namespace Gym_App.Application.Services
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Workouts added successfully" };
         }
-        public async Task<SettersResponse> SetWorkoutsOfSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
+        public async Task<SettersResponse> SetWorkoutsOfSchedule(Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
         {
             //Checking for DTO validity
             if (scheduleWorkout == null)
@@ -147,8 +148,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(schedule.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Setting workouts
@@ -169,7 +170,7 @@ namespace Gym_App.Application.Services
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { status = 2, msg = "Workouts added successfully" };
         }
-        public async Task<SettersResponse> DeleteWorkoutsFromSchedule(ClaimsPrincipal User, Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
+        public async Task<SettersResponse> DeleteWorkoutsFromSchedule(Guid scheduleID, ScheduleWorkoutDTO scheduleWorkout)
         {
             //Checking for DTO validity
             if (scheduleWorkout == null)
@@ -181,8 +182,8 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = "Schedule not found" };
 
             //Authorization
-            var authResult = await _authorizationService.AuthorizeAsync(User, schedule.User.Id, "SameUserPolicy");
-            if (!authResult.Succeeded)
+            var authResult = await _authorizationService.IsUserAsync(schedule.User.Id);
+            if (!authResult)
                 return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             //Checking if schedule has workouts

@@ -1,4 +1,5 @@
-﻿using Gym_App.Application.Services;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Application.Services;
 using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Moq;
@@ -14,10 +15,10 @@ namespace GymApp.Tests.WorkoutTests
      public class WorkoutDeleteTests : TestBase
     {
         private readonly IWorkoutService _workoutService;
-        private readonly Mock<IAuthorizationService> _authorizationService;
+        private readonly Mock<ICachedAuthorizationService> _authorizationService;
         public WorkoutDeleteTests() : base("WorkoutTestsDatabase")
         {
-            _authorizationService = new Mock<IAuthorizationService>();
+            _authorizationService = new Mock<ICachedAuthorizationService>();
             _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object);
         }
         //Deleting workout with all its possibilities of failure
@@ -27,12 +28,8 @@ namespace GymApp.Tests.WorkoutTests
             var user = CreateTestUser(CreateTestRole());
             var workout = CreateTestWorkout(user);
             await _unitOfWork.SaveChangesAsync();
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _workoutService.DeleteWorkout(new ClaimsPrincipal(), workout.Id);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            var result = await _workoutService.DeleteWorkout(workout.Id);
             Assert.NotNull(result);
             Assert.Equal("Workout deleted successfully", result.msg);
             Assert.Equal(2, result.status);
@@ -40,12 +37,8 @@ namespace GymApp.Tests.WorkoutTests
         [Fact]
         public async Task DeleteNonExistingWorkoutTest()
         {
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _workoutService.DeleteWorkout(new ClaimsPrincipal(), Guid.NewGuid());
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            var result = await _workoutService.DeleteWorkout(Guid.NewGuid());
             Assert.NotNull(result);
             Assert.Equal("Workout not found", result.msg);
             Assert.Equal(0, result.status);
@@ -56,12 +49,8 @@ namespace GymApp.Tests.WorkoutTests
             var user = CreateTestUser(CreateTestRole());
             var workout = CreateTestWorkout(user);
             await _unitOfWork.SaveChangesAsync();
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
-            var result = await _workoutService.DeleteWorkout(new ClaimsPrincipal(), workout.Id);
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(false);
+            var result = await _workoutService.DeleteWorkout(workout.Id);
             Assert.NotNull(result);
             Assert.Equal("Forbidden from access", result.msg);
             Assert.Equal(1, result.status);
@@ -72,12 +61,8 @@ namespace GymApp.Tests.WorkoutTests
             var user = CreateTestUser(CreateTestRole());
             var workout = CreateTestWorkout(user);
             await _unitOfWork.SaveChangesAsync();
-            _authorizationService.Setup(x => x.AuthorizeAsync(
-                It.IsAny<ClaimsPrincipal>(),
-                It.IsAny<object>(),
-                It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-            var result = await _workoutService.DeleteWorkout(new ClaimsPrincipal(), Guid.Empty);//Passing an empty id to check If it will pass validation checks
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            var result = await _workoutService.DeleteWorkout(Guid.Empty);//Passing an empty id to check If it will pass validation checks
             Assert.NotNull(result);
             Assert.Equal("Invalid workout ID", result.msg);
             Assert.Equal(0, result.status);

@@ -17,7 +17,7 @@ namespace Gym_App.Api.Controllers
         [HttpPost("create")]//That is one way of adding it. I like Route but I may diverge into this
         public async Task<IActionResult> CreateWorkout([FromBody] WorkoutCreationDTO workout)
         {
-            var result = await _workoutService.CreateWorkout(User,workout);
+            var result = await _workoutService.CreateWorkout(workout);
 
             if(result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -29,7 +29,7 @@ namespace Gym_App.Api.Controllers
         [HttpPut("update/{workoutID}")]
         public async Task<IActionResult> UpdateWorkout([FromRoute] Guid workoutID, [FromBody] WorkoutUpdateDTO workout)
         {
-            var result = await _workoutService.UpdateWorkout(User, workoutID, workout);
+            var result = await _workoutService.UpdateWorkout(workoutID, workout);
             
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -41,7 +41,7 @@ namespace Gym_App.Api.Controllers
         [HttpDelete("delete/{workoutID}")]
         public async Task<IActionResult> DeleteWorkout([FromRoute] Guid workout)
         {
-            var result = await _workoutService.DeleteWorkout(User,workout);
+            var result = await _workoutService.DeleteWorkout(workout);
             
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -53,7 +53,7 @@ namespace Gym_App.Api.Controllers
         [HttpPost("add-exercises/{workoutID}")]
         public async Task<IActionResult> AddExercisesToWorkout([FromRoute] Guid workoutID,[FromBody] WorkoutExerciseDTO workoutExercise)
         {
-            var result = await _workoutService.AddExercisesToWorkout(User, workoutID, workoutExercise);
+            var result = await _workoutService.AddExercisesToWorkout(workoutID, workoutExercise);
             
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -65,7 +65,7 @@ namespace Gym_App.Api.Controllers
         [HttpPost("set-exercises/{workoutID}")]
         public async Task<IActionResult> SetExercisesOfWorkout([FromRoute] Guid workoutID,[FromBody] WorkoutExerciseDTO workoutExercises)
         {
-            var result = await _workoutService.SetExercisesOfWorkout(User,workoutID,workoutExercises);
+            var result = await _workoutService.SetExercisesOfWorkout(workoutID,workoutExercises);
             
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -77,7 +77,7 @@ namespace Gym_App.Api.Controllers
         [HttpDelete("delete-exercises/{workoutID}")]
         public async Task<IActionResult> DeleteExercisesFromWorkout([FromRoute] Guid workoutID, [FromBody] WorkoutExerciseDTO workoutExercises)
         {
-            var result = await _workoutService.DeleteExercisesFromWorkout(User,workoutID,workoutExercises);
+            var result = await _workoutService.DeleteExercisesFromWorkout(workoutID,workoutExercises);
             
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });

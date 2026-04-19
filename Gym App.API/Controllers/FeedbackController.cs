@@ -17,7 +17,7 @@ namespace Gym_App.Api.Controllers
         [HttpPost("create/{userID}")]
         public async Task<IActionResult> CreateFeedback([FromRoute]Guid userID,[FromBody] FeedbackCreationDTO feedbackDTO)
         {
-            var result = await _feedbackService.CreateFeedback(User,userID, feedbackDTO);
+            var result = await _feedbackService.CreateFeedback(userID, feedbackDTO);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -29,7 +29,7 @@ namespace Gym_App.Api.Controllers
         [HttpPut("update/{feedbackID}")]
         public async Task<IActionResult> UpdateFeedback([FromRoute]Guid feedbackID,[FromBody] FeedbackUpdateDTO feedbackDTO)
         {
-            var result = await _feedbackService.UpdateFeedback(User,feedbackID, feedbackDTO);
+            var result = await _feedbackService.UpdateFeedback(feedbackID, feedbackDTO);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -41,7 +41,7 @@ namespace Gym_App.Api.Controllers
         [HttpDelete("delete/{feedbackID}")]
         public async Task<IActionResult> DeleteFeedback([FromRoute]Guid feedbackID)
         {
-            var result = await _feedbackService.DeleteFeedback(User, feedbackID);
+            var result = await _feedbackService.DeleteFeedback(feedbackID);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -55,7 +55,7 @@ namespace Gym_App.Api.Controllers
         {
             //Talking to Database
 
-            var result = await _feedbackService.GetFeedbackByID(User,feedbackID);
+            var result = await _feedbackService.GetFeedbackByID(feedbackID);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)
@@ -66,7 +66,7 @@ namespace Gym_App.Api.Controllers
         [HttpGet("get-workout-feedback/{workoutID}")]
         public async Task<IActionResult> GetFeedbackOfWorkout([FromRoute]Guid workoutID)
         {
-            var result = await _feedbackService.GetFeedbackOfWorkout(User, workoutID);
+            var result = await _feedbackService.GetFeedbackOfWorkout(workoutID);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)
@@ -77,7 +77,7 @@ namespace Gym_App.Api.Controllers
         [HttpGet("get-user-feedbacks/{userID}")]
         public async Task<IActionResult> GetUserFeedbacks([FromRoute]Guid userID,[FromQuery] string startDate,string endDate,string sortColumn, string OrderBy, string SearchTerm, int page = 1, int pageSize = 10)
         {//startDate and endDate are string so I can parse and check them
-            var result = await _feedbackService.GetUserFeedbacks(User, userID,startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            var result = await _feedbackService.GetUserFeedbacks(userID,startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)

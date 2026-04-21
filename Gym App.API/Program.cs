@@ -1,5 +1,6 @@
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
+using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
@@ -34,6 +35,22 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
+
+// ============================================
+// CORS CONFIGURATION
+// ============================================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("SignalRPolicy", builder =>
+    {
+        builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
+builder.Services.AddSignalR();
 
 // ============================================
 // SWAGGER CONFIGURATION
@@ -127,6 +144,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
         };
         options.IncludeErrorDetails = true;
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // ============================================
@@ -183,8 +212,12 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
+app.UseFileServer(enableDirectoryBrowsing: true);
+app.UseRouting();
+app.UseCors("SignalRPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHub<ChatHub>("/chat");
 app.MapControllers();
 
 app.Run();

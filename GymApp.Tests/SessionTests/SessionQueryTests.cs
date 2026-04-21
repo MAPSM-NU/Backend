@@ -38,6 +38,26 @@ namespace GymApp.Tests.SessionTests
             Assert.Equal(3, messages.Data!.TotalCount);
         }
         [Fact]
+        public async Task GetSessionFunctionCorrect()
+        {
+            var session = CreateTestSession(new List<User> { CreateTestUser(CreateTestRole()) });
+            for (int i = 0; i < 7; i++)
+            {
+                CreateTestMessage(session.Users.First(), session, $"Test message {i}", DateTime.UtcNow.AddMinutes(i * 5));
+            }
+            await _unitOfWork.SaveChangesAsync();
+
+            _authorizationService.Setup(x => x.IsInListAsync(It.IsAny<List<Guid>>())).ReturnsAsync(true);
+
+            var retrieveSession = await _sessionService.GetSession(session.Id, 1, 5);
+            Assert.NotNull(retrieveSession);
+            Assert.Equal(1, session.Users.Count);
+            Assert.Equal(5, session.Messages.Count);
+
+            var retrievedSession2 = await _sessionService.GetSession(session.Id, 1, 2);
+            Assert.Equal(2, session.Messages.Count);
+        }
+        [Fact]
         public async Task GetSessionMessagesDateInvalidTest()
         {
             var session = CreateTestSession(new List<User> { CreateTestUser(CreateTestRole()) });

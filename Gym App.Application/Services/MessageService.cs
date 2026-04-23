@@ -46,7 +46,7 @@ namespace Gym_App.Application.Services
             
             //Checking if user is part of the session
             if (!session.Users.Any(u => u.Id == user.Id))
-                return new SettersResponse { status = 0, msg = "User is not part of this session" };
+                return new SettersResponse { status = 1, msg = "User is not part of this session" };
 
             //Creating new message
             var newMessage = new Message

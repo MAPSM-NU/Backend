@@ -9,7 +9,6 @@ using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -44,9 +43,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("SignalRPolicy", builder =>
     {
         builder
-            .AllowAnyOrigin()
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .AllowCredentials();
     });
 });
 
@@ -209,14 +208,18 @@ using (var scope = app.Services.CreateScope())
 // ============================================
 // MIDDLEWARE PIPELINE
 // ============================================
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseHttpsRedirection();
-app.UseFileServer(enableDirectoryBrowsing: true);
+
 app.UseRouting();
+
 app.UseCors("SignalRPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapHub<ChatHub>("/chat");
 app.MapControllers();
 

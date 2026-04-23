@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gym App - SignalR Chat Hub Tester</title>
-    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/signalr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -275,7 +275,7 @@
 
                 <div class="form-group">
                     <label for="apiUrl">API URL:</label>
-                    <input type="text" id="apiUrl" value="http://localhost:5000" placeholder="http://localhost:5000">
+                    <input type="text" id="apiUrl" value="http://localhost:5001" placeholder="http://localhost:5001">
                 </div>
 
                 <div class="form-group">
@@ -317,6 +317,14 @@
                     <div class="stat-box">
                         <div class="stat-label">Current Room</div>
                         <div class="stat-value" id="currentRoom">-</div>
+                    </div>
+                </div>
+
+                <div style="background: #f0f0f0; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
+                    <h3 style="color: #667eea; margin-bottom: 10px; font-size: 1.1em;">📍 Available Rooms</h3>
+                    <button onclick="loadAvailableRooms()" style="margin-bottom: 10px;">🔄 Load Available Rooms</button>
+                    <div id="roomsList" style="background: white; padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: auto; border: 1px solid #ddd;">
+                        <p style="color: #999; font-size: 0.9em;">Click "Load Available Rooms" to see active sessions</p>
                     </div>
                 </div>
 
@@ -459,7 +467,11 @@
 
             try {
                 connection = new signalR.HubConnectionBuilder()
-                    .withUrl(`${apiUrl}/chat?access_token=${jwtToken}`)
+                    .configureLogging(signalR.LogLevel.Debug)
+                    .withUrl(`${apiUrl}/chat?access_token=${jwtToken}`,{
+                        skipNegotiation: true,  // skipNegotiation as we specify WebSockets
+                        transport: signalR.HttpTransportType.WebSockets  // force WebSocket transport
+                    })
                     .withAutomaticReconnect()
                     .build();
 
@@ -584,13 +596,14 @@
             }
 
             try {
-                await connection.invoke('SendMessage', {
-                    message: messageContent,
-                    room: sessionId
+                const result = await connection.invoke('SendMessage', {
+                    Message: messageContent,
+                    Room: sessionId
                 });
                 
-                log(`📤 Message sent: ${messageContent}`, 'success');
+                log(`${userName}:${messageContent}`, 'success');
                 messagesSent++;
+                log(`${result.status}\n${result.msg}`,'success');
                 document.getElementById('messagesSent').textContent = messagesSent;
                 document.getElementById('messageContent').value = '';
             } catch (err) {
@@ -623,9 +636,9 @@
                     pageSize
                 );
                 
-                log(`Messages loaded successfully`, 'success');
+                log(`Messages loaded successfully ${response.data}`, 'success');
                 updateResponse(response);
-            } catch (err) {
+            } catch (err) { 
                 log(`Load messages failed: ${err.toString()}`, 'error');
                 updateResponse(err);
             }
@@ -638,6 +651,61 @@
             messagesReceived = 0;
             document.getElementById('messagesSent').textContent = '0';
             document.getElementById('messagesReceived').textContent = '0';
+        }
+
+        async function loadAvailableRooms() {
+            if (!connection) {
+                log('Not connected. Connect first.', 'error');
+                return;
+            }
+
+            log('Loading available rooms...', 'info');
+
+            try {
+                const response = await connection.invoke('GetLiveChats', 1, 5);
+                
+                if (response.status !== 2) {
+                    log(`Failed to load rooms: ${response.msg}`, 'error');
+                    return;
+                }
+
+                const roomsList = document.getElementById('roomsList');
+                const rooms = response.data || [];
+
+                if (!rooms || rooms.length === 0) {
+                    roomsList.innerHTML = '<p style="color: #999; font-size: 0.9em;">No active rooms available</p>';
+                    log('No active rooms found', 'info');
+                    return;
+                }
+
+                // Create list of rooms
+                let roomsHtml = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                rooms.forEach(room => {
+                    roomsHtml += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;">
+                            <code style="color: #667eea; font-size: 0.85em; word-break: break-all; flex: 1;">${room}</code>
+                            <button onclick="copyRoomId('${room}')" style="background: #667eea; color: white; border: none; padding: 4px 10px; border-radius: 3px; font-size: 0.8em; cursor: pointer; margin-left: 8px; white-space: nowrap;">Copy</button>
+                        </div>
+                    `;
+                });
+                roomsHtml += '</div>';
+
+                roomsList.innerHTML = roomsHtml;
+                log(`Loaded ${rooms.length} active rooms`, 'success');
+                updateResponse(response);
+            } catch (err) {
+                log(`Load rooms failed: ${err.toString()}`, 'error');
+                updateResponse(err);
+            }
+        }
+
+        function copyRoomId(roomId) {
+            navigator.clipboard.writeText(roomId).then(() => {
+                log(`Copied room ID to clipboard: ${roomId}`, 'success');
+                document.getElementById('sessionId').value = roomId;
+            }).catch(err => {
+                log(`Failed to copy: ${err}`, 'error');
+            });
         }
 
         // Initial status

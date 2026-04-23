@@ -1,7 +1,7 @@
 ﻿using Gym_App.Application.Authorization;
 using Gym_App.Infastructure.DTOs.Message;
+using Gym_App.Infastructure.DTOs.Session;
 using Gym_App.Infastructure.Interfaces.Services;
-using Gym_App.Infastructure.Transfer_Classes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -13,7 +13,7 @@ namespace Gym_App.Application.Hubs
         private readonly IMessageService messageRegistry;
         private readonly ISessionService chatRegistry;
         private readonly ICurrentUser currentUser;
-        private readonly Dictionary<string, List<Guid>> rooms = new();
+        private static readonly Dictionary<string, List<Guid>> rooms = new();
         public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user)
         {
             messageRegistry = message;
@@ -63,38 +63,61 @@ namespace Gym_App.Application.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, room.Room);
             return new OutputResponse<OutputMessage>(2,"Successfully joined room",null,result);
         }
-        public async Task GetMessages(RoomRequest room, int page = 1, int PageSize = 5)
+        public async Task<OutputResponse<OutputMessage>> GetMessages(RoomRequest room, int page = 1, int pageSize = 5)
         {
-            throw new NotImplementedException();
+            if (!Guid.TryParse(room.Room, out var chatId))
+            {
+                return new OutputResponse<OutputMessage>(0, "Invalid Id", null, null);
+            }
+            var messages = await chatRegistry.GetSessionMessages(chatId, "", "", page, "", "", "", pageSize);
+            List<OutputMessage> result = new List<OutputMessage>();
+            foreach (var message in messages.Data.Items)
+            {
+                result.Add(new OutputMessage(
+                     message.Content,
+                     currentUser.Email ?? string.Empty,
+                     room.Room,
+                     message.Timestamp
+                ));
+            }
+            return new OutputResponse<OutputMessage>(2, "Messages Loaded successfully", null, result);
         }
-        public async Task SendMessage(InputMessage message)
+        public async Task<OutputResponse<Object>> SendMessage(InputMessage message)
         {
             var username = currentUser.Name;
             var userMessage = new UserMessage(
-                new(Context.UserIdentifier, username),
+                new(Context.UserIdentifier!, username!),
                 message.Message,
                 message.Room,
                 DateTimeOffset.Now
             );
 
-            if (!rooms.ContainsKey(message.Room)) return;
+            if (!rooms.ContainsKey(message.Room)) return new OutputResponse<Object>(0, "Chat Id not found", null, null);
 
             Guid chatId;
             Guid.TryParse(message.Room, out chatId);
             var dto = new MessageCreationDTO
             {
+                SessionID = chatId,
                 Content = message.Message,
                 IsRead = false
             };
-            await messageRegistry.AddMessage(chatId,dto);
+            var result = await messageRegistry.AddMessage((Guid)currentUser.UserID!,dto);
+            if (result.status == 0) return new OutputResponse<Object>(0, result.msg, null, null);
 
             await Clients.GroupExcept(message.Room, new[] { Context.ConnectionId })
                 .SendAsync("send_message", userMessage.Output);
-            return;
+            return new OutputResponse<Object>(2, result.msg, null, null);
         }
         public Task LeaveGroup(RoomRequest room)
         {
             return Groups.RemoveFromGroupAsync(Context.ConnectionId, room.Room);
+        }
+        
+        public Task<OutputResponse<string>> GetLiveChats(int page=1,int pageSize=5)
+        {
+            var chats = rooms.Keys.ToList();
+            return Task.FromResult(new OutputResponse<string>(2, "Success", null, chats));
         }
     }
 }

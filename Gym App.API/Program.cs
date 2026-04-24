@@ -40,7 +40,7 @@ builder.Services.AddMemoryCache();
 // ============================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("SignalRPolicy", builder =>
+    options.AddPolicy("CorsPolicy", builder =>
     {
         builder
             .AllowAnyMethod()
@@ -216,11 +216,12 @@ app.UseSwaggerUI();
 
 app.UseRouting();
 
-app.UseCors("SignalRPolicy");
+app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<ChatHub>("/chat");
+app.MapHub<NotificationHub>("/notif");
 app.MapControllers();
 
 app.Run();

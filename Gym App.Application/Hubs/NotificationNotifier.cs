@@ -1,0 +1,63 @@
+﻿using Gym_App.Domain;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
+using System.Threading.Channels;
+
+namespace Gym_App.Application.Hubs
+{
+    public interface INotificationSink
+    {
+        ValueTask PushAsync(Notification notification);
+    }
+    public class NotificationNotifier : BackgroundService, INotificationSink
+    {
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<NotificationNotifier> _logger;
+        private readonly ConnectionMultiplexer _redis;
+        private readonly Channel<Notification> _channel;
+        private readonly static TimeSpan Period = TimeSpan.FromSeconds(2);
+        
+        public NotificationNotifier(ILogger<NotificationNotifier> logger,IServiceProvider serviceProvider)
+        {
+            _logger = logger;
+            _channel = Channel.CreateUnbounded<Notification>();
+            _serviceProvider = serviceProvider;
+            _redis = ConnectionMultiplexer.Connect("Given ip");//not implemented
+
+        }
+        public ValueTask PushAsync(Notification notification) => _channel.Writer.WriteAsync(notification);
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            //this is a local implementation
+            var timer = new PeriodicTimer(Period);
+            while (true && await timer.WaitForNextTickAsync(stoppingToken))
+            {
+                try
+                {
+                    if (stoppingToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    var notification = await _channel.Reader.ReadAsync(stoppingToken);
+                    var message = notification.Content;
+                    var userId = notification.User.Id;
+                    using var scope = _serviceProvider.CreateScope();
+
+                    var hub = scope.ServiceProvider.GetRequiredService<IHubContext<NotificationHub>>();
+
+                    var payload = new { Message = notification.Content };
+                    _logger.LogInformation($"Sending channel notification '{message}' to {userId}");
+                    await hub.Clients.User(userId.ToString()).SendAsync("Notify", payload, stoppingToken);//curently it doesnt send the connection id but the actual user id which is wrong bs I am tired
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error in notification service.");
+                }
+            }
+        }
+    }
+}

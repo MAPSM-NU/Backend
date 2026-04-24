@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 
 namespace Gym_App.Application.Hubs
 {
@@ -33,7 +29,11 @@ namespace Gym_App.Application.Hubs
         string Message,
         string Room,
         DateTimeOffset SentAt
-    )
+    );
+    public record NotifMessage(
+        string userId,
+        string Message,
+        DateTimeOffset SentAt)
     {
         public OutputMessage Output => new(Message, User.UserName, Room, SentAt);
     }

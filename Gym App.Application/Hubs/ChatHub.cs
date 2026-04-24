@@ -14,6 +14,8 @@ namespace Gym_App.Application.Hubs
         private readonly ISessionService chatRegistry;
         private readonly ICurrentUser currentUser;
         private static readonly Dictionary<string, List<Guid>> rooms = new();
+        private static readonly Dictionary<string, Dictionary<string, string>> roomUsers = new(); // room -> {connectionId -> userName}
+        
         public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user)
         {
             messageRegistry = message;
@@ -36,6 +38,7 @@ namespace Gym_App.Application.Hubs
                     return new OutputResponse<OutputMessage>(0,"No session found with given Id",null,null);
                 
                 rooms[room.Room] = userIds;
+                roomUsers[room.Room] = new Dictionary<string, string>();
             }
 
             if (currentUser.User == null) return new OutputResponse<OutputMessage> (0, "Invalid Data", null, null);
@@ -59,8 +62,16 @@ namespace Gym_App.Application.Hubs
                      message.Timestamp
                 ));
             }
+            
+            // Track user in room
+            roomUsers[room.Room][Context.ConnectionId] = currentUser.Name ?? "Unknown";
+            
             // User is authorized, join the room
             await Groups.AddToGroupAsync(Context.ConnectionId, room.Room);
+            
+            // Notify others that user joined
+            await Clients.Group(room.Room).SendAsync("user_joined", new { userName = currentUser.Name, room = room.Room });
+            
             return new OutputResponse<OutputMessage>(2,"Successfully joined room",null,result);
         }
         public async Task<OutputResponse<OutputMessage>> GetMessages(RoomRequest room, int page = 1, int pageSize = 5)
@@ -105,7 +116,8 @@ namespace Gym_App.Application.Hubs
             var result = await messageRegistry.AddMessage((Guid)currentUser.UserID!,dto);
             if (result.status == 0) return new OutputResponse<Object>(0, result.msg, null, null);
 
-            await Clients.GroupExcept(message.Room, new[] { Context.ConnectionId })
+            // Send message to ALL clients in the group (including sender)
+            await Clients.Group(message.Room)
                 .SendAsync("send_message", userMessage.Output);
             return new OutputResponse<Object>(2, result.msg, null, null);
         }

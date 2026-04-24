@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym App - SignalR Chat Hub Tester</title>
+    <title>Gym App - Chat Hub Tester</title>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <style>
         * {
@@ -20,60 +20,75 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1600px;
             margin: 0 auto;
         }
 
         .header {
             text-align: center;
             color: white;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 2em;
+            margin-bottom: 5px;
         }
 
-        .content {
+        .header p {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .main-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
             margin-bottom: 20px;
         }
 
         .panel {
             background: white;
             border-radius: 10px;
-            padding: 20px;
+            padding: 18px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
         }
 
         .panel h2 {
             color: #667eea;
-            margin-bottom: 15px;
-            font-size: 1.5em;
+            margin-bottom: 12px;
+            font-size: 1.1em;
             border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
+        }
+
+        .panel h3 {
+            color: #667eea;
+            margin-top: 12px;
+            margin-bottom: 8px;
+            font-size: 0.95em;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         label {
             display: block;
             font-weight: 600;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             color: #333;
+            font-size: 0.85em;
         }
 
         input, textarea {
             width: 100%;
-            padding: 10px;
+            padding: 8px;
             border: 2px solid #e0e0e0;
             border-radius: 5px;
-            font-size: 1em;
+            font-size: 0.85em;
             font-family: inherit;
             transition: border-color 0.3s;
         }
@@ -86,16 +101,16 @@
 
         textarea {
             resize: vertical;
-            min-height: 60px;
+            min-height: 45px;
         }
 
         button {
             background: #667eea;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 8px 12px;
             border-radius: 5px;
-            font-size: 1em;
+            font-size: 0.85em;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
@@ -115,10 +130,12 @@
         }
 
         .status {
-            padding: 10px;
+            padding: 8px;
             border-radius: 5px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-weight: 600;
+            font-size: 0.85em;
+            text-align: center;
         }
 
         .status.disconnected {
@@ -139,77 +156,41 @@
             border: 2px solid #ffb74d;
         }
 
-        .messages-container {
-            background: #f5f5f5;
-            border: 2px solid #e0e0e0;
-            border-radius: 5px;
-            padding: 15px;
-            max-height: 400px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-        }
-
-        .message {
-            background: white;
-            padding: 12px;
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
             margin-bottom: 10px;
+        }
+
+        .stat-box {
+            background: #f5f5f5;
+            padding: 8px;
             border-radius: 5px;
-            border-left: 4px solid #667eea;
+            text-align: center;
         }
 
-        .message.error {
-            border-left-color: #ef5350;
-            background: #ffebee;
+        .stat-label {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 2px;
         }
 
-        .message.success {
-            border-left-color: #66bb6a;
-            background: #e8f5e9;
-        }
-
-        .message.info {
-            border-left-color: #42a5f5;
-            background: #e3f2fd;
-        }
-
-        .message-time {
-            font-size: 0.8em;
-            color: #999;
-            margin-top: 5px;
-        }
-
-        .message-content {
-            word-break: break-word;
-        }
-
-        .message-user {
+        .stat-value {
+            font-size: 1.2em;
             font-weight: 600;
             color: #667eea;
-            margin-bottom: 5px;
-        }
-
-        .response-box {
-            background: #f5f5f5;
-            border: 2px solid #e0e0e0;
-            border-radius: 5px;
-            padding: 12px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            max-height: 200px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
         }
 
         .button-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 6px;
+            margin-top: 8px;
         }
 
-        .button-group button {
-            width: 100%;
+        .button-group.full {
+            grid-template-columns: 1fr;
         }
 
         .clear-btn {
@@ -220,161 +201,342 @@
             background: #da190b;
         }
 
-        .full-width {
-            grid-column: 1 / -1;
+        .rooms-list {
+            background: #f9f9f9;
+            padding: 6px;
+            border-radius: 5px;
+            max-height: 100px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            margin: 6px 0;
+            flex: 1;
         }
 
-        @media (max-width: 768px) {
-            .content {
-                grid-template-columns: 1fr;
+        .room-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px;
+            background: white;
+            border-radius: 3px;
+            border: 1px solid #eee;
+            margin-bottom: 3px;
+            font-size: 0.8em;
+            gap: 4px;
+        }
+
+        .room-item code {
+            color: #667eea;
+            word-break: break-all;
+            flex: 1;
+            font-size: 0.75em;
+        }
+
+        .room-item button {
+            padding: 2px 6px;
+            font-size: 0.7em;
+            width: auto;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .messages-container {
+            flex: 1;
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 12px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            min-height: 300px;
+        }
+
+        .empty-chat {
+            color: #999;
+            text-align: center;
+            padding: 30px 15px;
+            font-size: 0.9em;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
+        .message.sent {
+            justify-content: flex-end;
         }
 
-        .stat-box {
-            background: #f5f5f5;
-            padding: 12px;
-            border-radius: 5px;
-            text-align: center;
+        .message.received {
+            justify-content: flex-start;
         }
 
-        .stat-label {
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 5px;
+        .message-bubble {
+            max-width: 85%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            word-wrap: break-word;
+            word-break: break-word;
         }
 
-        .stat-value {
-            font-size: 1.5em;
+        .message.sent .message-bubble {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.received .message-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            border-bottom-left-radius: 2px;
+        }
+
+        .message-user {
             font-weight: 600;
+            font-size: 0.8em;
+            margin-bottom: 3px;
+        }
+
+        .message.sent .message-user {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .message.received .message-user {
             color: #667eea;
+        }
+
+        .message-content {
+            font-size: 0.9em;
+            margin: 3px 0;
+        }
+
+        .message-time {
+            font-size: 0.7em;
+            opacity: 0.7;
+            margin-top: 3px;
+        }
+
+        .message.sent .message-time {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .message.received .message-time {
+            color: #999;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-area textarea {
+            flex: 1;
+            min-height: 45px;
+            margin: 0;
+        }
+
+        .input-area button {
+            width: 45px;
+            padding: 8px;
+            flex-shrink: 0;
+        }
+
+        .activity-log {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 8px;
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 0.8em;
+            flex: 1;
+        }
+
+        .log-entry {
+            padding: 3px 5px;
+            margin-bottom: 2px;
+            border-radius: 3px;
+            word-break: break-word;
+        }
+
+        .log-entry.info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .log-entry.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .log-entry.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .section-divider {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .flex-grow {
+            flex: 1;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>💬 Gym App Chat Hub Tester</h1>
-            <p>SignalR Real-time Chat Testing Interface</p>
+            <h1>Chat Hub Tester</h1>
+            <p>Real-time Chat Testing Interface</p>
         </div>
 
-        <div class="content">
-            <!-- Connection Panel -->
+        <div class="main-grid">
+            <!-- Left Panel: Connection -->
             <div class="panel">
-                <h2>🔌 Connection Setup</h2>
+                <h2>Connection</h2>
                 
                 <div class="status disconnected" id="connectionStatus">
-                    ⚫ Disconnected
+                    Disconnected
                 </div>
 
                 <div class="form-group">
-                    <label for="apiUrl">API URL:</label>
+                    <label>API URL:</label>
                     <input type="text" id="apiUrl" value="http://localhost:5001" placeholder="http://localhost:5001">
                 </div>
 
                 <div class="form-group">
-                    <label for="jwtToken">JWT Token:</label>
-                    <textarea id="jwtToken" placeholder="Paste your JWT token here..."></textarea>
+                    <label>JWT Token:</label>
+                    <textarea id="jwtToken" placeholder="Paste JWT token..."></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label for="userId">User ID:</label>
-                    <input type="text" id="userId" placeholder="Your User ID (from token)" readonly>
+                    <label>User ID:</label>
+                    <input type="text" id="userId" placeholder="Auto-filled" readonly>
                 </div>
 
                 <div class="form-group">
-                    <label for="userName">User Name:</label>
-                    <input type="text" id="userName" placeholder="Your Name (from token)" readonly>
+                    <label>User Name:</label>
+                    <input type="text" id="userName" placeholder="Auto-filled" readonly>
                 </div>
 
-                <div class="button-group">
-                    <button onclick="connect()">🔗 Connect</button>
-                    <button onclick="disconnect()">🔌 Disconnect</button>
+                <div class="button-group full">
+                    <button onclick="connect()">Connect</button>
+                    <button onclick="disconnect()" class="clear-btn">Disconnect</button>
                 </div>
 
-                <button class="clear-btn" onclick="clearLogs()" style="margin-top: 10px;">🗑️ Clear Logs</button>
-            </div>
-
-            <!-- Chat Panel -->
-            <div class="panel">
-                <h2>💭 Chat Controls</h2>
-
+                <h3>Stats</h3>
                 <div class="stats">
                     <div class="stat-box">
-                        <div class="stat-label">Messages Sent</div>
+                        <div class="stat-label">Sent</div>
                         <div class="stat-value" id="messagesSent">0</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-label">Messages Received</div>
+                        <div class="stat-label">Received</div>
                         <div class="stat-value" id="messagesReceived">0</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-label">Current Room</div>
+                        <div class="stat-label">Room</div>
                         <div class="stat-value" id="currentRoom">-</div>
                     </div>
                 </div>
 
-                <div style="background: #f0f0f0; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
-                    <h3 style="color: #667eea; margin-bottom: 10px; font-size: 1.1em;">📍 Available Rooms</h3>
-                    <button onclick="loadAvailableRooms()" style="margin-bottom: 10px;">🔄 Load Available Rooms</button>
-                    <div id="roomsList" style="background: white; padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: auto; border: 1px solid #ddd;">
-                        <p style="color: #999; font-size: 0.9em;">Click "Load Available Rooms" to see active sessions</p>
+                <div class="section-divider">
+                    <h3>Rooms</h3>
+                    <button onclick="loadAvailableRooms()" style="margin-bottom: 6px; font-size: 0.8em;">Load Rooms</button>
+                    <div class="rooms-list" id="roomsList">
+                        <p style="color: #999; font-size: 0.8em; text-align: center; padding: 15px 8px;">Click "Load Rooms"</p>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="sessionId">Session ID (Room):</label>
-                    <input type="text" id="sessionId" placeholder="e.g., 550e8400-e29b-41d4-a716-446655440000">
+                    <label>Session ID:</label>
+                    <input type="text" id="sessionId" placeholder="Room GUID">
                 </div>
 
-                <div class="button-group full-width">
-                    <button onclick="joinRoom()">📍 Join Room</button>
-                    <button onclick="leaveRoom()">🚪 Leave Room</button>
+                <div class="button-group full">
+                    <button onclick="joinRoom()">Join</button>
+                    <button onclick="leaveRoom()" class="clear-btn">Leave</button>
                 </div>
 
-                <div class="form-group" style="margin-top: 15px;">
-                    <label for="messageContent">Message:</label>
-                    <textarea id="messageContent" placeholder="Type your message here..."></textarea>
-                </div>
-
-                <button onclick="sendMessage()">📤 Send Message</button>
-
-                <div class="form-group" style="margin-top: 15px;">
-                    <label for="pageNumber">Page Number:</label>
-                    <input type="number" id="pageNumber" value="1" min="1">
-                </div>
-
-                <div class="form-group">
-                    <label for="pageSize">Page Size:</label>
-                    <input type="number" id="pageSize" value="5" min="1">
-                </div>
-
-                <button onclick="loadMessages()" style="margin-top: 10px;">📨 Load Messages</button>
-            </div>
-        </div>
-
-        <!-- Logs Panel -->
-        <div class="panel full-width">
-            <h2>📋 Activity Log</h2>
-            <div class="messages-container" id="logContainer">
-                <div class="message info">
-                    <div class="message-user">System</div>
-                    <div class="message-content">Ready to connect. Configure your settings and click "Connect"</div>
+                <div class="section-divider flex-grow">
+                    <h3>Activity</h3>
+                    <div class="activity-log" id="logContainer">
+                        <div class="log-entry info">Ready</div>
+                    </div>
+                    <button onclick="clearLogs()" class="clear-btn" style="margin-top: 6px; font-size: 0.8em;">Clear</button>
                 </div>
             </div>
-            <button class="clear-btn" onclick="clearLogs()">🗑️ Clear All Logs</button>
-        </div>
 
-        <!-- Response Panel -->
-        <div class="panel full-width">
-            <h2>📤 Last Response</h2>
-            <div class="response-box" id="responseBox">No responses yet...</div>
+            <!-- Middle Panel: Chat Messages -->
+            <div class="panel">
+                <h2>Chat Messages</h2>
+                <div class="messages-container" id="messagesContainer">
+                    <div class="empty-chat">Join a room to start chatting</div>
+                </div>
+
+                <div class="input-area">
+                    <textarea id="messageContent" placeholder="Type a message..."></textarea>
+                    <button onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Info -->
+            <div class="panel">
+                <h2>Info</h2>
+                
+                <div style="flex: 1;">
+                    <h3>Connected Users</h3>
+                    <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; min-height: 100px; overflow-y: auto; font-size: 0.9em; color: #666;">
+                        <p>Users in current room will appear here</p>
+                    </div>
+
+                    <h3 style="margin-top: 15px;">Connection Info</h3>
+                    <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; font-size: 0.85em; color: #666;">
+                        <p><strong>Status:</strong> <span id="infoStatus">Disconnected</span></p>
+                        <p><strong>Room:</strong> <span id="infoRoom">None</span></p>
+                        <p><strong>Total Messages:</strong> <span id="infoTotal">0</span></p>
+                    </div>
+
+                    <h3 style="margin-top: 15px;">Help</h3>
+                    <div style="background: #f5f5f5; padding: 10px; border-radius: 5px; font-size: 0.85em; color: #666; line-height: 1.5;">
+                        <p>1. Enter API URL</p>
+                        <p>2. Paste JWT token</p>
+                        <p>3. Click Connect</p>
+                        <p>4. Load or paste Room ID</p>
+                        <p>5. Click Join</p>
+                        <p>6. Send messages</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -383,37 +545,56 @@
         let messagesSent = 0;
         let messagesReceived = 0;
         let currentRoom = null;
+        let currentUserName = '';
 
         function log(message, type = 'info') {
             const logContainer = document.getElementById('logContainer');
-            const messageEl = document.createElement('div');
-            messageEl.className = `message ${type}`;
-            
-            const time = new Date().toLocaleTimeString();
-            messageEl.innerHTML = `
-                <div class="message-user">${type.toUpperCase()}</div>
-                <div class="message-content">${escapeHtml(message)}</div>
-                <div class="message-time">${time}</div>
-            `;
-            
-            logContainer.appendChild(messageEl);
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = message;
+            logContainer.appendChild(entry);
             logContainer.scrollTop = logContainer.scrollHeight;
         }
 
-        function updateResponse(data) {
-            const responseBox = document.getElementById('responseBox');
-            responseBox.textContent = JSON.stringify(data, null, 2);
+        function updateInfoStatus() {
+            document.getElementById('infoStatus').textContent = connection?.state === 1 ? 'Connected' : 'Disconnected';
+            document.getElementById('infoRoom').textContent = currentRoom ? currentRoom.substring(0, 12) + '...' : 'None';
+            document.getElementById('infoTotal').textContent = (messagesSent + messagesReceived);
+        }
+
+        function addMessage(userName, content, isOwn = false) {
+            const container = document.getElementById('messagesContainer');
+            
+            if (container.querySelector('.empty-chat')) {
+                container.innerHTML = '';
+            }
+
+            const message = document.createElement('div');
+            const time = new Date().toLocaleTimeString();
+            
+            message.className = `message ${isOwn ? 'sent' : 'received'}`;
+            message.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-user">${userName}</div>
+                    <div class="message-content">${escapeHtml(content)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            container.appendChild(message);
+            container.scrollTop = container.scrollHeight;
         }
 
         function updateStatus(connected) {
             const status = document.getElementById('connectionStatus');
             if (connected) {
-                status.textContent = '🟢 Connected';
+                status.textContent = 'Connected';
                 status.className = 'status connected';
             } else {
-                status.textContent = '🔴 Disconnected';
+                status.textContent = 'Disconnected';
                 status.className = 'status disconnected';
             }
+            updateInfoStatus();
         }
 
         function escapeHtml(text) {
@@ -445,58 +626,54 @@
             const apiUrl = document.getElementById('apiUrl').value;
             const jwtToken = document.getElementById('jwtToken').value.trim();
 
-            if (!apiUrl) {
-                log('Please enter API URL', 'error');
-                return;
-            }
-
-            if (!jwtToken) {
-                log('Please enter JWT token', 'error');
+            if (!apiUrl || !jwtToken) {
+                log('Enter API URL and JWT token', 'error');
                 return;
             }
 
             const decoded = decodeJwt(jwtToken);
             if (!decoded) return;
 
+            currentUserName = decoded.name || decoded.unique_name || 'Unknown';
             document.getElementById('userId').value = decoded.sub || decoded.nameid || 'N/A';
-            document.getElementById('userName').value = decoded.name || decoded.unique_name || 'N/A';
+            document.getElementById('userName').value = currentUserName;
 
-            log('Attempting to connect...', 'info');
+            log('Connecting...', 'info');
             document.getElementById('connectionStatus').className = 'status loading';
-            document.getElementById('connectionStatus').textContent = '🟡 Connecting...';
 
             try {
                 connection = new signalR.HubConnectionBuilder()
-                    .configureLogging(signalR.LogLevel.Debug)
-                    .withUrl(`${apiUrl}/chat?access_token=${jwtToken}`,{
-                        skipNegotiation: true,  // skipNegotiation as we specify WebSockets
-                        transport: signalR.HttpTransportType.WebSockets  // force WebSocket transport
+                    .configureLogging(signalR.LogLevel.Information)
+                    .withUrl(`${apiUrl}/chat?access_token=${jwtToken}`, {
+                        skipNegotiation: true,
+                        transport: signalR.HttpTransportType.WebSockets
                     })
                     .withAutomaticReconnect()
                     .build();
 
-                connection.onreconnecting((error) => {
-                    log(`Connection lost. Reconnecting...`, 'info');
+                connection.onreconnecting(() => {
+                    log('Reconnecting...', 'info');
                     updateStatus(false);
                 });
 
-                connection.onreconnected((connectionId) => {
-                    log(`Reconnected with ID: ${connectionId}`, 'success');
+                connection.onreconnected(() => {
+                    log('Reconnected', 'success');
                     updateStatus(true);
                 });
 
                 connection.on('send_message', (message) => {
-                    log(`📨 Message from ${message.user.userName}: ${message.message}`, 'success');
+                    // message is OutputMessage: { message, userName, room, sentAt }
+                    addMessage(message.userName, message.message, false);
                     messagesReceived++;
                     document.getElementById('messagesReceived').textContent = messagesReceived;
+                    updateInfoStatus();
                 });
 
                 await connection.start();
-                log('Successfully connected to SignalR Hub', 'success');
+                log('Connected', 'success');
                 updateStatus(true);
             } catch (err) {
                 log(`Connection failed: ${err.toString()}`, 'error');
-                updateResponse(err);
                 updateStatus(false);
             }
         }
@@ -509,47 +686,51 @@
 
             try {
                 await connection.stop();
-                log('Disconnected from SignalR Hub', 'info');
+                log('Disconnected', 'info');
                 updateStatus(false);
                 currentRoom = null;
                 document.getElementById('currentRoom').textContent = '-';
             } catch (err) {
-                log(`Disconnect failed: ${err.toString()}`, 'error');
+                log(`Disconnect failed: ${err}`, 'error');
             }
         }
 
         async function joinRoom() {
             if (!connection) {
-                log('Not connected. Connect first.', 'error');
+                log('Connect first', 'error');
                 return;
             }
 
             const sessionId = document.getElementById('sessionId').value.trim();
             if (!sessionId) {
-                log('Please enter a Session ID', 'error');
+                log('Enter Session ID', 'error');
                 return;
             }
 
-            const pageNumber = parseInt(document.getElementById('pageNumber').value) || 1;
-            const pageSize = parseInt(document.getElementById('pageSize').value) || 5;
-
-            log(`Attempting to join room ${sessionId}...`, 'info');
+            log('Joining room...', 'info');
 
             try {
                 const response = await connection.invoke('JoinRoom', 
                     { room: sessionId }, 
-                    pageNumber, 
-                    pageSize
+                    1, 
+                    5
                 );
                 
-                log(`Successfully joined room: ${response.msg}`, 'success');
-                updateResponse(response);
-                
+                log(`Joined: ${response.msg}`, 'success');
                 currentRoom = sessionId;
                 document.getElementById('currentRoom').textContent = sessionId.substring(0, 8) + '...';
+                
+                document.getElementById('messagesContainer').innerHTML = '';
+                if (response.data && response.data.length > 0) {
+                    response.data.forEach(msg => {
+                        addMessage(msg.email, msg.message, false);
+                    });
+                } else {
+                    document.getElementById('messagesContainer').innerHTML = '<div class="empty-chat">No messages yet</div>';
+                }
+                updateInfoStatus();
             } catch (err) {
-                log(`Join room failed: ${err.toString()}`, 'error');
-                updateResponse(err);
+                log(`Join failed: ${err}`, 'error');
             }
         }
 
@@ -561,154 +742,108 @@
 
             const sessionId = document.getElementById('sessionId').value.trim();
             if (!sessionId) {
-                log('Please enter a Session ID', 'error');
+                log('Enter Session ID', 'error');
                 return;
             }
 
             try {
                 await connection.invoke('LeaveGroup', { room: sessionId });
-                log(`Left room: ${sessionId}`, 'success');
+                log('Left room', 'success');
                 currentRoom = null;
                 document.getElementById('currentRoom').textContent = '-';
+                document.getElementById('messagesContainer').innerHTML = '<div class="empty-chat">Join a room to start chatting</div>';
+                updateInfoStatus();
             } catch (err) {
-                log(`Leave room failed: ${err.toString()}`, 'error');
-                updateResponse(err);
+                log(`Leave failed: ${err}`, 'error');
             }
         }
 
         async function sendMessage() {
             if (!connection) {
-                log('Not connected', 'error');
+                log('Connect first', 'error');
                 return;
             }
 
             const sessionId = document.getElementById('sessionId').value.trim();
             const messageContent = document.getElementById('messageContent').value.trim();
 
-            if (!sessionId) {
-                log('Please enter a Session ID', 'error');
-                return;
-            }
-
-            if (!messageContent) {
-                log('Please enter a message', 'error');
+            if (!sessionId || !messageContent) {
+                log('Enter Session ID and message', 'error');
                 return;
             }
 
             try {
-                const result = await connection.invoke('SendMessage', {
+                await connection.invoke('SendMessage', {
                     Message: messageContent,
                     Room: sessionId
                 });
                 
-                log(`${userName}:${messageContent}`, 'success');
+                addMessage(currentUserName, messageContent, true);
                 messagesSent++;
-                log(`${result.status}\n${result.msg}`,'success');
                 document.getElementById('messagesSent').textContent = messagesSent;
                 document.getElementById('messageContent').value = '';
+                log('Message sent', 'success');
+                updateInfoStatus();
             } catch (err) {
-                log(`Send message failed: ${err.toString()}`, 'error');
-                updateResponse(err);
-            }
-        }
-
-        async function loadMessages() {
-            if (!connection) {
-                log('Not connected', 'error');
-                return;
-            }
-
-            const sessionId = document.getElementById('sessionId').value.trim();
-            if (!sessionId) {
-                log('Please enter a Session ID', 'error');
-                return;
-            }
-
-            const pageNumber = parseInt(document.getElementById('pageNumber').value) || 1;
-            const pageSize = parseInt(document.getElementById('pageSize').value) || 5;
-
-            log(`Loading messages (page ${pageNumber}, size ${pageSize})...`, 'info');
-
-            try {
-                const response = await connection.invoke('GetMessages', 
-                    { room: sessionId }, 
-                    pageNumber, 
-                    pageSize
-                );
-                
-                log(`Messages loaded successfully ${response.data}`, 'success');
-                updateResponse(response);
-            } catch (err) { 
-                log(`Load messages failed: ${err.toString()}`, 'error');
-                updateResponse(err);
+                log(`Send failed: ${err}`, 'error');
             }
         }
 
         function clearLogs() {
-            const logContainer = document.getElementById('logContainer');
-            logContainer.innerHTML = '';
+            document.getElementById('logContainer').innerHTML = '';
             messagesSent = 0;
             messagesReceived = 0;
             document.getElementById('messagesSent').textContent = '0';
             document.getElementById('messagesReceived').textContent = '0';
+            updateInfoStatus();
         }
 
         async function loadAvailableRooms() {
             if (!connection) {
-                log('Not connected. Connect first.', 'error');
+                log('Connect first', 'error');
                 return;
             }
 
-            log('Loading available rooms...', 'info');
+            log('Loading rooms...', 'info');
 
             try {
                 const response = await connection.invoke('GetLiveChats', 1, 5);
                 
-                if (response.status !== 2) {
-                    log(`Failed to load rooms: ${response.msg}`, 'error');
-                    return;
-                }
-
                 const roomsList = document.getElementById('roomsList');
                 const rooms = response.data || [];
 
                 if (!rooms || rooms.length === 0) {
-                    roomsList.innerHTML = '<p style="color: #999; font-size: 0.9em;">No active rooms available</p>';
-                    log('No active rooms found', 'info');
+                    roomsList.innerHTML = '<p style="color: #999; font-size: 0.8em; text-align: center; padding: 15px 8px;">No active rooms</p>';
+                    log('No rooms available', 'info');
                     return;
                 }
 
-                // Create list of rooms
-                let roomsHtml = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+                let roomsHtml = '';
                 rooms.forEach(room => {
                     roomsHtml += `
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;">
-                            <code style="color: #667eea; font-size: 0.85em; word-break: break-all; flex: 1;">${room}</code>
-                            <button onclick="copyRoomId('${room}')" style="background: #667eea; color: white; border: none; padding: 4px 10px; border-radius: 3px; font-size: 0.8em; cursor: pointer; margin-left: 8px; white-space: nowrap;">Copy</button>
+                        <div class="room-item">
+                            <code>${room}</code>
+                            <button onclick="copyRoomId('${room}')">Copy</button>
                         </div>
                     `;
                 });
-                roomsHtml += '</div>';
 
                 roomsList.innerHTML = roomsHtml;
-                log(`Loaded ${rooms.length} active rooms`, 'success');
-                updateResponse(response);
+                log(`Loaded ${rooms.length} rooms`, 'success');
             } catch (err) {
-                log(`Load rooms failed: ${err.toString()}`, 'error');
-                updateResponse(err);
+                log(`Load rooms failed: ${err}`, 'error');
             }
         }
 
         function copyRoomId(roomId) {
             navigator.clipboard.writeText(roomId).then(() => {
-                log(`Copied room ID to clipboard: ${roomId}`, 'success');
+                log('Copied to clipboard', 'success');
                 document.getElementById('sessionId').value = roomId;
-            }).catch(err => {
-                log(`Failed to copy: ${err}`, 'error');
+            }).catch(() => {
+                log('Copy failed', 'error');
             });
         }
 
-        // Initial status
         updateStatus(false);
     </script>
 </body>

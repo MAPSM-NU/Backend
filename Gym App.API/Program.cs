@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
 using Gym_App.Application.Hubs;
@@ -113,6 +114,7 @@ builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHand
 // ============================================
 // UTILITY SERVICES
 // ============================================
+builder.Services.AddHostedService<NotificationNotifier>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();
 

@@ -14,6 +14,7 @@ namespace Gym_App.Application.Hubs
     }
     public class NotificationNotifier : BackgroundService, INotificationSink
     {
+        //Planning to implement redis but for now, implementation will only be local
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<NotificationNotifier> _logger;
         private readonly ConnectionMultiplexer _redis;
@@ -47,11 +48,11 @@ namespace Gym_App.Application.Hubs
                     var userId = notification.User.Id;
                     using var scope = _serviceProvider.CreateScope();
 
-                    var hub = scope.ServiceProvider.GetRequiredService<IHubContext<NotificationHub>>();
+                    var hub = scope.ServiceProvider.GetRequiredService<NotificationHub>();
 
-                    var payload = new { Message = notification.Content };
+                    var payload = new NotifMessage(userId.ToString(),message,DateTimeOffset.Now);
                     _logger.LogInformation($"Sending channel notification '{message}' to {userId}");
-                    await hub.Clients.User(userId.ToString()).SendAsync("Notify", payload, stoppingToken);//curently it doesnt send the connection id but the actual user id which is wrong bs I am tired
+                    await hub.SendNotif(payload,stoppingToken);//curently it doesnt send the connection id but the actual user id which is wrong bs I am tired
                 }
                 catch (Exception e)
                 {

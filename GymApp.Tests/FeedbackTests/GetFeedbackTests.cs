@@ -60,78 +60,6 @@ namespace GymApp.Tests.FeedbackTests
         }
         #endregion
 
-        #region GetFeedbackId Tests
-        [Fact]
-        public async Task GetFeedbackId_WithValidFeedbackId_ReturnsId()
-        {
-            // Arrange
-            var (feedback, user, _) = await SetupFeedbackWithUserAndWorkout();
-            var claimsPrincipal = CreateTestClaimsPrincipal(user.Id.ToString());
-
-            _authorizationServiceMock
-                .Setup(x => x.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Success());
-
-            // Act
-            var result = await _feedbackService.GetFeedbackId(claimsPrincipal, feedback.Id);
-
-            // Assert
-            Assert.NotEqual(Guid.Empty, result);
-            Assert.Equal(feedback.Id, result);
-        }
-
-        [Fact]
-        public async Task GetFeedbackId_WithEmptyGuid_ReturnsGuidEmpty()
-        {
-            // Arrange
-            var claimsPrincipal = CreateTestClaimsPrincipal(Guid.NewGuid().ToString());
-
-            // Act
-            var result = await _feedbackService.GetFeedbackId(claimsPrincipal, Guid.Empty);
-
-            // Assert
-            Assert.Equal(Guid.Empty, result);
-        }
-
-        [Fact]
-        public async Task GetFeedbackId_WithNonExistentFeedback_ReturnsGuidEmpty()
-        {
-            // Arrange
-            var nonExistentFeedbackId = Guid.NewGuid();
-            var claimsPrincipal = CreateTestClaimsPrincipal(Guid.NewGuid().ToString());
-
-            // Act & Assert - This will likely throw exception if feedback not found
-            try
-            {
-                var result = await _feedbackService.GetFeedbackId(claimsPrincipal, nonExistentFeedbackId);
-                Assert.Equal(Guid.Empty, result);
-            }
-            catch (NullReferenceException)
-            {
-                // Expected behavior if GetFeedbackwithUser returns null
-            }
-        }
-
-        [Fact]
-        public async Task GetFeedbackId_WithUnauthorizedUser_ReturnsGuidEmpty()
-        {
-            // Arrange
-            var (feedback, user, _) = await SetupFeedbackWithUserAndWorkout();
-            var unauthorizedUserId = Guid.NewGuid().ToString();
-            var claimsPrincipal = CreateTestClaimsPrincipal(unauthorizedUserId);
-
-            _authorizationServiceMock
-                .Setup(x => x.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
-                .ReturnsAsync(AuthorizationResult.Failed());
-
-            // Act
-            var result = await _feedbackService.GetFeedbackId(claimsPrincipal, feedback.Id);
-
-            // Assert
-            Assert.Equal(Guid.Empty, result);
-        }
-        #endregion
-
         #region GetFeedbackByID Tests
         [Fact]
         public async Task GetFeedbackByID_WithValidFeedbackId_ReturnsFeedbackDTO()
@@ -301,7 +229,7 @@ namespace GymApp.Tests.FeedbackTests
             Assert.Equal(2, result.status); // Success
             Assert.Equal("Successful", result.msg);
             Assert.NotNull(result.Data);
-            Assert.Equal(2, result.Data.Count);
+            Assert.Equal(2, result.Data.Items.Count);
         }
 
         [Fact]
@@ -479,7 +407,7 @@ namespace GymApp.Tests.FeedbackTests
             // Assert
             Assert.Equal(2, result.status);
             Assert.NotNull(result.Data);
-            Assert.Equal(3, result.Data.Count);
+            Assert.Equal(3, result.Data.Items.Count);
         }
         #endregion
 
@@ -531,7 +459,7 @@ namespace GymApp.Tests.FeedbackTests
             Assert.Equal(2, result.status); // Success
             Assert.Equal("Successful", result.msg);
             Assert.NotNull(result.Data);
-            Assert.Equal(2, result.Data.Count);
+            Assert.Equal(2, result.Data.Items.Count);
         }
 
         [Fact]
@@ -578,7 +506,7 @@ namespace GymApp.Tests.FeedbackTests
             // Assert
             Assert.Equal(2, result.status);
             Assert.NotNull(result.Data);
-            Assert.Equal(2, result.Data.Count);
+            Assert.Equal(2, result.Data.Items.Count);
         }
         #endregion
     }

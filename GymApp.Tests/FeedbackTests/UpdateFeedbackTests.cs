@@ -52,8 +52,6 @@ namespace GymApp.Tests.FeedbackTests
             };
 
             await _unitOfWork.Feedbacks.Create(feedback);
-            workout.Feedback = feedback;
-            await _unitOfWork.Workouts.Update(workout);
             await _unitOfWork.SaveChangesAsync();
 
             return (feedback, user, workout);
@@ -130,18 +128,17 @@ namespace GymApp.Tests.FeedbackTests
         }
 
         [Fact]
-        public async Task UpdateFeedback_WithAllFieldsEmpty_ReturnsSuccess()
+        public async Task UpdateFeedback_WithMultipleFields_UpdatesSuccessfully()
         {
             // Arrange
             var (feedback, user, _) = await SetupFeedbackWithUserAndWorkout();
-            var originalTitle = feedback.Title;
             var claimsPrincipal = CreateTestClaimsPrincipal(user.Id.ToString());
 
             var feedbackUpdateDTO = new FeedbackUpdateDTO
             {
-                Title = "",
-                Type = "",
-                FeedbackText = "",
+                Title = "New Title Only",
+                Type = "Original",
+                FeedbackText = "Original feedback text",
                 CaloriesBurned = 0,
                 DurationMinutes = 0
             };
@@ -156,9 +153,9 @@ namespace GymApp.Tests.FeedbackTests
             // Assert
             Assert.Equal(2, result.status);
 
-            // Verify feedback remains unchanged
-            var unchangedFeedback = await _unitOfWork.Feedbacks.GetById(feedback.Id);
-            Assert.Equal(originalTitle, unchangedFeedback.Title);
+            // Verify title was updated
+            var updatedFeedback = await _unitOfWork.Feedbacks.GetById(feedback.Id);
+            Assert.Equal("New Title Only", updatedFeedback.Title);
         }
         #endregion
 

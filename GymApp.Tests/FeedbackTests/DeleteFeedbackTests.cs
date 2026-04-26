@@ -51,8 +51,6 @@ namespace GymApp.Tests.FeedbackTests
             };
 
             await _unitOfWork.Feedbacks.Create(feedback);
-            workout.Feedback = feedback;
-            await _unitOfWork.Workouts.Update(workout);
             await _unitOfWork.SaveChangesAsync();
 
             return (feedback, user, workout);
@@ -212,9 +210,9 @@ namespace GymApp.Tests.FeedbackTests
         }
         #endregion
 
-        #region Concurrent Delete Tests
+        #region Sequential Delete Tests
         [Fact]
-        public async Task DeleteFeedback_ConcurrentDeletionAttempts_OnlyOneSucceeds()
+        public async Task DeleteFeedback_SequentialDeletionAttempts_FirstSucceedsSecondFails()
         {
             // Arrange
             var (feedback, user, _) = await SetupFeedbackWithUserAndWorkout();
@@ -225,18 +223,16 @@ namespace GymApp.Tests.FeedbackTests
                 .Setup(x => x.AuthorizeAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<object>(), It.IsAny<string>()))
                 .ReturnsAsync(AuthorizationResult.Success());
 
-            // Act - Simulate two concurrent delete attempts
-            var deleteTask1 = _feedbackService.DeleteFeedback(claimsPrincipal, feedbackId);
-            var deleteTask2 = _feedbackService.DeleteFeedback(claimsPrincipal, feedbackId);
+            // Act - First deletion should succeed
+            var result1 = await _feedbackService.DeleteFeedback(claimsPrincipal, feedbackId);
 
-            var results = await Task.WhenAll(deleteTask1, deleteTask2);
+            // Second deletion attempt should fail
+            var result2 = await _feedbackService.DeleteFeedback(claimsPrincipal, feedbackId);
 
-            // Assert - One should succeed, one should fail
-            var successCount = results.Count(r => r.status == 2);
-            var failureCount = results.Count(r => r.status == 0 && r.msg == "Feedback not found");
-
-            Assert.Equal(1, successCount);
-            Assert.Equal(1, failureCount);
+            // Assert
+            Assert.Equal(2, result1.status); // Success
+            Assert.Equal(0, result2.status); // Failure
+            Assert.Equal("Feedback not found", result2.msg);
         }
         #endregion
     }

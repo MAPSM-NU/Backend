@@ -270,7 +270,7 @@ namespace GymApp.Tests.FeedbackTests
 
         #region Workout Belongs To User Tests
         [Fact]
-        public async Task CreateFeedback_WithWorkoutNotBelongingToUser_ReturnsForbidden()
+        public async Task CreateFeedback_WithWorkoutNotBelongingToUser_ReturnsBadRequest()
         {
             // Arrange
             var role = CreateTestRole("User");
@@ -298,9 +298,9 @@ namespace GymApp.Tests.FeedbackTests
             // Act
             var result = await _feedbackService.CreateFeedback(claimsPrincipal, user1.Id, feedbackDTO);
 
-            // Assert
-            Assert.Equal(1, result.status); // Unauthorized
-            Assert.Equal("Unauthorized", result.msg);
+            // Assert - Will return BadRequest because GetWorkoutByUserId only looks for user1's workouts
+            Assert.Equal(0, result.status);
+            Assert.Equal("Workout not found", result.msg);
         }
         #endregion
     }

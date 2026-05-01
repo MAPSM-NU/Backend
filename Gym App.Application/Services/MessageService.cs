@@ -241,6 +241,7 @@ namespace Gym_App.Application.Services
                 SenderID = m.Sender.Id,
                 SessionID = m.Session.Id,
                 MessageID = m.Id,
+                Name = m.Sender.Name,
                 Content = m.Content,
                 IsRead = m.IsRead,
                 Timestamp = m.CreatedAt
@@ -265,6 +266,7 @@ namespace Gym_App.Application.Services
                     SenderID = m.Sender.Id,
                     SessionID = m.Session.Id,
                     MessageID = m.Id,
+                    Name = m.Sender.Name,
                     Content = m.Content,
                     IsRead = m.IsRead,
                     Timestamp = m.CreatedAt

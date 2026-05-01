@@ -2,6 +2,15 @@
 
 namespace Gym_App.Application.Hubs
 {
+    public record UserMessage(
+        User User,
+        string Message,
+        string Room,
+        DateTimeOffset SentAt
+    )
+    {
+        public OutputMessage Output => new(Message, User.UserName, Room, SentAt);
+    }
     public record NotifChatMessage(
         string userId,
         string Message,
@@ -32,14 +41,4 @@ namespace Gym_App.Application.Hubs
         T? value,
         List<T>? Data
     );
-
-    public record UserMessage(
-        User User,
-        string Message,
-        string Room,
-        DateTimeOffset SentAt
-    )
-    {
-        public OutputMessage Output => new(Message, User.UserName, Room, SentAt);
-    }
 }

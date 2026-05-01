@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
 using Gym_App.Application.Hubs;
@@ -40,7 +41,7 @@ builder.Services.AddMemoryCache();
 // ============================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("SignalRPolicy", builder =>
+    options.AddPolicy("CorsPolicy", builder =>
     {
         builder
             .AllowAnyMethod()
@@ -113,6 +114,8 @@ builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHand
 // ============================================
 // UTILITY SERVICES
 // ============================================
+builder.Services.AddSingleton<INotificationSink,NotificationNotifier>();
+builder.Services.AddHostedService<NotificationNotifier>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();
 
@@ -216,11 +219,12 @@ app.UseSwaggerUI();
 
 app.UseRouting();
 
-app.UseCors("SignalRPolicy");
+app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<ChatHub>("/chat");
+app.MapHub<NotificationHub>("/notif");
 app.MapControllers();
 
 app.Run();

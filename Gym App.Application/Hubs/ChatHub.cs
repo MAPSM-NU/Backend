@@ -1,6 +1,5 @@
 ﻿using Gym_App.Application.Authorization;
 using Gym_App.Infastructure.DTOs.Message;
-using Gym_App.Infastructure.DTOs.Session;
 using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -14,6 +13,8 @@ namespace Gym_App.Application.Hubs
         private readonly IMessageService messageRegistry;
         private readonly ISessionService chatRegistry;
         private readonly ICurrentUser currentUser;
+        private readonly INotificationSink notificationSink;
+        public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user, INotificationSink notificationSink)
         private readonly ILogger<ChatHub> logger;
         private static readonly Dictionary<string, List<Guid>> rooms = new();
         private static readonly Dictionary<string, Dictionary<string, string>> roomUsers = new(); // room -> {connectionId -> userName}
@@ -23,6 +24,7 @@ namespace Gym_App.Application.Hubs
             messageRegistry = message;
             chatRegistry = chat;
             currentUser = user;
+            this.notificationSink = notificationSink;
             logger = log;
         }
         public async Task<OutputResponse<OutputMessage>> JoinRoom(RoomRequest room, int page=1, int pageSize = 5)
@@ -65,7 +67,7 @@ namespace Gym_App.Application.Hubs
 
             var messages = await chatRegistry.GetSessionMessages(chatId, "", "", page, "", "", "", pageSize);
             List<OutputMessage> result = new List<OutputMessage>();
-            foreach (var message in messages.Data.Items)
+            foreach (var message in messages.Data!.Items)
             {
                 result.Add(new OutputMessage(
                      message.Content,
@@ -80,6 +82,12 @@ namespace Gym_App.Application.Hubs
             
             // User is authorized, join the room
             await Groups.AddToGroupAsync(Context.ConnectionId, room.Room);
+            for (var i = 0; i < rooms[room.Room].Count; i++) await notificationSink.PushAsync(new NotifSentMessage(
+                currentUserId.ToString()!,
+                $"User {currentUserId} has joined the chat",
+                rooms[room.Room][i].ToString(),
+                DateTime.Now
+                ));
             
             // Notify others that user joined
             await Clients.Group(room.Room).SendAsync("user_joined", new { userName = currentUser.Name, room = room.Room });

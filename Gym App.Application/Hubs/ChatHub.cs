@@ -14,12 +14,11 @@ namespace Gym_App.Application.Hubs
         private readonly ISessionService chatRegistry;
         private readonly ICurrentUser currentUser;
         private readonly INotificationSink notificationSink;
-        public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user, INotificationSink notificationSink)
         private readonly ILogger<ChatHub> logger;
         private static readonly Dictionary<string, List<Guid>> rooms = new();
         private static readonly Dictionary<string, Dictionary<string, string>> roomUsers = new(); // room -> {connectionId -> userName}
         
-        public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user,ILogger<ChatHub> log)
+        public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user,ILogger<ChatHub> log,INotificationSink notificationSink)
         {
             messageRegistry = message;
             chatRegistry = chat;

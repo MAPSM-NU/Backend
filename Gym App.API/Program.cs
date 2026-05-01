@@ -114,6 +114,7 @@ builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHand
 // ============================================
 // UTILITY SERVICES
 // ============================================
+builder.Services.AddSingleton<INotificationSink,NotificationNotifier>();
 builder.Services.AddHostedService<NotificationNotifier>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();

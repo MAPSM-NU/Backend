@@ -1,6 +1,5 @@
 ﻿using Gym_App.Application.Authorization;
 using Gym_App.Infastructure.DTOs.Message;
-using Gym_App.Infastructure.DTOs.Session;
 using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -13,12 +12,14 @@ namespace Gym_App.Application.Hubs
         private readonly IMessageService messageRegistry;
         private readonly ISessionService chatRegistry;
         private readonly ICurrentUser currentUser;
+        private readonly INotificationSink notificationSink;
         private static readonly Dictionary<string, List<Guid>> rooms = new();
-        public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user)
+        public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user, INotificationSink notificationSink)
         {
             messageRegistry = message;
             chatRegistry = chat;
             currentUser = user;
+            this.notificationSink = notificationSink;
         }
         public async Task<OutputResponse<OutputMessage>> JoinRoom(RoomRequest room, int page=1, int pageSize = 5)
         {
@@ -50,7 +51,7 @@ namespace Gym_App.Application.Hubs
 
             var messages = await chatRegistry.GetSessionMessages(chatId, "", "", page, "", "", "", pageSize);
             List<OutputMessage> result = new List<OutputMessage>();
-            foreach (var message in messages.Data.Items)
+            foreach (var message in messages.Data!.Items)
             {
                 result.Add(new OutputMessage(
                      message.Content,
@@ -61,6 +62,12 @@ namespace Gym_App.Application.Hubs
             }
             // User is authorized, join the room
             await Groups.AddToGroupAsync(Context.ConnectionId, room.Room);
+            for (var i = 0; i < rooms[room.Room].Count; i++) await notificationSink.PushAsync(new NotifSentMessage(
+                currentUserId.ToString()!,
+                $"User {currentUserId} has joined the chat",
+                rooms[room.Room][i].ToString(),
+                DateTime.Now
+                ));
             return new OutputResponse<OutputMessage>(2,"Successfully joined room",null,result);
         }
         public async Task<OutputResponse<OutputMessage>> GetMessages(RoomRequest room, int page = 1, int pageSize = 5)

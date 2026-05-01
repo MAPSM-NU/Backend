@@ -722,8 +722,10 @@
                 
                 document.getElementById('messagesContainer').innerHTML = '';
                 if (response.data && response.data.length > 0) {
-                    response.data.forEach(msg => {
-                        addMessage(msg.email, msg.message, false);
+                    const data = response.data;
+                    data.reverse();
+                    data.forEach(msg => {
+                        addMessage(msg.userName, msg.message, false);
                     });
                 } else {
                     document.getElementById('messagesContainer').innerHTML = '<div class="empty-chat">No messages yet</div>';

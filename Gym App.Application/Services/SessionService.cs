@@ -376,18 +376,21 @@ namespace Gym_App.Application.Services
             //Order by given column
             if (!string.IsNullOrEmpty(sortColumn))
                 messageQuery = _unitOfWork.Messages.FilterSortColumn(sortColumn, OrderBy, messageQuery);
+            else
+                messageQuery = messageQuery.OrderByDescending(m => m.CreatedAt);
 
-            //Projecting the resultant message queries to messageDTO
-            var messageResponse = messageQuery
-                .Select(m => new MessageViewDTO
-                {
-                    SenderID = m.Sender.Id,
-                    SessionID = m.Session.Id,
-                    MessageID = m.Id,
-                    Content = m.Content,
-                    IsRead = m.IsRead,
-                    Timestamp = m.CreatedAt
-                });
+                //Projecting the resultant message queries to messageDTO
+                var messageResponse = messageQuery
+                    .Select(m => new MessageViewDTO
+                    {
+                        SenderID = m.Sender.Id,
+                        SessionID = m.Session.Id,
+                        MessageID = m.Id,
+                        Name = m.Sender.Name,
+                        Content = m.Content,
+                        IsRead = m.IsRead,
+                        Timestamp = m.CreatedAt
+                    });
 
             //Making the result as a paged list
             var messages = await PagedList<MessageViewDTO>.CreateAsync(messageResponse, page, pageSize);

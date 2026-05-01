@@ -5,6 +5,7 @@
         public Guid SenderID { get; set; }
         public Guid SessionID { get; set; }
         public Guid MessageID { get; set; }
+        public required string Name { get; set; }
         public required string Content { get; set; }
         public DateTime Timestamp { get; set; }
         public bool IsRead { get; set; }

@@ -268,6 +268,45 @@ namespace Gym_App.Application.Services
         //-----------------------------------------------------------------------
 
         //        *********** Getters ***********
+        public async Task<GettersResponse<SessionViewDTO>> GetSession(Guid sessionID, int page = 1, int pageSize = 5)
+        {
+            if (sessionID == Guid.Empty) return new GettersResponse<SessionViewDTO>
+            {
+                status = 0,
+                msg = "Invalid Data"
+            };
+
+            var session = await _unitOfWork.Sessions.GetSession(sessionID,page,pageSize);
+            if (session == null) return new GettersResponse<SessionViewDTO>
+            {
+                status = 0,
+                msg = "session not found"
+            };
+
+            var userIds = session.Users.Select(x=>x.Id).ToList();
+
+            var authresult = await _authorizationService.IsInListAsync(userIds);
+            if(!authresult)
+                return new GettersResponse<SessionViewDTO>
+                {
+                    status = 1,
+                    msg = "Unauthorized"
+                };
+
+            var dto = new SessionViewDTO
+            {
+                SessionID = session.Id,
+                StartTime = session.CreatedAt,
+                UserIDs = userIds,
+            };
+            return new GettersResponse<SessionViewDTO>
+            {
+                status = 2,
+                Value = dto,
+                msg = "Successful"
+            };
+
+        }
 
         public async Task<List<Guid>?> GetSessionUsersIDs(Guid sessionID)
         {
@@ -337,18 +376,21 @@ namespace Gym_App.Application.Services
             //Order by given column
             if (!string.IsNullOrEmpty(sortColumn))
                 messageQuery = _unitOfWork.Messages.FilterSortColumn(sortColumn, OrderBy, messageQuery);
+            else
+                messageQuery = messageQuery.OrderByDescending(m => m.CreatedAt);
 
-            //Projecting the resultant message queries to messageDTO
-            var messageResponse = messageQuery
-                .Select(m => new MessageViewDTO
-                {
-                    SenderID = m.Sender.Id,
-                    SessionID = m.Session.Id,
-                    MessageID = m.Id,
-                    Content = m.Content,
-                    IsRead = m.IsRead,
-                    Timestamp = m.CreatedAt
-                });
+                //Projecting the resultant message queries to messageDTO
+                var messageResponse = messageQuery
+                    .Select(m => new MessageViewDTO
+                    {
+                        SenderID = m.Sender.Id,
+                        SessionID = m.Session.Id,
+                        MessageID = m.Id,
+                        Name = m.Sender.Name,
+                        Content = m.Content,
+                        IsRead = m.IsRead,
+                        Timestamp = m.CreatedAt
+                    });
 
             //Making the result as a paged list
             var messages = await PagedList<MessageViewDTO>.CreateAsync(messageResponse, page, pageSize);
@@ -431,5 +473,7 @@ namespace Gym_App.Application.Services
                 Data = sessions
             };
         }
+
+        
     }
 }

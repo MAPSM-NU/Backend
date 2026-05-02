@@ -1,5 +1,7 @@
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
+using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
@@ -8,7 +10,6 @@ using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -34,6 +35,22 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
+
+// ============================================
+// CORS CONFIGURATION
+// ============================================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", builder =>
+    {
+        builder
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
+
+builder.Services.AddSignalR();
 
 // ============================================
 // SWAGGER CONFIGURATION
@@ -97,6 +114,8 @@ builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHand
 // ============================================
 // UTILITY SERVICES
 // ============================================
+builder.Services.AddSingleton<INotificationSink,NotificationNotifier>();
+builder.Services.AddHostedService<NotificationNotifier>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();
 
@@ -127,6 +146,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
         };
         options.IncludeErrorDetails = true;
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // ============================================
@@ -180,11 +211,20 @@ using (var scope = app.Services.CreateScope())
 // ============================================
 // MIDDLEWARE PIPELINE
 // ============================================
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseHttpsRedirection();
+
+app.UseRouting();
+
+app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHub<ChatHub>("/chat");
+app.MapHub<NotificationHub>("/notif");
 app.MapControllers();
 
 app.Run();

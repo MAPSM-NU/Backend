@@ -151,5 +151,25 @@ namespace GymApp.Tests
             _unitOfWork.Sessions.Create(session);
             return session;
         }
+        protected Feedback CreateTestFeedback(User user, Workout workout, string title = "Test Feedback",
+            string type = "General", string feedbackText = "This is a test feedback",
+            int? caloriesBurned = 100, int? durationMinutes = 30, Guid id = default)
+        {
+            var feedback = new Feedback
+            {
+                Id = id == default ? Guid.NewGuid() : id,
+                CreatedAt = DateTime.UtcNow,
+                Title = title,
+                Type = type,
+                FeedbackText = feedbackText,
+                CaloriesBurned = caloriesBurned,
+                DurationMinutes = durationMinutes,
+                User = user,
+                Workout = workout,
+                WorkoutID = workout.Id
+            };
+            _unitOfWork.Feedbacks.Create(feedback);
+            return feedback;
+        }
     }
 }

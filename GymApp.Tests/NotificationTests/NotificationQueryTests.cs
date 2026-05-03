@@ -1,4 +1,5 @@
 using Gym_App.Application.Authorization;
+using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Services;
@@ -12,11 +13,13 @@ namespace GymApp.Tests.NotificationTests
     {
         private readonly INotificationService _notificationService;
         private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
+        private readonly Mock<INotificationSink> _notificationSinkMock;
 
         public NotificationQueryTests() : base("NotificationCreationTestDatabase")
         {
             _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
-            _notificationService = new NotificationService(_unitOfWork, _authorizationServiceMock.Object);
+            _notificationSinkMock = new Mock<INotificationSink>();
+            _notificationService = new NotificationService(_unitOfWork, _authorizationServiceMock.Object, _notificationSinkMock.Object);
         }
 
         // ========================================

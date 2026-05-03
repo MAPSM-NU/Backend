@@ -28,7 +28,7 @@ namespace Gym_App.Application.Hubs
                     ConnectedUsers[userId] = new();
                 ConnectedUsers[userId].Add(connectionId);
             }
-            logger.LogInformation($"Added user {userId}");
+            logger.LogInformation($"Added user {userId}\n Connection ID: {connectionId}");
             return base.OnConnectedAsync();
         }
         public override Task OnDisconnectedAsync(Exception? exception)
@@ -48,21 +48,21 @@ namespace Gym_App.Application.Hubs
             logger.Log(logLevel:LogLevel.Error,exception!.Message);
             return base.OnDisconnectedAsync(exception);
         }
-        public async Task<OutputResponse<Object>> SendNotif(NotifSentMessage notif, CancellationToken stoppingToken)
+        public async Task<OutputResponse<Object>> SendNotif(NotifMessage notif, CancellationToken stoppingToken)
         {
-            if(!ConnectedUsers.ContainsKey(notif.recieverId)) return new OutputResponse<Object>(0,"user not online",null,null);
+            if(!ConnectedUsers.ContainsKey(notif.userId)) return new OutputResponse<Object>(0,"user not online",null,null);
 
-            for(int i = 0; i < ConnectedUsers[notif.recieverId].Count; i++)
+            for(int i = 0; i < ConnectedUsers[notif.userId].Count; i++)
             {
                 try
                 {
-                    await Clients.User(ConnectedUsers[notif.recieverId][i]).SendAsync("Notify", notif, stoppingToken);
-                    logger.LogInformation($"Notif: {notif.recieverId}");
+                    await Clients.User(ConnectedUsers[notif.userId][i]).SendAsync("Notify", notif, stoppingToken);
+                    logger.LogInformation($"Notif sent to: {notif.userId}\n Connection ID: {ConnectedUsers[notif.userId][i]}");
                     return new OutputResponse<Object>(2, "successful", null, null);
                 }
                 catch
                 {
-                    logger.LogError($"User: {notif.recieverId} not found");
+                    logger.LogError($"User: {notif.userId} not found");
                 }
             }
             return new OutputResponse<Object>(0, "not found", null, null);

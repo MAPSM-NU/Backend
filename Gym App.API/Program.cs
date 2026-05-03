@@ -9,6 +9,7 @@ using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -44,9 +45,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("CorsPolicy", builder =>
     {
         builder
-            .AllowAnyMethod()
+            .AllowAnyOrigin()
             .AllowAnyHeader()
-            .AllowCredentials();
+            .AllowAnyMethod();
     });
 });
 
@@ -114,8 +115,9 @@ builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHand
 // ============================================
 // UTILITY SERVICES
 // ============================================
-builder.Services.AddSingleton<INotificationSink,NotificationNotifier>();
-builder.Services.AddHostedService<NotificationNotifier>();
+builder.Services.AddSingleton<NotificationNotifier>();
+builder.Services.AddSingleton<INotificationSink>(provider => provider.GetRequiredService<NotificationNotifier>());
+builder.Services.AddHostedService(provider => provider.GetRequiredService<NotificationNotifier>());
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();
 

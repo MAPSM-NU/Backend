@@ -13,17 +13,17 @@ namespace Gym_App.Application.Hubs
         private readonly IMessageService messageRegistry;
         private readonly ISessionService chatRegistry;
         private readonly ICurrentUser currentUser;
-        private readonly INotificationSink notificationSink;
+        private readonly INotificationService notificationService;
         private readonly ILogger<ChatHub> logger;
         private static readonly Dictionary<string, List<Guid>> rooms = new();
         private static readonly Dictionary<string, Dictionary<string, string>> roomUsers = new(); // room -> {connectionId -> userName}
         
-        public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user,ILogger<ChatHub> log,INotificationSink notificationSink)
+        public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user,ILogger<ChatHub> log,INotificationService notificationService)
         {
             messageRegistry = message;
             chatRegistry = chat;
             currentUser = user;
-            this.notificationSink = notificationSink;
+            this.notificationService = notificationService;
             logger = log;
         }
         public async Task<OutputResponse<OutputMessage>> JoinRoom(RoomRequest room, int page=1, int pageSize = 5)
@@ -75,21 +75,25 @@ namespace Gym_App.Application.Hubs
                      message.Timestamp
                 ));
             }
-            
             // Track user in room
             roomUsers[room.Room][Context.ConnectionId] = currentUser.Name ?? "Unknown";
             
             // User is authorized, join the room
             await Groups.AddToGroupAsync(Context.ConnectionId, room.Room);
-            for (var i = 0; i < rooms[room.Room].Count; i++) await notificationSink.PushAsync(new NotifSentMessage(
-                currentUserId.ToString()!,
-                $"User {currentUserId} has joined the chat",
-                rooms[room.Room][i].ToString(),
-                DateTime.Now
-                ));
-            
+
             // Notify others that user joined
             await Clients.Group(room.Room).SendAsync("user_joined", new { userName = currentUser.Name, room = room.Room });
+            foreach(var userId in rooms[room.Room])
+            {
+                if (userId != (Guid)currentUserId!)
+                {
+                    await notificationService.CreateNotification(userId,new Infastructure.DTOs.Notification.NotificationCreationDTO
+                    {
+                        Title = $"User Joined chat: {chatId}",
+                        Content = $"{currentUser.Name} has joined session {room.Room}"
+                    });
+                }
+            }
             logger.LogInformation($"Inside function \"Join Room\": Successfully joined room\n Connection ID: {Context.ConnectionId}\n Room Id: {room.Room}");
             return new OutputResponse<OutputMessage>(2,"Successfully joined room",null,result);
         }
@@ -144,6 +148,19 @@ namespace Gym_App.Application.Hubs
             {
                 logger.LogError($"Inside function \"Send Message\": {result.msg}\n Connection ID: {Context.ConnectionId}");
                 return new OutputResponse<Object>(0, result.msg, null, null);
+            }
+
+            // send notif for users not in group
+            foreach(var userId in rooms[message.Room])
+            {
+                if (!roomUsers[message.Room].Values.Contains(userId.ToString()) && userId != currentUser.UserID)
+                {
+                    await notificationService.CreateNotification(userId,new Infastructure.DTOs.Notification.NotificationCreationDTO
+                    {
+                        Title = $"New Message in chat: {chatId}",
+                        Content = $"You have a new message in session {message.Room}\n {currentUser.Name} : {message.Message}"
+                    });
+                }
             }
 
             await Clients.GroupExcept(message.Room,Context.ConnectionId )

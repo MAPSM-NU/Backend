@@ -15,6 +15,12 @@ namespace Gym_App.Application.Hubs
         string userId,
         string Message,
         DateTimeOffset SentAt);
+    
+    public record NotifMessage(
+        string userId,
+        string Message,
+        DateTimeOffset SentAt);
+    
     public record NotifSentMessage(
         string senderId,
         string Message,

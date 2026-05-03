@@ -1,37 +1,35 @@
-﻿using Gym_App.Infastructure.DTOs.Notification;
+﻿using Gym_App.Domain;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
 using System.Threading.Channels;
 
 namespace Gym_App.Application.Hubs
 {
     public interface INotificationSink
     {
-        ValueTask PushAsync(NotifSentMessage notification);
+        ValueTask PushAsync(Notification notification);
     }
     public class NotificationNotifier : BackgroundService, INotificationSink
     {
-        //Planning to implement redis but for now, implementation will only be local
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<NotificationNotifier> _logger;
-        private readonly ConnectionMultiplexer _redis;
-        private readonly Channel<NotifSentMessage> _channel;
+        private readonly Channel<Notification> _channel;
         private readonly static TimeSpan Period = TimeSpan.FromSeconds(2);
         
-        public NotificationNotifier(ILogger<NotificationNotifier> logger,IServiceProvider serviceProvider)
+        public NotificationNotifier(ILogger<NotificationNotifier> logger, IServiceProvider serviceProvider)
         {
             _logger = logger;
-            _channel = Channel.CreateUnbounded<NotifSentMessage>();
+            _channel = Channel.CreateUnbounded<Notification>();
             _serviceProvider = serviceProvider;
-            //_redis = ConnectionMultiplexer.Connect("Given ip");//not implemented
-
         }
-        public ValueTask PushAsync(NotifSentMessage notification) => _channel.Writer.WriteAsync(notification);
+
+        public ValueTask PushAsync(Notification notification) => _channel.Writer.WriteAsync(notification);
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            //this is a local implementation
+            _logger.LogInformation(_logger.IsEnabled(LogLevel.Information) ? $"Notification notifier started at {DateTimeOffset.Now}" : "Notification notifier started.");
             var timer = new PeriodicTimer(Period);
             while (true && await timer.WaitForNextTickAsync(stoppingToken))
             {
@@ -39,19 +37,20 @@ namespace Gym_App.Application.Hubs
                 {
                     if (stoppingToken.IsCancellationRequested)
                     {
+                        timer.Dispose();
                         return;
                     }
 
                     var notification = await _channel.Reader.ReadAsync(stoppingToken);
-                    var message = notification.Message;
-                    var userId = notification.recieverId;
+                    var userId = notification.User.Id.ToString();
+                    
                     using var scope = _serviceProvider.CreateScope();
+                    var hub = scope.ServiceProvider.GetRequiredService<IHubContext<NotificationHub>>();
 
-                    var hub = scope.ServiceProvider.GetRequiredService<NotificationHub>();
-
-                    var payload = new NotifSentMessage(userId.ToString(),message,notification.recieverId,DateTimeOffset.Now);
-                    _logger.LogInformation($"Sending channel notification '{message}' to {userId}");
-                    await hub.SendNotif(payload,stoppingToken);//curently it doesnt send the connection id but the actual user id which is wrong bs I am tired
+                    var payload = new NotifMessage(userId, notification.Content ?? "", DateTimeOffset.Now);
+                    
+                    _logger.LogInformation($"Sending notification '{notification.Title}' to user {userId}");
+                    await hub.Clients.User(userId).SendAsync("Receive_Notification", payload, stoppingToken);
                 }
                 catch (Exception e)
                 {

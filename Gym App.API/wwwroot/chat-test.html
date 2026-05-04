@@ -285,6 +285,10 @@
             justify-content: flex-start;
         }
 
+        .message.system {
+            justify-content: center;
+        }
+
         .message-bubble {
             max-width: 85%;
             padding: 10px 12px;
@@ -304,6 +308,17 @@
             color: #333;
             border: 1px solid #ddd;
             border-bottom-left-radius: 2px;
+        }
+
+        .message.system .message-bubble {
+            background: #f0f0f0;
+            color: #666;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-style: italic;
+            font-size: 0.85em;
+            max-width: 100%;
+            text-align: center;
         }
 
         .message-user {
@@ -444,6 +459,79 @@
             flex: 1;
         }
 
+        .online-users-widget {
+            background: #e8f5e9;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #66bb6a;
+            margin-bottom: 15px;
+        }
+
+        .online-users-header {
+            font-weight: 600;
+            color: #2e7d32;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .online-users-count {
+            font-size: 2em;
+            color: #2e7d32;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .online-users-list {
+            background: white;
+            border-radius: 5px;
+            padding: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #c8e6c9;
+            margin-bottom: 8px;
+        }
+
+        .online-users-list {
+            background: white;
+            border-radius: 5px;
+            padding: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #c8e6c9;
+        }
+
+        .online-user-item {
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            font-size: 0.85em;
+            margin-bottom: 3px;
+            margin-bottom: 8px;
+        }
+
+        .online-users-list {
+            background: white;
+            border-radius: 5px;
+            padding: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #c8e6c9;
+            margin-bottom: 8px;
+        }
+
+        .online-users-list {
+            background: white;
+            border-radius: 5px;
+            padding: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #c8e6c9;
+            margin-bottom: 8px;
+            margin-bottom: 8px;
+            margin-bottom: 8px;
+        }
+
         @media (max-width: 1200px) {
             .main-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -532,6 +620,10 @@
                     <button onclick="leaveRoom()" class="clear-btn">Leave</button>
                 </div>
 
+                <div class="button-group full" style="margin-top: 6px;">
+                    <button onclick="getOnlineUsers()" style="background: #2196F3;">Get Online Users</button>
+                </div>
+
                 <div class="section-divider flex-grow">
                     <h3>Activity</h3>
                     <div class="activity-log" id="logContainer">
@@ -544,6 +636,10 @@
             <!-- Middle Panel: Chat Messages -->
             <div class="panel">
                 <h2>Chat Messages</h2>
+                <div class="online-users" id="onlineUsersWidget">
+                    <div class="online-users-header">Online Users</div>
+                    <div class="online-users-count" id="onlineUsersCount">0</div>
+                </div>
                 <div class="messages-container" id="messagesContainer">
                     <div class="empty-chat">Join a room to start chatting</div>
                 </div>
@@ -554,11 +650,20 @@
                 </div>
             </div>
 
-            <!-- Right Panel: Notifications -->
+            <!-- Right Panel: Notifications & Online Users -->
             <div class="panel">
                 <h2>Notifications</h2>
+
+                <!-- Online Users Widget -->
+                <div class="online-users-widget">
+                    <div class="online-users-header">Online Users</div>
+                    <div class="online-users-count" id="onlineUsersCount">0</div>
+                    <div class="online-users-list" id="onlineUsersList">
+                        <p style="color: #999; font-size: 0.85em; text-align: center; padding: 8px;">Join a room to see online users</p>
+                    </div>
+                </div>
                 
-                <div style="flex: 1; display: flex; flex-direction: column;">
+                <div class="section-divider" style="flex: 1; display: flex; flex-direction: column;">
                     <h3>Send Notification</h3>
                     
                     <div class="form-group">
@@ -644,24 +749,15 @@
             const banner = document.createElement('div');
             banner.className = 'notification-banner success';
             banner.innerHTML = `
-                        <div class="notification-title">${title}</div>
-                        <div class="notification-message">${message}</div>
-                    `;
+                <div class="notification-title">${title}</div>
+                <div class="notification-message">${message}</div>
+            `;
             document.body.appendChild(banner);
 
             setTimeout(() => {
                 banner.style.animation = 'slideInRight 0.3s ease-in-out reverse';
                 setTimeout(() => banner.remove(), 300);
             }, 5000);
-        }
-
-        function log(message, type = 'info') {
-            const logContainer = document.getElementById('logContainer');
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${type}`;
-            entry.textContent = message;
-            logContainer.appendChild(entry);
-            logContainer.scrollTop = logContainer.scrollHeight;
         }
 
         function addMessage(userName, content, isOwn = false) {
@@ -676,12 +772,34 @@
 
             message.className = `message ${isOwn ? 'sent' : 'received'}`;
             message.innerHTML = `
-                        <div class="message-bubble">
-                            <div class="message-user">${userName}</div>
-                            <div class="message-content">${escapeHtml(content)}</div>
-                            <div class="message-time">${time}</div>
-                        </div>
-                    `;
+                <div class="message-bubble">
+                    <div class="message-user">${userName}</div>
+                    <div class="message-content">${escapeHtml(content)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+
+            container.appendChild(message);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addSystemMessage(content) {
+            const container = document.getElementById('messagesContainer');
+
+            if (container.querySelector('.empty-chat')) {
+                container.innerHTML = '';
+            }
+
+            const message = document.createElement('div');
+            const time = new Date().toLocaleTimeString();
+
+            message.className = 'message system';
+            message.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-content">${escapeHtml(content)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
 
             container.appendChild(message);
             container.scrollTop = container.scrollHeight;
@@ -740,7 +858,7 @@
                 notificationConnection.onreconnecting(() => {
                     log('Notification hub reconnecting...', 'info');
                 });
-
+                
                 notificationConnection.on('send_notif', (notification) => {
                     addNotification(notification.message || 'Notification', notification.userId);
                     notificationsReceived++;
@@ -800,10 +918,21 @@
                     updateStatus(true);
                 });
 
+                connection.on('user_joined', (message) => {
+                    addMessage(message.userName, message.message, false);
+                    messagesReceived++;
+                    document.getElementById('messagesReceived').textContent = messagesReceived;
+                });
+
                 connection.on('send_message', (message) => {
                     addMessage(message.userName, message.message, false);
                     messagesReceived++;
                     document.getElementById('messagesReceived').textContent = messagesReceived;
+                });
+
+                connection.on('system_message', (message) => {
+                    addSystemMessage(message.content);
+                    log('System message: ' + message.content, 'info');
                 });
 
                 await connection.start();
@@ -889,6 +1018,7 @@
                 log('Left room', 'success');
                 currentRoom = null;
                 document.getElementById('messagesContainer').innerHTML = '<div class="empty-chat">Join a room to start chatting</div>';
+                document.getElementById('onlineUsersCount').textContent = '0';
             } catch (err) {
                 log(`Leave failed: ${err}`, 'error');
             }
@@ -909,18 +1039,87 @@
             }
 
             try {
+                // Optimistic UI update: Show message immediately
+                addMessage(currentUserName, messageContent, true);
+                messagesSent++;
+                document.getElementById('messagesSent').textContent = messagesSent;
+                document.getElementById('messageContent').value = '';
+
+                // Send to server
                 await connection.invoke('SendMessage', {
                     Message: messageContent,
                     Room: sessionId
                 });
 
-                addMessage(currentUserName, messageContent, true);
-                messagesSent++;
-                document.getElementById('messagesSent').textContent = messagesSent;
-                document.getElementById('messageContent').value = '';
                 log('Message sent', 'success');
             } catch (err) {
                 log(`Send failed: ${err}`, 'error');
+            }
+        }
+
+        function displayOnlineUsers(usersList) {
+            const count = usersList ? usersList.length : 0;
+            document.getElementById('onlineUsersCount').textContent = count;
+
+            const usersListContainer = document.getElementById('onlineUsersList');
+            
+            if (!usersList || usersList.length === 0) {
+                usersListContainer.innerHTML = '<p style="color: #999; font-size: 0.85em; text-align: center; padding: 8px;">No users online</p>';
+                return;
+            }
+
+            let html = '';
+            usersList.forEach(user => {
+                html += `<div class="online-user-item">${escapeHtml(user.name)}</div>`;
+            });
+
+            usersListContainer.innerHTML = html;
+        }
+
+        async function refreshOnlineUsers() {
+            if (!connection || !currentRoom) {
+                return;
+            }
+
+            try {
+                const response = await connection.invoke('GetOnlineUsers', { room: currentRoom });
+                
+                if (response.status === 2 && response.data) {
+                    displayOnlineUsers(response.data);
+                    log(`${response.data.length} user(s) online`, 'info');
+                } else {
+                    log(response.msg || 'Failed to get online users', 'error');
+                    displayOnlineUsers(null);
+                }
+            } catch (err) {
+                log(`Get online users failed: ${err}`, 'error');
+            }
+        }
+
+        async function getOnlineUsers() {
+            if (!connection) {
+                log('Connect first', 'error');
+                return;
+            }
+
+            const sessionId = document.getElementById('sessionId').value.trim();
+            if (!sessionId) {
+                log('Enter Session ID', 'error');
+                return;
+            }
+
+            try {
+                const response = await connection.invoke('GetOnlineUsers', { room: sessionId });
+                
+                if (response.status === 2) {
+                    const userCount = response.data.userCount;
+                    document.getElementById('onlineUsersCount').textContent = userCount;
+                    log(`${userCount} user(s) online`, 'success');
+                } else {
+                    log(response.msg || 'Failed to get online users', 'error');
+                }
+            } catch (err) {
+                log(`Get online users failed: ${err}`, 'error');
             }
         }
 
@@ -947,7 +1146,7 @@
                     })
                 });
 
-                if (response.status == 2) {
+                if (response.status === 200) {
                     log('Notification sent', 'success');
                     document.getElementById('notifTitle').value = '';
                     document.getElementById('notifMessage').value = '';
@@ -958,7 +1157,6 @@
             } catch (err) {
                 log(`Send notification failed: ${err}`, 'error');
             }
-            return;
         }
 
         function clearLogs() {
@@ -994,11 +1192,11 @@
                 let roomsHtml = '';
                 rooms.forEach(room => {
                     roomsHtml += `
-                                <div class="room-item">
-                                    <code>${room}</code>
-                                    <button onclick="copyRoomId('${room}')">Copy</button>
-                                </div>
-                            `;
+                        <div class="room-item">
+                            <code>${room}</code>
+                            <button onclick="copyRoomId('${room}')">Copy</button>
+                        </div>
+                    `;
                 });
 
                 roomsList.innerHTML = roomsHtml;

@@ -21,6 +21,9 @@ public class UnitOfWork : IUnitOfWork
     private IExerciseRepositry? _exerciseRepositry;
     private IMuscleRepositry? _muscleRepositry;
     private IFeedbackRepositry? _feedbackRepositry;
+    private IPersonalRecordRepository? _personalRecordRepository;
+    private IWorkoutSetRepository? _workoutSetRepository;
+    private IExerciseInstanceRepository? _exerciseInstanceRepository;
 
     public UnitOfWork(DbBase context)
     {
@@ -60,6 +63,12 @@ public class UnitOfWork : IUnitOfWork
 
     public IFeedbackRepositry Feedbacks
         => _feedbackRepositry ??= new FeedbackRepositry(_context);
+    public IPersonalRecordRepository PersonalRecords
+        => _personalRecordRepository ??= new PersonalRecordRepository(_context);
+    public IWorkoutSetRepository WorkoutSet
+        => _workoutSetRepository ??= new WorkoutSetRepository(_context);
+    public IExerciseInstanceRepository ExerciseInstance
+        => _exerciseInstanceRepository ??= new ExerciseInstanceRepository(_context);
 
     /// <summary>
     /// Saves all changes in a single database transaction

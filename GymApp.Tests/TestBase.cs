@@ -101,7 +101,8 @@ namespace GymApp.Tests
                 User = user,
                 Id = Id == default ? Guid.NewGuid() : Id,
                 Date = DateTime.Now,
-                Day = DateTime.Now.DayOfWeek.ToString()
+                Day = DateTime.Now.DayOfWeek.ToString(),
+                Type = "Strength",
             };
             _unitOfWork.Workouts.Create(workout);
             return workout;

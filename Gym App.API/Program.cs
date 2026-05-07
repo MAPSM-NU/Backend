@@ -1,6 +1,7 @@
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
+using Gym_App.Application.BackgroundJobs;
 using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
 using Gym_App.Infastructure.Context;
@@ -87,9 +88,10 @@ builder.Services.AddSwaggerGen(c => {
 // ============================================
 // DATABASE CONFIGURATION
 // ============================================
-    builder.Services.AddDbContext<DbBase>(options =>
+builder.Services.AddDbContext<DbBase>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("ModyConnection")));
+        builder.Configuration.GetConnectionString("ModyConnection"),
+        b => b.MigrationsAssembly("GymApp.Infrastructure")));
 
 // ============================================
 // UNIT OF WORK & REPOSITORIES
@@ -118,6 +120,11 @@ builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHand
 builder.Services.AddSingleton<NotificationNotifier>();
 builder.Services.AddSingleton<INotificationSink>(provider => provider.GetRequiredService<NotificationNotifier>());
 builder.Services.AddHostedService(provider => provider.GetRequiredService<NotificationNotifier>());
+
+builder.Services.AddSingleton<WorkoutNotificationBackgroundService>();
+builder.Services.AddSingleton<IWorkoutNotificationSink>(provider => provider.GetRequiredService<WorkoutNotificationBackgroundService>());
+builder.Services.AddHostedService(provider => provider.GetRequiredService<WorkoutNotificationBackgroundService>());
+
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();
 
@@ -188,7 +195,6 @@ builder.Services.ConfigureHttpJsonOptions(x =>
     x.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     x.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
-
 // ============================================
 // BUILD APPLICATION
 // ============================================

@@ -1,7 +1,6 @@
 ﻿using Gym_App.Domain;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
-using MailKit.Search;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -18,24 +17,38 @@ namespace Gym_App.Infastructure.Repositries
         }
         public async Task<Workout> GetWorkoutById(Guid workoutID)
         {
-            return await table.Include(w => w.Exercises)
+            return await table
                         .Include(w => w.User)
                         .Include(w => w.Feedback)
+                        .Include(w => w.ExerciseInstances)
+                            .ThenInclude(ei => ei.Sets)
+                        .Include(w => w.ExerciseInstances)
+                            .ThenInclude(ei => ei.Exercise)
+                        .AsSplitQuery()
                         .FirstOrDefaultAsync(w => w.Id == workoutID);
         }
         public async Task<Workout> GetWorkoutByUserId(Guid userId)
         {
-            return await table.Include(w => w.Exercises)
+            return await table
                         .Include(w => w.User)
                         .Include(w => w.Feedback)
+                        .Include(w => w.ExerciseInstances)
+                            .ThenInclude(ei => ei.Sets)
+                        .Include(w => w.ExerciseInstances)
+                            .ThenInclude(ei => ei.Exercise)
+                        .AsSplitQuery()
                         .FirstOrDefaultAsync(w => w.User.Id == userId);
         }
         public async Task<IEnumerable<Workout>> GetWorkoutsByUserId(Guid userID, int pageNumber = 1, int pageSize = 10)
         {
             return await table.Where(w => w.User.Id == userID)
-                        .Include(w => w.Exercises)
                         .Include(w => w.User)
                         .Include(w => w.Feedback)
+                        .Include(w => w.ExerciseInstances)
+                            .ThenInclude(ei => ei.Sets)
+                        .Include(w => w.ExerciseInstances)
+                            .ThenInclude(ei => ei.Exercise)
+                        .AsSplitQuery()
                         .Skip((pageNumber - 1) * pageSize)
                         .Take(pageSize)
                         .ToListAsync();

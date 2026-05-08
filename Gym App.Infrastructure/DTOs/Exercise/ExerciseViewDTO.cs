@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
+﻿
 namespace Gym_App.Infastructure.DTOs.Exercise
 {
     public class ExerciseViewDTO

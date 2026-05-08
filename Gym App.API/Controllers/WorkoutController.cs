@@ -15,7 +15,7 @@ namespace Gym_App.Api.Controllers
         {
             _workoutService = workoutService;
         }
-        [HttpPost("create")]
+        [HttpPost("create/{userId}")]
         public async Task<IActionResult> CreateWorkout([FromRoute]Guid userId, [FromBody] WorkoutCreationDTO workout)
         {
             var result = await _workoutService.CreateWorkoutWithExercisesAsync(userId, workout);

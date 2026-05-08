@@ -12,7 +12,7 @@ namespace Gym_App.Domain
         public User? User { get; set; }
         public required Guid ExerciseId { get; set; }
         public Exercise? Exercise { get; set; }
-        [Column(TypeName = "decimal(3,2)")]
+        [Column(TypeName = "decimal(5,2)")]
         [Range(0, 999.99, ErrorMessage = "Weight must be between 0 and 999.99.")]
         public required decimal Weight { get; set; }
         public required int Reps { get; set; }

@@ -14,7 +14,7 @@ namespace Gym_App.Domain
         public Workout? Workout { get; set; }
         public int ExerciseOrder { get; set; }
         public int? PlannedReps { get; set; }
-        [Column(TypeName = "decimal(3,2)")]
+        [Column(TypeName = "decimal(5,2)")]
         [Range(0, 999.99, ErrorMessage = "Weight must be between 0 and 999.99.")]
         public decimal? PlannedWeight { get; set; }
         public DateTime? StartedAt { get; set; }

@@ -7,6 +7,7 @@ using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
+using Gym_App.Infrastructure.DTOs.Exercise;
 using Gym_App.Infrastructure.DTOs.Workout;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -71,7 +72,7 @@ namespace Gym_App.Application.Services
                     }
                 }
 
-                _unitOfWork.Workouts.Create(workout);
+                await _unitOfWork.Workouts.Create(workout);
                 
 
                 // Create exercise instances with sets
@@ -93,7 +94,9 @@ namespace Gym_App.Application.Services
                         PlannedReps = exerciseDto.PlannedReps,
                         PlannedWeight = exerciseDto.PlannedWeight,
                         Notes = exerciseDto.Notes,
-                        IsCompleted = false
+                        IsCompleted = false,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
                     };
 
                     await _unitOfWork.ExerciseInstance!.Create(exerciseInstance);
@@ -109,10 +112,12 @@ namespace Gym_App.Application.Services
                             Weight = setDto.Weight,
                             RestSeconds = setDto.RestSeconds,
                             Notes = setDto.Notes,
-                            IsCompleted = false
+                            IsCompleted = false,
+                            CreatedAt = DateTime.Now,
+                            UpdatedAt = DateTime.Now,
                         };
 
-                        _unitOfWork.WorkoutSet.Create(workoutSet);
+                        await _unitOfWork.WorkoutSet.Create(workoutSet);
                     }
 
 
@@ -129,6 +134,86 @@ namespace Gym_App.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError($"Error creating workout: {ex.Message}");
+                return new SettersResponse { status = 0, msg = $"Error: {ex.Message}" };
+            }
+        }
+        public async Task<SettersResponse> ManageWorkoutExerciseAsync(Guid workoutID, ExerciseManagementDTO workoutExercises)
+        {
+            try
+            {
+                var workout = await _unitOfWork.Workouts.GetById(workoutID);
+                if (workout == null)
+                    return new SettersResponse { status = 0, msg = "Workout not found" };
+                var authResult = await _authorizationService.IsUserAsync(workout.User.Id);
+                if (!authResult)
+                    return new SettersResponse { status = 1, msg = "Unauthorized" };
+                if(workoutExercises.requestType == requestType.Create)
+                {
+                    var exercise = await _unitOfWork.Exercises.GetById(workoutExercises.ExerciseId);
+                    if (exercise == null)
+                        return new SettersResponse { status = 0, msg = "Exercise not found" };
+                    var exerciseInstance = new ExerciseInstance
+                    {
+                        WorkoutId = workout.Id,
+                        ExerciseId = workoutExercises.ExerciseId,
+                        PlannedReps = workoutExercises.PlannedReps,
+                        PlannedWeight = workoutExercises.PlannedWeight,
+                        Notes = workoutExercises.Notes,
+                        IsCompleted = false,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                    };
+                    await _unitOfWork.ExerciseInstance!.Create(exerciseInstance);
+                    // Create sets for this exercise
+                    foreach (var setDto in workoutExercises.Sets)
+                    {
+                        var workoutSet = new WorkoutSet
+                        {
+                            ExerciseInstanceId = exerciseInstance.Id,
+                            SetNumber = setDto.SetNumber,
+                            Reps = setDto.Reps,
+                            Weight = setDto.Weight,
+                            RestSeconds = setDto.RestSeconds,
+                            Notes = setDto.Notes,
+                            IsCompleted = false,
+                            CreatedAt = DateTime.Now,
+                            UpdatedAt = DateTime.Now,
+                        };
+                        await _unitOfWork.WorkoutSet.Create(workoutSet);
+                    }
+                }
+                else if(workoutExercises.requestType == requestType.Update)
+                {
+                    var exerciseInstance = await _unitOfWork.ExerciseInstance.GetById(workoutExercises.ExerciseId);
+                    if (exerciseInstance == null)
+                        return new SettersResponse { status = 0, msg = "Exercise instance not found in this workout" };
+                    exerciseInstance.PlannedReps = workoutExercises.PlannedReps;
+                    exerciseInstance.PlannedWeight = workoutExercises.PlannedWeight;
+                    exerciseInstance.Notes = workoutExercises.Notes;
+                    exerciseInstance.UpdatedAt = DateTime.Now;
+                    await _unitOfWork.ExerciseInstance.Update(exerciseInstance);
+                    // Update sets for this exercise
+                    var setsResult = await WorkoutSetManagement(workoutExercises.Sets);
+                    if (setsResult.status != 1)
+                        return new SettersResponse { status = 0, msg = "Error managing sets for this exercise" };
+                }
+                else if(workoutExercises.requestType == requestType.Delete)
+                {
+                    var exerciseInstance = await _unitOfWork.ExerciseInstance.GetById(workoutExercises.ExerciseId);
+                    if (exerciseInstance == null)
+                        return new SettersResponse { status = 0, msg = "Exercise instance not found in this workout" };
+                    await _unitOfWork.ExerciseInstance.Delete(exerciseInstance);
+                }
+                else
+                {
+                    return new SettersResponse { status = 0, msg = "Invalid request type" };
+                }
+                await _unitOfWork.SaveChangesAsync();
+                return new SettersResponse { status = 2, msg = "Workout exercise managed successfully" };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error managing workout exercise: {ex.Message}");
                 return new SettersResponse { status = 0, msg = $"Error: {ex.Message}" };
             }
         }
@@ -566,6 +651,23 @@ namespace Gym_App.Application.Services
                     Date = w.Date,
                     Difficulty = w.Difficulty,
                     Day = w.Day,
+                    Exercises = w.ExerciseInstances!.Select(ei => new ExerciseDetailDTO
+                    {
+                        ExerciseId = ei.ExerciseId,
+                        Name = ei.Exercise!.Name,
+                        PlannedReps = (int)ei.PlannedReps!,
+                        PlannedWeight = (int)ei.PlannedWeight!,
+                        Notes = ei.Notes!,
+                        Sets = ei.Sets!.Select(ws => new WorkoutSetDTO
+                        {
+                            SetId = ws.Id,
+                            SetNumber = ws.SetNumber,
+                            Reps = ws.Reps,
+                            Weight = ws.Weight,
+                            RestSeconds = ws.RestSeconds,
+                            Notes = ws.Notes
+                        }).ToList()
+                    }).ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -605,6 +707,23 @@ namespace Gym_App.Application.Services
                 Date = workout.Date,
                 Difficulty = workout.Difficulty,
                 Day = workout.Day,
+                Exercises = workout.ExerciseInstances!.Select(ei => new ExerciseDetailDTO
+                {
+                    ExerciseId = ei.ExerciseId,
+                    Name = ei.Exercise!.Name,
+                    PlannedReps = (int)ei.PlannedReps!,
+                    PlannedWeight = (int)ei.PlannedWeight!,
+                    Notes = ei.Notes!,
+                    Sets = ei.Sets!.Select(ws => new WorkoutSetDTO
+                    {
+                        SetId = ws.Id,
+                        SetNumber = ws.SetNumber,
+                        Reps = ws.Reps,
+                        Weight = ws.Weight,
+                        RestSeconds = ws.RestSeconds,
+                        Notes = ws.Notes
+                    }).ToList()
+                }).ToList(),
             };
 
             return new GettersResponse<WorkoutViewDTO>
@@ -733,6 +852,23 @@ namespace Gym_App.Application.Services
                     Date = w.Date,
                     Difficulty = w.Difficulty,
                     Day = w.Day,
+                    Exercises = w.ExerciseInstances.Select(ei => new ExerciseDetailDTO
+                    {
+                        ExerciseId = ei.ExerciseId,
+                        Name = ei.Exercise.Name,
+                        PlannedReps = (int)ei.PlannedReps,
+                        PlannedWeight = (int)ei.PlannedWeight,
+                        Notes = ei.Notes,
+                        Sets = ei.Sets.Select(ws => new WorkoutSetDTO
+                        {
+                            SetId = ws.Id,
+                            SetNumber = ws.SetNumber,
+                            Reps = ws.Reps,
+                            Weight = ws.Weight,
+                            RestSeconds = ws.RestSeconds,
+                            Notes = ws.Notes
+                        }).ToList()
+                    }).ToList()
                 });
 
             if (workoutsQuery == null || !workoutsQuery.Any())
@@ -757,6 +893,50 @@ namespace Gym_App.Application.Services
         public Task<Guid> GetWorkoutUserID(Guid WorkoutID)
         {
             throw new NotImplementedException();
+        }
+        private async Task<SettersResponse> WorkoutSetManagement(IEnumerable<WorkoutSetManagementDTO> workoutSets)
+        {
+            try
+            {
+                foreach(var setDto in workoutSets)
+                {
+                    var workoutSet = await _unitOfWork.WorkoutSet.GetById(setDto.SetId);
+                    if(setDto.requestType.ToLower() == "update")
+                    {
+                        if (workoutSet != null)
+                        {
+                            workoutSet.Reps = setDto.Reps;
+                            workoutSet.Weight = setDto.Weight;
+                            workoutSet.RestSeconds = setDto.RestSeconds;
+                            workoutSet.Notes = setDto.Notes;
+                            workoutSet.IsCompleted = setDto.IsCompleted;
+                            workoutSet.ActualReps = setDto.ActualReps;
+                            workoutSet.ActualWeight = setDto.ActualWeight;
+                            _logger.LogInformation($"Updating workout set with ID {setDto.SetId}");
+                            await _unitOfWork.WorkoutSet.Update(workoutSet);
+                        }
+                    }
+                    else if(setDto.requestType.ToLower() == "delete")
+                    {
+                        if (workoutSet != null)
+                        {
+                            _logger.LogInformation($"Deleting workout set with ID {setDto.SetId}");
+                            await _unitOfWork.WorkoutSet.Delete(workoutSet.Id);
+                        }
+                        else 
+                        {
+                            _logger.LogInformation($"Workout set with ID {setDto.SetId} not found for deletion");
+                        }
+                    }
+                }
+                await _unitOfWork.SaveChangesAsync();
+                return new SettersResponse { status = 2, msg = "Workout sets managed successfully" };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error managing workout sets: {ex.Message}");
+                return new SettersResponse { status = 0, msg = $"Error: {ex.Message}" };
+            }
         }
         private async Task DetectAndCreatePersonalRecordAsync(
             Guid userId,
@@ -823,5 +1003,7 @@ namespace Gym_App.Application.Services
                 _logger.LogError($"Error detecting PR: {ex.Message}");
             }
         }
+
+        
     }
 }

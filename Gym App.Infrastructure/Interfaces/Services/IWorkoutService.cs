@@ -2,6 +2,7 @@
 using Gym_App.Infastructure.DTOs.Exercise;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Transfer_Classes;
+using Gym_App.Infrastructure.DTOs.Exercise;
 using Gym_App.Infrastructure.DTOs.Workout;
 
 namespace Gym_App.Infastructure.Interfaces.Services
@@ -9,6 +10,7 @@ namespace Gym_App.Infastructure.Interfaces.Services
     public interface IWorkoutService
     {
         public Task<SettersResponse> CreateWorkoutWithExercisesAsync(Guid userId,WorkoutCreationDTO createWorkoutDto);
+        public Task<SettersResponse> ManageWorkoutExerciseAsync(Guid workoutID, ExerciseManagementDTO workoutExercises);
         public Task<SettersResponse> StartWorkoutAsync(Guid workoutId, Guid userId);
         public Task<SettersResponse> UpdateWorkoutProgressAsync(Guid userId,WorkoutUpdateProgressDTO progressDto);
         public Task<SettersResponse> CompleteWorkoutAsync(Guid workoutId, Guid userId);

@@ -152,5 +152,24 @@ namespace GymApp.Tests
             _unitOfWork.Sessions.Create(session);
             return session;
         }
+        protected Exercise CreateTestExerciseWithId(Guid exerciseId, string exerciseName = "Test Exercise",
+            string description = "Test Description", DateTime createdAt = default, string category = "Strength", string difficulty = "Medium",
+            string grip = "Overhand")
+        {
+            var exercise = new Exercise
+            {
+                Name = exerciseName,
+                Description = description,
+                VideoUrl = $"https://www.youtube.com/watch?v=example",
+                UpdatedAt = DateTime.Now,
+                Category = category,
+                Id = exerciseId,
+                Difficulty = difficulty,
+                Grip = grip,
+                CreatedAt = createdAt == default ? DateTime.Now : createdAt
+            };
+            _unitOfWork.Exercises.Create(exercise);
+            return exercise;
+        }
     }
 }

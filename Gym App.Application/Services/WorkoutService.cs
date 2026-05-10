@@ -34,7 +34,7 @@ namespace Gym_App.Application.Services
             Guid userId,
             WorkoutCreationDTO createWorkoutDto)
         {
-            if (createWorkoutDto == null)
+            if (createWorkoutDto == null || string.IsNullOrEmpty(createWorkoutDto.Name))
                 return new SettersResponse { status = 0, msg = "Invalid workout data" };
 
             var authResult = await _authorizationService.IsUserAsync(userId);
@@ -77,6 +77,7 @@ namespace Gym_App.Application.Services
 
                 // Create exercise instances with sets
                 int exerciseOrder = 1;
+                bool exerciseAdded,setAdded;exerciseAdded = setAdded = false;
                 foreach (var exerciseDto in createWorkoutDto.ExerciseDetails)
                 {
                     var exercise = await _unitOfWork.Exercises.GetById(exerciseDto.ExerciseId);
@@ -85,7 +86,7 @@ namespace Gym_App.Application.Services
                         _logger.LogWarning($"Exercise {exerciseDto} not found");
                         continue;
                     }
-
+                    exerciseAdded = true;
                     var exerciseInstance = new ExerciseInstance
                     {
                         WorkoutId = workout.Id,
@@ -104,6 +105,7 @@ namespace Gym_App.Application.Services
                     // Create sets for this exercise
                     foreach (var setDto in exerciseDto.Sets)
                     {
+                        setAdded = true;
                         var workoutSet = new WorkoutSet
                         {
                             ExerciseInstanceId = exerciseInstance.Id,
@@ -119,17 +121,22 @@ namespace Gym_App.Application.Services
 
                         await _unitOfWork.WorkoutSet.Create(workoutSet);
                     }
-
-
                 }
                 await _unitOfWork.SaveChangesAsync();
                 _logger.LogInformation($"Workout {workout.Id} created with exercises for user {userId}");
 
-                return new SettersResponse
-                {
-                    status = 2,
-                    msg = "Workout created successfully",
-                };
+                if(exerciseAdded && setAdded)
+                    return new SettersResponse { status = 2, msg = "Workout and exercises with sets created successfully" };
+                else if(exerciseAdded)
+                    return new SettersResponse { status = 2, msg = "Workout and exercises created successfully, but no sets were added" };
+                else if (!exerciseAdded)
+                    return new SettersResponse { status = 0, msg = "Workout created successfully, but no valid exercises were added" };
+                else
+                    return new SettersResponse
+                    {
+                        status = 2,
+                        msg = "Workout created successfully",
+                    };
             }
             catch (Exception ex)
             {

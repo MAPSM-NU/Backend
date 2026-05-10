@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.0" />
     <PackageReference Include="MimeKit" Version="4.15.1" />
     <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>

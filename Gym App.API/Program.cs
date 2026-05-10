@@ -1,4 +1,4 @@
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using Microsoft.EntityFrameworkCore.Design;
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
 using Gym_App.Application.BackgroundJobs;
@@ -91,7 +91,7 @@ builder.Services.AddSwaggerGen(c => {
 builder.Services.AddDbContext<DbBase>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("ModyConnection"),
-        b => b.MigrationsAssembly("GymApp.Infrastructure")));
+        b => b.MigrationsAssembly("Gym_App.API")));
 
 // ============================================
 // UNIT OF WORK & REPOSITORIES
@@ -195,6 +195,12 @@ builder.Services.ConfigureHttpJsonOptions(x =>
     x.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     x.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
+
+Log.Information("Starting Gym App API...");
+Log.Information("Issuer: {Issuer}", builder.Configuration["JwtSettings:Issuer"]);
+Log.Information("Audience: {Audience}", builder.Configuration["JwtSettings:Audience"]);
+Log.Information("Token Key: {Key}", builder.Configuration["JwtSettings:Token"]);
+Log.Information("Database Connection: {ConnectionString}", builder.Configuration.GetConnectionString("VpsConnection"));
 // ============================================
 // BUILD APPLICATION
 // ============================================

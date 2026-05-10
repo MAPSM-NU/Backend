@@ -5,6 +5,7 @@ namespace Gym_App.Infrastructure.DTOs.Exercise
 {
     public class ExerciseDetailDTO
     {
+        public Guid Id { get; set; }
         public Guid ExerciseId { get; set; }
         public string Name { get; set; } = string.Empty;
         public int PlannedReps { get; set; }

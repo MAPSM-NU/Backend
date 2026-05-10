@@ -1,5 +1,6 @@
 ﻿using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infrastructure.DTOs.Exercise;
 using Gym_App.Infrastructure.DTOs.Workout;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -55,6 +56,18 @@ namespace Gym_App.Api.Controllers
         public async Task<IActionResult> FinishWorkout([FromRoute] Guid workoutID, [FromRoute] Guid userId)
         {
             var result = await _workoutService.CompleteWorkoutAsync(workoutID, userId);
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(new { message = result.msg });
+        }
+        [HttpPut("manage-workout-exercise/{workoutID}")]
+        public async Task<IActionResult> ManageWorkout([FromRoute] Guid workoutID, [FromBody] ExerciseManagementDTO workoutManager)
+        {
+            var result = await _workoutService.ManageWorkoutExerciseAsync(workoutID, workoutManager);
             
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });

@@ -31,5 +31,9 @@ namespace Gym_App.Infrastructure.DTOs.Exercise
         public const string Create = "create";
         public const string Update = "update";
         public const string Delete = "delete";
+        public static bool IsValid(string type)
+        {
+            return type == Create || type == Update || type == Delete;
+        }
     }
 }

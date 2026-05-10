@@ -88,7 +88,8 @@ builder.Services.AddSwaggerGen(c => {
 // ============================================
     builder.Services.AddDbContext<DbBase>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("VpsConnection")));
+        builder.Configuration.GetConnectionString("VpsConnection"),
+        b => b.MigrationsAssembly("GymApp.Infastructure")));
 
 // ============================================
 // UNIT OF WORK & REPOSITORIES

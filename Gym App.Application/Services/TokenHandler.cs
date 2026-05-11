@@ -62,6 +62,8 @@ namespace Gym_App.Application.Services
                 Expires = DateTime.Now.AddDays(4),
                 User = user,
                 UserID = UserID,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
             await _unitOfWork.Tokens.Create(refreshToken);
             return refreshToken.RefreshToken;

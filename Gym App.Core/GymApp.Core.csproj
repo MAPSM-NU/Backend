@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="MimeKit" Version="4.15.1" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.36.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
   </ItemGroup>
 
 </Project>

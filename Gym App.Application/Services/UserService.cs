@@ -138,8 +138,6 @@ public class UserService : IUserServise
             RefreshToken = refreshToken,
             Expires = DateTime.Now.AddDays(4)
         };
-        
-        await _unitOfWork.Tokens.Create(refreshTokenEntity);
         await _unitOfWork.SaveChangesAsync();
 
         return new ResponseToken

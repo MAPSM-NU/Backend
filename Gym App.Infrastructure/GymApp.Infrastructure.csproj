@@ -22,7 +22,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.14" />
     <PackageReference Include="MimeKit" Version="4.15.1" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.36.0" />
   </ItemGroup>
 
 </Project>

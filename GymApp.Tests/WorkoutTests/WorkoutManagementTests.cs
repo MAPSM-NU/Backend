@@ -1,13 +1,10 @@
 ﻿using Gym_App.Application.Authorization;
 using Gym_App.Application.BackgroundJobs;
 using Gym_App.Application.Services;
-using Gym_App.Domain;
-using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infrastructure.DTOs.Exercise;
 using Gym_App.Infrastructure.DTOs.Workout;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
 using Moq;
 
 namespace GymApp.Tests.WorkoutTests
@@ -25,6 +22,7 @@ namespace GymApp.Tests.WorkoutTests
             _logger = new Mock<ILogger<WorkoutService>>();
             _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object, _notificationService.Object, _logger.Object);
         }
+        //need to do tests that check for the order of the exercises
         [Fact]
         public async Task WorkoutExerciseUpdate()
         {

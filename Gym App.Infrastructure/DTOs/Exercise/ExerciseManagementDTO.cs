@@ -14,6 +14,7 @@ namespace Gym_App.Infrastructure.DTOs.Exercise
         public string Name { get; set; } = string.Empty;
         public int PlannedReps { get; set; }
         public int PlannedWeight { get; set; }
+        public int ExerciseOrder { get; set; }
         public string Notes { get; set; } = string.Empty;
         public DateTime? StartedAt { get; set; }
         public DateTime? CompletedAt { get; set; }

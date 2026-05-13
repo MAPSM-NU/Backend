@@ -157,16 +157,18 @@ namespace Gym_App.Application.Services
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
                 if(requestType.Create.Contains(workoutExercises.requestType.ToLower()))
                 {
-                    var exercise = await _unitOfWork.Exercises.GetById(workoutExercises.ExerciseId);
+                    var exercise = await _unitOfWork.Exercises!.GetById(workoutExercises.ExerciseId);
                     if (exercise == null)
                         return new SettersResponse { status = 0, msg = "Exercise not found" };
                     var exerciseInstance = new ExerciseInstance
                     {
                         WorkoutId = workout.Id,
                         ExerciseId = workoutExercises.ExerciseId,
+                        Exercise = exercise,
                         PlannedReps = workoutExercises.PlannedReps,
                         PlannedWeight = workoutExercises.PlannedWeight,
                         Notes = workoutExercises.Notes,
+                        ExerciseOrder = workoutExercises.ExerciseOrder != 0 ? workoutExercises.ExerciseOrder : workout.ExerciseInstances!.Count + 1,
                         IsCompleted = false,
                         CreatedAt = DateTime.Now,
                         UpdatedAt = DateTime.Now,
@@ -206,6 +208,11 @@ namespace Gym_App.Application.Services
                     if (workoutExercises.PlannedWeight != 0 && workoutExercises.PlannedWeight != exerciseInstance.PlannedWeight)
                     {
                         exerciseInstance.PlannedWeight = workoutExercises.PlannedWeight;
+                        anyChange = true;
+                    }
+                    if (exerciseInstance.ExerciseOrder != 0 && exerciseInstance.ExerciseOrder != workoutExercises.ExerciseOrder)
+                    {
+                        exerciseInstance.ExerciseOrder = workoutExercises.ExerciseOrder;
                         anyChange = true;
                     }
                     if (!string.IsNullOrEmpty(workoutExercises.Notes) && workoutExercises.Notes != exerciseInstance.Notes)
@@ -392,41 +399,6 @@ namespace Gym_App.Application.Services
                 return new SettersResponse { status = 0, msg = $"Error: {ex.Message}" };
             }
         }
-        public async Task<SettersResponse> CreateWorkout(WorkoutCreationDTO workout)
-        {
-            //Checking the validity of the DTO
-            if (workout == null || string.IsNullOrEmpty(workout.Name) || workout.UserID == Guid.Empty)
-                return new SettersResponse { status = 0, msg = "Invalid workout data" };
-
-            //Searching for the User
-            var isUserExist = await _unitOfWork.Users.GetById(workout.UserID);
-            if (isUserExist == null)
-                return new SettersResponse { status = 0, msg = "User not found" };
-
-            //Authorization
-            var authResult = await _authorizationService.IsUserAsync(isUserExist.Id);
-            if (!authResult)
-                return new SettersResponse { status = 1, msg = "Forbidden from access" };
-
-            //Creating the new Workout
-            var newWorkout = new Workout
-            {
-                Id = Guid.NewGuid(),
-                Name = workout.Name,
-                Description = workout.Description,
-                Date = workout.Date,
-                Difficulty = workout.Difficulty,
-                Day = workout.Day,
-                CreatedAt = DateTime.Now,
-                User = isUserExist,
-                Type = workout.Type,
-            };
-
-            //Saving to Database via repository
-            await _unitOfWork.Workouts.Create(newWorkout);
-            await _unitOfWork.SaveChangesAsync();
-            return new SettersResponse { status = 2, msg = "Workout created successfully" };
-        }
 
         public async Task<SettersResponse> UpdateWorkout(Guid workoutID, WorkoutUpdateDTO workout)
         {
@@ -515,46 +487,36 @@ namespace Gym_App.Application.Services
                     _logger.LogWarning($"Exercise with ID {exercise.ExerciseId} not found");
                     continue;
                 }
-                if(!workout.ExerciseInstances.Any(x=>x.ExerciseId == exerciseEntity.Id))
+                added = true;
+                var exerciseInstance = new ExerciseInstance
                 {
-                    added = true;
-                    var exerciseInstance = new ExerciseInstance
-                    {
-                        ExerciseId = exerciseEntity.Id,
-                        WorkoutId = workout.Id,
-                        PlannedReps = exercise.PlannedReps,
-                        PlannedWeight = exercise.PlannedWeight,
-                        Notes = exercise.Notes,
-                        ExerciseOrder = workout.ExerciseInstances.Count + 1
-                    };
-                    await _unitOfWork.ExerciseInstance.Create(exerciseInstance);
-                    foreach (var setDto in exercise.Sets)
-                    {
-                        var workoutSet = new WorkoutSet
-                        {
-                            ExerciseInstanceId = exerciseInstance.Id,
-                            SetNumber = setDto.SetNumber,
-                            Reps = setDto.Reps,
-                            Weight = setDto.Weight,
-                            RestSeconds = setDto.RestSeconds,
-                            Notes = setDto.Notes,
-                            IsCompleted = false
-                        };
-
-                        await _unitOfWork.WorkoutSet.Create(workoutSet);
-                    }
-                }
-                else
+                   ExerciseId = exerciseEntity.Id,
+                   WorkoutId = workout.Id,
+                   PlannedReps = exercise.PlannedReps,
+                   PlannedWeight = exercise.PlannedWeight,
+                   Notes = exercise.Notes,
+                   ExerciseOrder = exercise.ExerciseOrder != 0 ? exercise.ExerciseOrder : workout.ExerciseInstances.Count + 1,
+                };
+                await _unitOfWork.ExerciseInstance.Create(exerciseInstance);
+                foreach (var setDto in exercise.Sets)
                 {
-                    _logger.LogInformation($"Exercise with ID {exercise.ExerciseId} already exists in workout {workoutID}");
-                    nonAdded = true;
-                    continue;
-                }
+                   var workoutSet = new WorkoutSet
+                   {
+                       ExerciseInstanceId = exerciseInstance.Id,
+                       SetNumber = setDto.SetNumber,
+                       Reps = setDto.Reps,
+                       Weight = setDto.Weight,
+                       RestSeconds = setDto.RestSeconds,
+                       Notes = setDto.Notes,
+                       IsCompleted = false
+                   };
 
+                   await _unitOfWork.WorkoutSet.Create(workoutSet);
+                }
             }
             if(added)await _unitOfWork.SaveChangesAsync();
             if(added && nonAdded)
-                return new SettersResponse { status = 2, msg = "Some exercises added successfully, some were already in the workout" };
+                return new SettersResponse { status = 2, msg = "Some exercises were added successfully, but some were not added because they were already in the workout or their ids were wrong" };
             else if(added)
                 return new SettersResponse { status = 2, msg = "Exercises added successfully" };
             else
@@ -576,7 +538,7 @@ namespace Gym_App.Application.Services
             //Authorization
             var authResult = await _authorizationService.IsUserAsync(isWorkoutExist.User.Id);
             if (!authResult)
-                return new SettersResponse { status = 1, msg = "Forbidden from access" };
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             isWorkoutExist.ExerciseInstances.Clear();
             bool added, nonAdded; added = nonAdded = false;
@@ -620,7 +582,7 @@ namespace Gym_App.Application.Services
             }
             if (added) await _unitOfWork.SaveChangesAsync();
             if (added && nonAdded)
-                return new SettersResponse { status = 2, msg = "Some exercises set successfully, some were not found" };
+                return new SettersResponse { status = 2, msg = "Some exercises were set successfully, but some were not set because their exercise ids were wrong" };
             else if (added)
                 return new SettersResponse { status = 2, msg = "Exercises set successfully" };
             else
@@ -628,10 +590,10 @@ namespace Gym_App.Application.Services
 
         }
 
-        public async Task<SettersResponse> DeleteExercisesFromWorkout(Guid workoutID, WorkoutExerciseDTO workoutExercises)
+        public async Task<SettersResponse> DeleteExercisesFromWorkout(Guid workoutID, List<Guid> exerciseInstanceIds)
         {
             //checking the Validity of the DTO
-            if (workoutExercises == null || workoutID == Guid.Empty || workoutExercises.exercisesDetails == null || !workoutExercises.exercisesDetails.Any())
+            if (exerciseInstanceIds == null || workoutID == Guid.Empty || !exerciseInstanceIds.Any())
                 return new SettersResponse { status = 0, msg = "Invalid data" };
 
             //Searching for the Workout
@@ -642,12 +604,12 @@ namespace Gym_App.Application.Services
             //Authentication
             var authResult = await _authorizationService.IsUserAsync(isWorkoutExist.User.Id);
             if (!authResult)
-                return new SettersResponse { status = 1, msg = "Forbidden from access" };
+                return new SettersResponse { status = 1, msg = "Unauthorized" };
 
             bool deleted, nonDeleted; deleted = nonDeleted = false;
-            foreach(var exerciseDetail in workoutExercises.exercisesDetails)
+            foreach(var exerciseInstanceId in exerciseInstanceIds)
             {
-                var exerciseInstance = isWorkoutExist.ExerciseInstances.FirstOrDefault(e => e.ExerciseId == exerciseDetail.ExerciseId);
+                var exerciseInstance = isWorkoutExist.ExerciseInstances.FirstOrDefault(e => e.Id == exerciseInstanceId);
                 if (exerciseInstance != null)
                 {
                     isWorkoutExist.ExerciseInstances.Remove(exerciseInstance);
@@ -657,7 +619,7 @@ namespace Gym_App.Application.Services
                 else
                 {
                     nonDeleted = true;
-                    _logger.LogInformation($"Exercise with ID {exerciseDetail.ExerciseId} not found in workout {workoutID}");
+                    _logger.LogInformation($"Exercise with ID {exerciseInstanceId} not found in workout {workoutID}");
                 }
             }
             if(deleted) await _unitOfWork.SaveChangesAsync();

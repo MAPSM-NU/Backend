@@ -137,9 +137,9 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
         [HttpDelete("delete-exercises/{workoutID}")]
-        public async Task<IActionResult> DeleteExercisesFromWorkout([FromRoute] Guid workoutID, [FromBody] WorkoutExerciseDTO workoutExercises)
+        public async Task<IActionResult> DeleteExercisesFromWorkout([FromRoute] Guid workoutID, [FromBody] List<Guid> exerciseInstanceIds)
         {
-            var result = await _workoutService.DeleteExercisesFromWorkout(workoutID,workoutExercises);
+            var result = await _workoutService.DeleteExercisesFromWorkout(workoutID,exerciseInstanceIds);
             
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });

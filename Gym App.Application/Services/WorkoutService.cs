@@ -155,7 +155,7 @@ namespace Gym_App.Application.Services
                 var authResult = await _authorizationService.IsUserAsync(workout.User.Id);
                 if (!authResult)
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
-                if(workoutExercises.requestType == requestType.Create)
+                if(requestType.Create.Contains(workoutExercises.requestType.ToLower()))
                 {
                     var exercise = await _unitOfWork.Exercises.GetById(workoutExercises.ExerciseId);
                     if (exercise == null)
@@ -191,29 +191,30 @@ namespace Gym_App.Application.Services
                     }
                     anyChange = true;
                 }
-                else if(workoutExercises.requestType == requestType.Update)
+                else if(requestType.Update.Contains(workoutExercises.requestType.ToLower()))
                 {
                     
                     var exerciseInstance = await _unitOfWork.ExerciseInstance.GetById(workoutExercises.ExerciseId);
                     if (exerciseInstance == null)
                         return new SettersResponse { status = 0, msg = "Exercise instance not found in this workout" };
-                    if (workoutExercises.PlannedReps != 0)
+
+                    if (workoutExercises.PlannedReps != 0 && workoutExercises.PlannedReps != exerciseInstance.PlannedReps)
                     {
                         exerciseInstance.PlannedReps = workoutExercises.PlannedReps;
                         anyChange = true;
                     }
-                    if (workoutExercises.PlannedWeight != 0)
+                    if (workoutExercises.PlannedWeight != 0 && workoutExercises.PlannedWeight != exerciseInstance.PlannedWeight)
                     {
                         exerciseInstance.PlannedWeight = workoutExercises.PlannedWeight;
                         anyChange = true;
                     }
-                    if (!string.IsNullOrEmpty(workoutExercises.Notes) && exerciseInstance.Notes != workoutExercises.Notes)
+                    if (!string.IsNullOrEmpty(workoutExercises.Notes) && workoutExercises.Notes != exerciseInstance.Notes)
                     {
                         exerciseInstance.Notes = workoutExercises.Notes;
                         anyChange = true;
                     }
                     // Update sets for this exercise
-                    var setsResult = await WorkoutSetManagement(workoutExercises.Sets);
+                    var setsResult = await WorkoutSetManagement(exerciseInstance.Id, workoutExercises.Sets);
                     if (setsResult.status == 0)
                         return new SettersResponse { status = 0, msg = $"Error : {setsResult.msg}" };
 
@@ -229,7 +230,7 @@ namespace Gym_App.Application.Services
                     } 
                 }
                     
-                else if(workoutExercises.requestType == requestType.Delete)
+                else if(requestType.Delete.Contains(workoutExercises.requestType.ToLower()))
                 {
                     var exerciseInstance = await _unitOfWork.ExerciseInstance.GetById(workoutExercises.ExerciseId);
                     if (exerciseInstance == null)
@@ -938,7 +939,7 @@ namespace Gym_App.Application.Services
         {
             throw new NotImplementedException();
         }
-        private async Task<SettersResponse> WorkoutSetManagement(IEnumerable<WorkoutSetManagementDTO> workoutSets)
+        private async Task<SettersResponse> WorkoutSetManagement(Guid exerciseInstanceId, IEnumerable<WorkoutSetManagementDTO> workoutSets)
         {
             try
             {
@@ -950,11 +951,11 @@ namespace Gym_App.Application.Services
                         _logger.LogWarning("empty dto given");
                         continue; // Skip empty DTOs
                     }
-                    if (setDto.requestType.ToLower() == requestType.Create)
+                    if (requestType.Create.Contains(setDto.requestType.ToLower()))
                     {
                         var newWorkoutSet = new WorkoutSet
                         {
-                            ExerciseInstanceId = setDto.ExerciseInstanceId,
+                            ExerciseInstanceId = exerciseInstanceId,
                             SetNumber = setDto.SetNumber,
                             Reps = setDto.Reps,
                             Weight = setDto.Weight,
@@ -970,34 +971,62 @@ namespace Gym_App.Application.Services
                         continue; // Skip to next iteration after creation
                     }
                     var workoutSet = await _unitOfWork.WorkoutSet.GetById(setDto.SetId);
-                    if(setDto.requestType.ToLower() == requestType.Update)
+                    if(workoutSet == null)
                     {
-                        if (workoutSet != null)
+                        _logger.LogInformation($"Workout set with ID {setDto.SetId}");
+                        continue;
+                    }
+                    if(requestType.Update.Contains(setDto.requestType.ToLower()))
+                    {
+                        if (workoutSet.Reps != setDto.Reps)
                         {
                             workoutSet.Reps = setDto.Reps;
+                            changesHappened = true;
+                        }
+                                
+
+                        if (workoutSet.Weight != setDto.Weight)
+                        {
                             workoutSet.Weight = setDto.Weight;
+                            changesHappened = true;
+                        }
+
+                        if (workoutSet.RestSeconds != setDto.RestSeconds)
+                        {
                             workoutSet.RestSeconds = setDto.RestSeconds;
+                            changesHappened = true;
+                        }
+
+                        if (workoutSet.Notes != setDto.Notes)
+                        {
                             workoutSet.Notes = setDto.Notes;
+                            changesHappened = true;
+                        }
+                        if (workoutSet.IsCompleted != setDto.IsCompleted)
+                        {
                             workoutSet.IsCompleted = setDto.IsCompleted;
+                            changesHappened = true;
+                        }
+
+                        if (workoutSet.ActualReps != setDto.ActualReps)
+                        {
                             workoutSet.ActualReps = setDto.ActualReps;
+                            changesHappened = true;
+                        }
+
+                        if (workoutSet.ActualWeight != setDto.ActualWeight)
+                        {
                             workoutSet.ActualWeight = setDto.ActualWeight;
-                            _logger.LogInformation($"Updating workout set with ID {setDto.SetId}");
                             changesHappened = true;
-                            await _unitOfWork.WorkoutSet.Update(workoutSet);
                         }
+                        _logger.LogInformation($"Updating workout set with ID {setDto.SetId}" + (changesHappened ? " with changes" : " without changes"));
+                        await _unitOfWork.WorkoutSet.Update(workoutSet);
                     }
-                    else if(setDto.requestType.ToLower() == requestType.Delete)
+                    else if(requestType.Delete.Contains(setDto.requestType.ToLower()))
                     {
-                        if (workoutSet != null)
-                        {
-                            _logger.LogInformation($"Deleting workout set with ID {setDto.SetId}");
-                            changesHappened = true;
-                            await _unitOfWork.WorkoutSet.Delete(workoutSet.Id);
-                        }
-                        else 
-                        {
-                            _logger.LogInformation($"Workout set with ID {setDto.SetId} not found for deletion");
-                        }
+                        _logger.LogInformation($"Deleting workout set with ID {setDto.SetId}");
+                        changesHappened = true;
+                        await _unitOfWork.WorkoutSet.Delete(workoutSet.Id);
                     }
                 }
                 if (changesHappened) 

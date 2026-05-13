@@ -8,7 +8,6 @@ namespace Gym_App.Infrastructure.DTOs.Workout
 {
     public class WorkoutSetManagementDTO
     {
-        public Guid ExerciseInstanceId { get; set; }
         public string requestType { get; set; } = string.Empty;
         public Guid SetId { get; set; }
         public int Reps { get; set; }

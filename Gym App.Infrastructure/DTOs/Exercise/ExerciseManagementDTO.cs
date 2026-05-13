@@ -33,7 +33,7 @@ namespace Gym_App.Infrastructure.DTOs.Exercise
         public const string Delete = "delete";
         public static bool IsValid(string type)
         {
-            return type == Create || type == Update || type == Delete;
+            return Create.Contains(type) || Update.Contains(type) || Delete.Contains(type);
         }
     }
 }

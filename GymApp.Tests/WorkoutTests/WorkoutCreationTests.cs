@@ -35,7 +35,6 @@ namespace GymApp.Tests.WorkoutTests
             {
                 Name = "Test Workout",
                 Description = "This is a test workout",
-                UserID = user.Id,
                 Date = DateTime.Now,
                 Day = "Monday",
                 Difficulty = "Medium",
@@ -85,14 +84,13 @@ namespace GymApp.Tests.WorkoutTests
             {
                 Name = "Test Workout",
                 Description = "This is a test workout",
-                UserID = Guid.NewGuid(), // Non-existing user ID
                 Date = DateTime.Now,
                 Day = "Monday",
                 Difficulty = "Medium",
                 Type = "Strength"
             };
             _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
-            var result = await _workoutService.CreateWorkoutWithExercisesAsync(Guid.NewGuid(), workout);
+            var result = await _workoutService.CreateWorkoutWithExercisesAsync(Guid.NewGuid(), workout);//non-existing user ID
             Assert.NotNull(result);
             Assert.Equal("User not found", result.msg);
             Assert.Equal(0, result.status);
@@ -105,7 +103,6 @@ namespace GymApp.Tests.WorkoutTests
             {
                 Name = "Test Workout",
                 Description = "This is a test workout",
-                UserID = user.Id,
                 Date = DateTime.Now,
                 Day = "Monday",
                 Difficulty = "Medium",
@@ -125,7 +122,6 @@ namespace GymApp.Tests.WorkoutTests
             {
                 Name = "", // Invalid name
                 Description = "This is a test workout",
-                UserID = user.Id,
                 Date = DateTime.Now,
                 Day = "Monday",
                 Difficulty = "Medium",
@@ -145,7 +141,6 @@ namespace GymApp.Tests.WorkoutTests
             {
                 Name = "Test Workout",
                 Description = "This is a test workout",
-                UserID = user.Id,
                 Date = DateTime.Now,
                 Day = "Monday",
                 Difficulty = "Medium",
@@ -187,7 +182,6 @@ namespace GymApp.Tests.WorkoutTests
             {
                 Name = "Test Workout",
                 Description = "This is a test workout",
-                UserID = user.Id,
                 Date = DateTime.Now,
                 Day = "Monday",
                 Difficulty = "Medium",

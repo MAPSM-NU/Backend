@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore.Design;
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
-using Gym_App.Application.BackgroundJobs;
 using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
 using Gym_App.Infastructure.Context;
@@ -121,9 +120,9 @@ builder.Services.AddSingleton<NotificationNotifier>();
 builder.Services.AddSingleton<INotificationSink>(provider => provider.GetRequiredService<NotificationNotifier>());
 builder.Services.AddHostedService(provider => provider.GetRequiredService<NotificationNotifier>());
 
-builder.Services.AddSingleton<WorkoutNotificationBackgroundService>();
-builder.Services.AddSingleton<IWorkoutNotificationSink>(provider => provider.GetRequiredService<WorkoutNotificationBackgroundService>());
-builder.Services.AddHostedService(provider => provider.GetRequiredService<WorkoutNotificationBackgroundService>());
+builder.Services.AddSingleton<WorkoutNotifier>();
+builder.Services.AddSingleton<IWorkoutNotificationSink>(provider => provider.GetRequiredService<WorkoutNotifier>());
+builder.Services.AddHostedService(provider => provider.GetRequiredService<WorkoutNotifier>());
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();

@@ -1,5 +1,5 @@
 ﻿using Gym_App.Application.Authorization;
-using Gym_App.Application.BackgroundJobs;
+using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;

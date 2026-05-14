@@ -7,10 +7,10 @@ namespace Gym_App.Infrastructure.DTOs.Workout
 {
     public class WorkoutUpdateProgressDTO
     {
-        public DateTime ActualStartTime;
-        public DateTime ActualEndTime;
-        public bool IsCompleted;
         public Guid WorkoutId { get; set; }
-        public IEnumerable<ExerciseDetailDTO> Exercises { get; set; }
+        public DateTime? ActualStartTime { get; set; }
+        public DateTime? ActualEndTime { get; set; }
+        public bool IsCompleted { get; set; }
+        public IEnumerable<ExerciseUpdateProgressDTO> Exercises { get; set; }
     }
 }

@@ -28,7 +28,7 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
-        [HttpPut("update-progress/{userId}")]
+        [HttpPost("update-progress/{userId}")]
         public async Task<IActionResult> UpdateWorkoutProgress([FromRoute] Guid userId, [FromBody] WorkoutUpdateProgressDTO workoutProgress)
         {
             var result = await _workoutService.UpdateWorkoutProgressAsync(userId, workoutProgress);

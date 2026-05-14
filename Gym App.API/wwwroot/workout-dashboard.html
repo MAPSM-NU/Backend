@@ -796,7 +796,7 @@
         let allPRs = [];
         let currentUser = null;
         let token = localStorage.getItem('gymAppToken');
-        const API_URL = 'http://localhost:5001/api/vi';
+        const API_URL = 'http://localhost:5001/api/v1';
         let exerciseFormCount = 0;
         let userId = null;
 
@@ -804,12 +804,28 @@
         document.addEventListener('DOMContentLoaded', () => {
             setDefaultDate();
             if (token) {
+                userId = extractUserIdFromToken(token);
                 showMainContent();
                 loadData();
             } else {
                 showLoginScreen();
             }
         });
+
+        function extractUserIdFromToken(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                const decoded = JSON.parse(jsonPayload);
+                return decoded.sub || decoded.userId || decoded.nameid;
+            } catch (error) {
+                console.error('Error extracting userId from token:', error);
+                return null;
+            }
+        }
 
         function setDefaultDate() {
             const today = new Date().toISOString().split('T')[0];
@@ -838,13 +854,11 @@
             }
 
             try {
-                const response = await axios.post(`${API_URL}/auth/sign-in`, {
-                    email,
-                    password
-                });
+                const response = await axios.post(`${API_URL}/auth/sign-in?email=${email}&password=${password}`);
 
                 if (response.data.status === 2) {
                     token = response.data.data;
+                    userId = extractUserIdFromToken(token);
                     localStorage.setItem('gymAppToken', token);
                     showMainContent();
                     loadData();
@@ -861,6 +875,7 @@
 
         function handleLogout() {
             token = null;
+            userId = null;
             localStorage.removeItem('gymAppToken');
             showLoginScreen();
             document.getElementById('loginEmail').value = '';
@@ -879,12 +894,14 @@
                     ...getAxiosConfig(),
                     params: { page: 1, pageSize: 1000 }
                 });
-                allWorkouts = workoutsRes.data.value?.items || [];
+                allWorkouts = workoutsRes.data || [];
 
-                const prsRes = await axios.get(`${API_URL}/workout/get-personal-records/${userId}`, {
-                    ...getAxiosConfig()
-                });
-                allPRs = prsRes.data.value?.items || [];
+                if (userId) {
+                    const prsRes = await axios.get(`${API_URL}/workout/get-personal-records/${userId}`, {
+                        ...getAxiosConfig()
+                    });
+                    allPRs = prsRes.data || [];
+                }
 
                 renderOverview();
                 renderWorkouts();
@@ -1324,6 +1341,11 @@
             const messageEl = document.getElementById('createWorkoutMessage');
             messageEl.innerHTML = '';
 
+            if (!userId) {
+                showMessage('User not authenticated', 'error', messageEl);
+                return;
+            }
+
             const name = document.getElementById('workoutName').value;
             const date = document.getElementById('workoutDate').value;
             const type = document.getElementById('workoutType').value;
@@ -1389,12 +1411,12 @@
                 };
 
                 const response = await axios.post(
-                    `${API_URL}/workout/create-with-exercises`,
+                    `${API_URL}/workout/create/${userId}`,
                     payload,
                     getAxiosConfig()
                 );
 
-                if (response.data.status === 2) {
+                if (response.data.status === 2 || response.data.message) {
                     showMessage('Workout created successfully', 'success', messageEl);
                     resetWorkoutForm();
                     setTimeout(() => {

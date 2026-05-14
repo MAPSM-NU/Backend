@@ -1,5 +1,5 @@
 ﻿using Gym_App.Application.Authorization;
-using Gym_App.Application.BackgroundJobs;
+using Gym_App.Application.Hubs;
 using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.DTOs.Exercise;
@@ -65,7 +65,7 @@ namespace Gym_App.Application.Services
                 // Parse scheduled start time if provided
                 if (!string.IsNullOrEmpty(createWorkoutDto.ScheduledStartTime))
                 {
-                    if (TimeSpan.TryParse(createWorkoutDto.ScheduledStartTime, out var startTime))
+                    if (!TimeSpan.TryParse(createWorkoutDto.ScheduledStartTime, out var startTime))
                     {
                         workout.ScheduledStartTime = startTime;
                         workout.ScheduledEndTime = startTime.Add(TimeSpan.FromMinutes(createWorkoutDto.Duration));
@@ -270,11 +270,11 @@ namespace Gym_App.Application.Services
         {
             try
             {
-                var workout = await _unitOfWork.Workouts.GetById(workoutId);
+                var workout = await _unitOfWork.Workouts.GetWorkoutById(workoutId);
                 if (workout == null)
                     return new SettersResponse { status = 0, msg = "Workout not found" };
 
-                var authResult = await _authorizationService.IsUserAsync(workout.User.Id);
+                var authResult = await _authorizationService.IsUserAsync(userId);
                 if (!authResult)
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -299,11 +299,18 @@ namespace Gym_App.Application.Services
         {
             try
             {
-                var workout = await _unitOfWork.Workouts.GetById(progressDto.WorkoutId);
+                if(progressDto == null || progressDto.WorkoutId == Guid.Empty)
+                {
+                    if (progressDto == null) _logger.LogInformation("progressDto is empty");
+                    return new SettersResponse { status = 0, msg = "Invalid progress data" };
+                }
+                    
+
+                var workout = await _unitOfWork.Workouts.GetWorkoutById(progressDto.WorkoutId);
                 if (workout == null)
                     return new SettersResponse { status = 0, msg = "Workout not found" };
 
-                var authResult = await _authorizationService.IsUserAsync(workout.User.Id);
+                var authResult = await _authorizationService.IsUserAsync(userId);
                 if (!authResult)
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -321,7 +328,7 @@ namespace Gym_App.Application.Services
                 // Update exercise instances and sets
                 foreach (var exerciseProgress in progressDto.Exercises)
                 {
-                    var exerciseInstance = await _unitOfWork.ExerciseInstance.GetById(
+                    var exerciseInstance = await _unitOfWork.ExerciseInstance.GetWithSetsAsync(
                         exerciseProgress.ExerciseId);
 
                     if (exerciseInstance != null)
@@ -340,7 +347,7 @@ namespace Gym_App.Application.Services
                             {
                                 workoutSet.IsCompleted = setProgress.IsCompleted;
                                 workoutSet.ActualReps = setProgress.ActualReps;
-                                workoutSet.ActualWeight = setProgress.ActualWeight;
+                                workoutSet.ActualWeight = (decimal?)setProgress.ActualWeight;
                                 workoutSet.Notes = setProgress.Notes;
 
                                 _unitOfWork.WorkoutSet.Update(workoutSet);
@@ -374,11 +381,11 @@ namespace Gym_App.Application.Services
         {
             try
             {
-                var workout = await _unitOfWork.Workouts.GetById(workoutId);
+                var workout = await _unitOfWork.Workouts.GetWorkoutById(workoutId);
                 if (workout == null)
                     return new SettersResponse { status = 0, msg = "Workout not found" };
 
-                var authResult = await _authorizationService.IsUserAsync(workout.User.Id);
+                var authResult = await _authorizationService.IsUserAsync(userId);
                 if (!authResult)
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
 
@@ -858,6 +865,7 @@ namespace Gym_App.Application.Services
                     Date = w.Date,
                     Difficulty = w.Difficulty,
                     Day = w.Day,
+                    ScheduledStartTime = w.ScheduledStartTime,
                     Exercises = w.ExerciseInstances.Select(ei => new ExerciseDetailDTO
                     {
                         Id = ei.Id,
@@ -1056,8 +1064,8 @@ namespace Gym_App.Application.Services
                         WorkoutSetId = workoutSet.Id,
                         NotificationSent = false
                     };
-
-                    _unitOfWork.PersonalRecords.Create(newPR);
+                    await _notificationService.PushAsync(newPR);
+                    await _unitOfWork.PersonalRecords.Create(newPR);
                     await _unitOfWork.SaveChangesAsync();
 
                     _logger.LogInformation(

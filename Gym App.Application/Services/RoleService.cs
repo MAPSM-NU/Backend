@@ -22,6 +22,7 @@ namespace Gym_App.Application.Services
                 CreatedAt = DateTime.Now,
                 Id = Guid.NewGuid(),
             });
+            await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Role created", status = 2 };
         }
         public async Task<SettersResponse> updateRole(Guid roleId, string roleName)

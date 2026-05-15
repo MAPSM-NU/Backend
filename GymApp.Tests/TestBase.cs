@@ -217,6 +217,7 @@ namespace GymApp.Tests
             };
             _unitOfWork.Exercises.Create(exercise);
             return exercise;
+        }
         protected Feedback CreateTestFeedback(User user, Workout workout, string title = "Test Feedback",
             string type = "General", string feedbackText = "This is a test feedback",
             int? caloriesBurned = 100, int? durationMinutes = 30, Guid id = default)

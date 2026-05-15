@@ -19,6 +19,7 @@ namespace Gym_App.Domain
         public int CaloriesBurned { get; set; }
         public int Duration { get; set; } // Duration in minutes
         public int DurationRemaining { get; set; }
+        public bool hasStarted { get; set; }
         public bool IsCompleted { get; set; }
         public TimeSpan? ScheduledStartTime { get; set; }
         public TimeSpan? ScheduledEndTime { get; set; }

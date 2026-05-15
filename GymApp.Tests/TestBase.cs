@@ -106,11 +106,15 @@ namespace GymApp.Tests
                 Type = "Strength",
                 Difficulty = "Medium",
             };
-            var exercise = CreateTestExercise();
+            var exerciseList = new List<Exercise>();
+            for(int i = 0; i < 3; i++)
+            {
+                exerciseList.Add(CreateTestExercise($"Test Exercise {i + 1}"));
+            }
             var exercises = new List<ExerciseInstance>();
             for (int i = 0; i < 3; i++)
             {
-                exercises.Add(CreateTestExerciseInstance(workout, exercise, $"Test Notes {i + 1}"));
+                exercises.Add(CreateTestExerciseInstance(workout, exerciseList[i], $"Test Notes {i + 1}"));
                 var set = CreateTestWorkoutSet(exercises[i], $"Test Notes {i + 1}");
             }
             workout.ExerciseInstances = exercises;

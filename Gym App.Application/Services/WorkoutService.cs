@@ -278,7 +278,11 @@ namespace Gym_App.Application.Services
                 if (!authResult)
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
 
+                if (workout.hasStarted)
+                    return new SettersResponse { status = 0, msg = "Workout has already started" };
+
                 workout.ActualStartTime = DateTime.UtcNow;
+                workout.hasStarted = true;
                 _unitOfWork.Workouts.Update(workout);
                 await _unitOfWork.SaveChangesAsync();
 
@@ -313,6 +317,9 @@ namespace Gym_App.Application.Services
                 var authResult = await _authorizationService.IsUserAsync(userId);
                 if (!authResult)
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
+
+                if (!workout.hasStarted)
+                    return new SettersResponse { status = 0, msg = "Workout hasn't started" };
 
                 // Update workout timing
                 if (progressDto.ActualStartTime != default)
@@ -381,6 +388,9 @@ namespace Gym_App.Application.Services
         {
             try
             {
+                if (workoutId == Guid.Empty || userId == Guid.Empty)
+                    return new SettersResponse { status = 0, msg = "Invalid data" };
+
                 var workout = await _unitOfWork.Workouts.GetWorkoutById(workoutId);
                 if (workout == null)
                     return new SettersResponse { status = 0, msg = "Workout not found" };
@@ -388,6 +398,9 @@ namespace Gym_App.Application.Services
                 var authResult = await _authorizationService.IsUserAsync(userId);
                 if (!authResult)
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
+
+                if (!workout.hasStarted)
+                    return new SettersResponse { status = 0, msg = "Workout hasn't even started yet" };
 
                 workout.IsCompleted = true;
                 workout.ActualEndTime = DateTime.UtcNow;
@@ -747,13 +760,13 @@ namespace Gym_App.Application.Services
             };
         }
 
-        public async Task<GettersResponse<ExerciseViewDTO>> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
+        public async Task<GettersResponse<ExerciseDetailDTO>> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Getting the workout and its exercises from repository
             var workout = await _unitOfWork.Workouts.GetWorkoutById(WorkoutID);
 
             if (workout == null)
-                return new GettersResponse<ExerciseViewDTO>
+                return new GettersResponse<ExerciseDetailDTO>
                 {
                     status = 0,
                     msg = "No Exercises in given workout"
@@ -767,10 +780,11 @@ namespace Gym_App.Application.Services
             {
                 searchTerm = searchTerm.ToLower();
                 exercises = exercises.Where(e =>
-                    e.Exercise.Name.ToLower().Contains(searchTerm) ||
-                    e.Exercise.Description?.ToLower().Contains(searchTerm) == true ||
-                    e.Exercise.Category?.ToLower().Contains(searchTerm) == true ||
-                    e.Exercise.Difficulty?.ToLower().Contains(searchTerm) == true);
+                    (e.Exercise!.Name != null && e.Exercise.Name.ToLower().Contains(searchTerm)) ||
+                    (e.Exercise.Description != null && e.Exercise.Description.ToLower().Contains(searchTerm)) ||
+                    (e.Exercise.Difficulty != null && e.Exercise.Difficulty.ToLower().Contains(searchTerm)) ||
+                    (e.Notes != null && e.Notes.ToLower().Contains(searchTerm))
+                );
             }
 
             //If the sortColumn is not null, sort the data
@@ -782,35 +796,47 @@ namespace Gym_App.Application.Services
                 exercises = sortColumn.ToLower() switch
                 {
                     "name" or "n" => descending 
-                        ? exercises.OrderByDescending(e => e.Exercise.Name)
-                        : exercises.OrderBy(e => e.Exercise.Name),
+                        ? exercises.OrderByDescending(e => e.Exercise!.Name)
+                        : exercises.OrderBy(e => e.Exercise!.Name),
                     "difficulty" or "dif" => descending
-                        ? exercises.OrderByDescending(e => e.Exercise.Difficulty)
-                        : exercises.OrderBy(e => e.Exercise.Difficulty),
+                        ? exercises.OrderByDescending(e => e.Exercise!.Difficulty)
+                        : exercises.OrderBy(e => e.Exercise!.Difficulty),
                     "description" or "desc" => descending
-                        ? exercises.OrderByDescending(e => e.Exercise.Description)
-                        : exercises.OrderBy(e => e.Exercise.Description),
+                        ? exercises.OrderByDescending(e => e.Exercise!.Description)
+                        : exercises.OrderBy(e => e.Exercise!.Description),
                     "category" or "cat" => descending
-                        ? exercises.OrderByDescending(e => e.Exercise.Category)
-                        : exercises.OrderBy(e => e.Exercise.Category),
+                        ? exercises.OrderByDescending(e => e.Exercise!.Category)
+                        : exercises.OrderBy(e => e.Exercise!.Category),
                     "date" or "createdat" or "created" => descending
-                        ? exercises.OrderByDescending(e => e.Exercise.CreatedAt)
-                        : exercises.OrderBy(e => e.Exercise.CreatedAt),
+                        ? exercises.OrderByDescending(e => e.Exercise!.CreatedAt)
+                        : exercises.OrderBy(e => e.Exercise!.CreatedAt),
                     _ => exercises
                 };
             }
 
-            //Projecting the resultant exercises to ExerciseViewDTO
+            //Projecting the resultant exercises to ExerciseDetailDTO
             var allExercises = exercises
-                .Select(e => new ExerciseViewDTO
+                .Select(e => new ExerciseDetailDTO
                 {
-                    ExerciseID = e.Id,
+                    ExerciseId = e.ExerciseId,
                     Name = e.Exercise.Name,
-                    Description = e.Exercise.Description,
-                    Difficulty = e.Exercise.Difficulty,
-                    Grip = e.Exercise.Grip,
-                    Category = e.Exercise.Category,
-                    VideoUrl = e.Exercise.VideoUrl,
+                    StartedAt = e.StartedAt,
+                    CompletedAt = e.CompletedAt,
+                    Id = e.Id,
+                    IsCompleted = e.IsCompleted,
+                    Notes = e.Notes,
+                    PlannedReps = (int)e.PlannedReps!,
+                    PlannedWeight = (int)e.PlannedWeight!,
+                    ExerciseOrder = e.ExerciseOrder,
+                    Sets = e.Sets.Select(s => new WorkoutSetDTO
+                    {
+                        SetId = s.Id,
+                        SetNumber = s.SetNumber,
+                        Reps = s.Reps,
+                        Weight = s.Weight,
+                        RestSeconds = s.RestSeconds,
+                        Notes = s.Notes
+                    }).ToList(),
                 })
                 .ToList(); // Materialize to list
 
@@ -821,9 +847,9 @@ namespace Gym_App.Application.Services
                 .Take(pageSize)
                 .ToList();
 
-            var pagedExercises = new PagedList<ExerciseViewDTO>(pagedItems, page, pageSize, totalCount);
+            var pagedExercises = new PagedList<ExerciseDetailDTO>(pagedItems, page, pageSize, totalCount);
             
-            return new GettersResponse<ExerciseViewDTO>
+            return new GettersResponse<ExerciseDetailDTO>
             {
                 status = 2,
                 msg = "Successful",

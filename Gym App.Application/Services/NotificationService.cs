@@ -45,6 +45,7 @@ namespace Gym_App.Application.Services
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
 
+            //removed for now cause making notifications is not up for the user anymore
             ////Authorization
             //var authResult = await _authorizationService.IsUserAsync(user.Id);
             //if (!authResult)

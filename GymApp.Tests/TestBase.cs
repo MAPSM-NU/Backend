@@ -94,6 +94,7 @@ namespace GymApp.Tests
         }
         protected Workout CreateTestWorkout(User user, string workoutName = "Test Workout", string description = "Test Description", Guid Id = default)
         {
+            
             var workout = new Workout
             {
                 Name = workoutName,
@@ -101,10 +102,57 @@ namespace GymApp.Tests
                 User = user,
                 Id = Id == default ? Guid.NewGuid() : Id,
                 Date = DateTime.Now,
-                Day = DateTime.Now.DayOfWeek.ToString()
+                Day = DateTime.Now.DayOfWeek.ToString(),
+                Type = "Strength",
+                Difficulty = "Medium",
             };
+            var exerciseList = new List<Exercise>();
+            for(int i = 0; i < 3; i++)
+            {
+                exerciseList.Add(CreateTestExercise($"Test Exercise {i + 1}"));
+            }
+            var exercises = new List<ExerciseInstance>();
+            for (int i = 0; i < 3; i++)
+            {
+                exercises.Add(CreateTestExerciseInstance(workout, exerciseList[i], $"Test Notes {i + 1}"));
+                var set = CreateTestWorkoutSet(exercises[i], $"Test Notes {i + 1}");
+            }
+            workout.ExerciseInstances = exercises;
             _unitOfWork.Workouts.Create(workout);
             return workout;
+        }
+        protected ExerciseInstance CreateTestExerciseInstance(Workout workout, Exercise exercise,string notes = "Test Notes", int sets = 3, int reps = 10, int weightKg = 50)
+        {
+            var exerciseInstance = new ExerciseInstance
+            {
+                Workout = workout,
+                WorkoutId = workout.Id,
+                Exercise = exercise,
+                ExerciseId = exercise.Id,
+                PlannedReps = reps,
+                Notes = notes,
+                PlannedWeight = weightKg,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+            };
+            _unitOfWork.ExerciseInstance.Create(exerciseInstance);
+            return exerciseInstance;
+        }
+        protected WorkoutSet CreateTestWorkoutSet(ExerciseInstance exerciseInstance,string notes = "Test Notes", int setNumber = 1, int actualReps = 10, int actualWeight = 50)
+        {
+            var workoutSet = new WorkoutSet
+            {
+                ExerciseInstance = exerciseInstance,
+                ExerciseInstanceId = exerciseInstance.Id,
+                SetNumber = setNumber,
+                ActualReps = actualReps,
+                ActualWeight = actualWeight,
+                Notes = notes,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+            };
+            _unitOfWork.WorkoutSet.Create(workoutSet);
+            return workoutSet;
         }
         protected Exercise CreateTestExercise(string exerciseName = "Test Exercise",
             string description = "Test Description", DateTime createdAt = default, string category = "Strength", string difficulty = "Medium",
@@ -150,6 +198,25 @@ namespace GymApp.Tests
             };
             _unitOfWork.Sessions.Create(session);
             return session;
+        }
+        protected Exercise CreateTestExerciseWithId(Guid exerciseId, string exerciseName = "Test Exercise",
+            string description = "Test Description", DateTime createdAt = default, string category = "Strength", string difficulty = "Medium",
+            string grip = "Overhand")
+        {
+            var exercise = new Exercise
+            {
+                Name = exerciseName,
+                Description = description,
+                VideoUrl = $"https://www.youtube.com/watch?v=example",
+                UpdatedAt = DateTime.Now,
+                Category = category,
+                Id = exerciseId,
+                Difficulty = difficulty,
+                Grip = grip,
+                CreatedAt = createdAt == default ? DateTime.Now : createdAt
+            };
+            _unitOfWork.Exercises.Create(exercise);
+            return exercise;
         }
         protected Feedback CreateTestFeedback(User user, Workout workout, string title = "Test Feedback",
             string type = "General", string feedbackText = "This is a test feedback",

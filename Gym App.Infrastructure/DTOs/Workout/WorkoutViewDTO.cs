@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Gym_App.Infrastructure.DTOs.Exercise;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Infastructure.DTOs.WorkoutDTOs
@@ -12,5 +13,7 @@ namespace Gym_App.Infastructure.DTOs.WorkoutDTOs
         public DateTime Date { get; set; }
         public string? Difficulty { get; set; }
         public required string Day { get; set; }
+        public TimeSpan? ScheduledStartTime { get; set; }
+        public IEnumerable<ExerciseDetailDTO> Exercises { get; set; } = new List<ExerciseDetailDTO>();
     }
 }

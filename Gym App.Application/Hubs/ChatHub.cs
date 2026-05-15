@@ -3,6 +3,7 @@ using Gym_App.Infastructure.DTOs.Message;
 using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 
 namespace Gym_App.Application.Hubs
@@ -13,17 +14,17 @@ namespace Gym_App.Application.Hubs
         private readonly IMessageService messageRegistry;
         private readonly ISessionService chatRegistry;
         private readonly ICurrentUser currentUser;
-        private readonly INotificationSink notificationSink;
+        private readonly INotificationService notificationService;
         private readonly ILogger<ChatHub> logger;
         private static readonly Dictionary<string, List<Guid>> rooms = new();
-        private static readonly Dictionary<string, Dictionary<string, string>> roomUsers = new(); // room -> {connectionId -> userName}
+        private static readonly Dictionary<string, Dictionary<string, Guid>> roomUsers = new(); // room -> {connectionId -> userName}
         
-        public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user,ILogger<ChatHub> log,INotificationSink notificationSink)
+        public ChatHub(IMessageService message, ISessionService chat,ICurrentUser user,ILogger<ChatHub> log,INotificationService notificationService)
         {
             messageRegistry = message;
             chatRegistry = chat;
             currentUser = user;
-            this.notificationSink = notificationSink;
+            this.notificationService = notificationService;
             logger = log;
         }
         public async Task<OutputResponse<OutputMessage>> JoinRoom(RoomRequest room, int page=1, int pageSize = 5)
@@ -45,7 +46,7 @@ namespace Gym_App.Application.Hubs
                     return new OutputResponse<OutputMessage>(0, "No session found with given Id", null, null);
                 }
                 rooms[room.Room] = userIds;
-                roomUsers[room.Room] = new Dictionary<string, string>();
+                roomUsers[room.Room] = new Dictionary<string, Guid>();
             }
 
             if (currentUser.User == null)
@@ -75,21 +76,28 @@ namespace Gym_App.Application.Hubs
                      message.Timestamp
                 ));
             }
-            
             // Track user in room
-            roomUsers[room.Room][Context.ConnectionId] = currentUser.Name ?? "Unknown";
+            roomUsers[room.Room][Context.ConnectionId] = currentUser.UserID ?? Guid.Empty;
             
             // User is authorized, join the room
             await Groups.AddToGroupAsync(Context.ConnectionId, room.Room);
-            for (var i = 0; i < rooms[room.Room].Count; i++) await notificationSink.PushAsync(new NotifSentMessage(
-                currentUserId.ToString()!,
-                $"User {currentUserId} has joined the chat",
-                rooms[room.Room][i].ToString(),
-                DateTime.Now
-                ));
-            
+
+            // Send system message for user joining
+            await SendSystemMessage(room.Room, $"{currentUser.Name} joined the chat");
+
             // Notify others that user joined
             await Clients.Group(room.Room).SendAsync("user_joined", new { userName = currentUser.Name, room = room.Room });
+            foreach(var userId in rooms[room.Room])
+            {
+                if (userId != (Guid)currentUserId!)
+                {
+                    await notificationService.CreateNotification(userId,new Infastructure.DTOs.Notification.NotificationCreationDTO
+                    {
+                        Title = $"User Joined chat: {chatId}",
+                        Content = $"{currentUser.Name} has joined session {room.Room}"
+                    });
+                }
+            }
             logger.LogInformation($"Inside function \"Join Room\": Successfully joined room\n Connection ID: {Context.ConnectionId}\n Room Id: {room.Room}");
             return new OutputResponse<OutputMessage>(2,"Successfully joined room",null,result);
         }
@@ -146,15 +154,36 @@ namespace Gym_App.Application.Hubs
                 return new OutputResponse<Object>(0, result.msg, null, null);
             }
 
+            // send notif for users not in group
+            foreach(var userId in rooms[message.Room])
+            {
+                logger.LogInformation($"Checking to send notification for user: {userId} with connection Id : {roomUsers[message.Room].FirstOrDefault(x => x.Value == userId).Key}");
+                if (userId != currentUser.UserID && !roomUsers[message.Room].ContainsValue(userId))
+                {
+                    await notificationService.CreateNotification(userId,new Infastructure.DTOs.Notification.NotificationCreationDTO
+                    {
+                        Title = $"New Message in chat: {chatId}",
+                        Content = $"You have a new message in session {message.Room}\n {currentUser.Name} : {message.Message}"
+                    });
+                }
+            }
+
             await Clients.GroupExcept(message.Room,Context.ConnectionId )
                 .SendAsync("send_message", userMessage.Output);
             logger.LogInformation($"Inside function \"Send Message\": {result.msg}\n Connection ID: {Context.ConnectionId}");
             return new OutputResponse<Object>(2, result.msg, null, null);
         }
-        public Task LeaveGroup(RoomRequest room)
+        public async Task LeaveGroup(RoomRequest room)
         {
+            roomUsers[room.Room].Remove(Context.ConnectionId);
             logger.LogInformation($"Inside function \"Leave Group\": removed Connection ID: {Context.ConnectionId} from {room.Room}");
-            return Groups.RemoveFromGroupAsync(Context.ConnectionId, room.Room);
+            
+            // Send system message for user leaving
+            await SendSystemMessage(room.Room, $"{currentUser.Name} left the chat");
+            
+            await Clients.Group(room.Room).SendAsync("user_left", new { userName = currentUser.Name, room = room.Room });
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, room.Room);
+            return;
         }
         
         public Task<OutputResponse<string>> GetLiveChats(int page=1,int pageSize=5)
@@ -162,6 +191,46 @@ namespace Gym_App.Application.Hubs
             var chats = rooms.Keys.ToList();
             logger.LogInformation($"Inside function \"Get Live Chats\": Success\n Connection ID: {Context.ConnectionId}\nData:{chats}");
             return Task.FromResult(new OutputResponse<string>(2, "Success", null, chats));
+        }
+
+        public async Task<OutputResponse<User>> GetOnlineUsers(RoomRequest room)
+        {
+            if (!Guid.TryParse(room.Room, out var chatId))
+            {
+                logger.LogError($"Inside function \"Get Online Users Count\": Invalid Id\n Connection ID: {Context.ConnectionId}");
+                return await Task.FromResult(new OutputResponse<User>(0, "Invalid Id", null, null));
+            }
+
+            if (!roomUsers.ContainsKey(room.Room))
+            {
+                logger.LogError($"Inside function \"Get Online Users Count\": Room not found\n Connection ID: {Context.ConnectionId}");
+                return await Task.FromResult(new OutputResponse<User>(0, "Room not found", null, null));
+            }
+
+            var onlineUser = roomUsers[room.Room].Values.Distinct();
+            var onlineUsersList = new List<User>();
+            foreach (var userId in onlineUser)
+            {
+                var userName = rooms[room.Room].Contains(userId) ? currentUser.Name : "Unknown";
+                onlineUsersList.Add(new User(userId.ToString(), userName));
+            }
+            logger.LogInformation($"Inside function \"Get Online Users Count\": Retrieved {onlineUser.Count()} online users\n Connection ID: {Context.ConnectionId}\n Room Id: {room.Room}");
+            return await Task.FromResult(new OutputResponse<User>(2, "Online users retrieved", null, onlineUsersList));
+        }
+
+        private async Task SendSystemMessage(string roomId, string message)
+        {
+            var systemMessage = new
+            {
+                content = message,
+                userName = "System",
+                room = roomId,
+                timestamp = DateTimeOffset.Now,
+                isSystemMessage = true
+            };
+
+            await Clients.Group(roomId).SendAsync("system_message", systemMessage);
+            logger.LogInformation($"System message sent to room {roomId}: {message}");
         }
     }
 }

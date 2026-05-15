@@ -1,5 +1,7 @@
 ﻿using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infrastructure.DTOs.Exercise;
+using Gym_App.Infrastructure.DTOs.Workout;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,14 +16,74 @@ namespace Gym_App.Api.Controllers
         {
             _workoutService = workoutService;
         }
-        [HttpPost("create")]//That is one way of adding it. I like Route but I may diverge into this
-        public async Task<IActionResult> CreateWorkout([FromBody] WorkoutCreationDTO workout)
+        [HttpPost("create/{userId}")]
+        public async Task<IActionResult> CreateWorkout([FromRoute]Guid userId, [FromBody] WorkoutCreationDTO workout)
         {
-            var result = await _workoutService.CreateWorkout(workout);
+            var result = await _workoutService.CreateWorkoutWithExercisesAsync(userId, workout);
 
             if(result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if(result.status == 1)
+                return Forbid();
+            else
+                return Ok(new { message = result.msg });
+        }
+        [HttpPost("update-progress/{userId}")]
+        public async Task<IActionResult> UpdateWorkoutProgress([FromRoute] Guid userId, [FromBody] WorkoutUpdateProgressDTO workoutProgress)
+        {
+            var result = await _workoutService.UpdateWorkoutProgressAsync(userId, workoutProgress);
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(new { message = result.msg });
+        }
+        [HttpPut("start-workout/{workoutID}/{userId}")]
+        public async Task<IActionResult> StartWorkout([FromRoute] Guid workoutID, [FromRoute] Guid userId)
+        {
+            var result = await _workoutService.StartWorkoutAsync(workoutID, userId);
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(new { message = result.msg });
+        }
+        [HttpPut("complete-workout/{workoutID}/{userId}")]
+        public async Task<IActionResult> FinishWorkout([FromRoute] Guid workoutID, [FromRoute] Guid userId)
+        {
+            var result = await _workoutService.CompleteWorkoutAsync(workoutID, userId);
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(new { message = result.msg });
+        }
+        [HttpPut("manage-workout-exercise/{workoutID}")]
+        public async Task<IActionResult> ManageWorkout([FromRoute] Guid workoutID, [FromBody] ExerciseManagementDTO workoutManager)
+        {
+            var result = await _workoutService.ManageWorkoutExerciseAsync(workoutID, workoutManager);
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(new { message = result.msg });
+        }
+        [HttpGet("get-personal-records/{userId}")]
+                public async Task<IActionResult> GetPersonalRecords([FromRoute] Guid userId)
+        {
+            var result = await _workoutService.GetUserPersonalRecordsAsync(userId);
+            
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
                 return Forbid();
             else
                 return Ok(new { message = result.msg });
@@ -75,9 +137,9 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
         [HttpDelete("delete-exercises/{workoutID}")]
-        public async Task<IActionResult> DeleteExercisesFromWorkout([FromRoute] Guid workoutID, [FromBody] WorkoutExerciseDTO workoutExercises)
+        public async Task<IActionResult> DeleteExercisesFromWorkout([FromRoute] Guid workoutID, [FromBody] List<Guid> exerciseInstanceIds)
         {
-            var result = await _workoutService.DeleteExercisesFromWorkout(workoutID,workoutExercises);
+            var result = await _workoutService.DeleteExercisesFromWorkout(workoutID,exerciseInstanceIds);
             
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });

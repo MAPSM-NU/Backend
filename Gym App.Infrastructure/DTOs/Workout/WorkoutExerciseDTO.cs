@@ -1,9 +1,10 @@
 ﻿using Gym_App.Domain.Entities;
+using Gym_App.Infrastructure.DTOs.Exercise;
 
 namespace Gym_App.Infastructure.DTOs.WorkoutDTOs
 {
     public class WorkoutExerciseDTO
     {
-        public List<Guid> ExercisesID { get; set; } = new List<Guid>();
+        public IEnumerable<ExerciseDetailDTO> exercisesDetails { get; set; }
     }
 }

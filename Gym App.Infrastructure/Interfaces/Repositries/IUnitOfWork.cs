@@ -17,6 +17,9 @@ public interface IUnitOfWork : IAsyncDisposable
     IExerciseRepositry? Exercises { get; }
     IMuscleRepositry? Muscles { get; }
     IFeedbackRepositry? Feedbacks { get; }
+    IPersonalRecordRepository? PersonalRecords { get; }
+    IWorkoutSetRepository? WorkoutSet { get; }
+    IExerciseInstanceRepository? ExerciseInstance { get; }
 
     /// <summary>
     /// Saves all changes made to repositories in a single database transaction

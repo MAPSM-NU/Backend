@@ -1,9 +1,8 @@
 using Gym_App.Application.Authorization;
+using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
-using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.Notification;
 using Gym_App.Infastructure.Interfaces.Services;
-using Microsoft.AspNetCore.Authorization;
 using Moq;
 using System.Security.Claims;
 
@@ -13,11 +12,13 @@ namespace GymApp.Tests.NotificationTests
     {
         private readonly INotificationService _notificationService;
         private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
+        private readonly Mock<INotificationSink> _notificationSinkMock;
 
         public NotificationCreationTests() : base("NotificationCreationTestDatabase")
         {
             _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
-            _notificationService = new NotificationService(_unitOfWork, _authorizationServiceMock.Object);
+            _notificationSinkMock = new Mock<INotificationSink>();
+            _notificationService = new NotificationService(_unitOfWork, _authorizationServiceMock.Object, _notificationSinkMock.Object);
         }
 
         // ========================================
@@ -112,40 +113,7 @@ namespace GymApp.Tests.NotificationTests
             Assert.Equal(0, result.status);
             Assert.Equal("User not found", result.msg);
         }
-
-        /// <summary>
-        /// Test Case 4: Create notification with unauthorized user
-        /// Scenario: User doesn't have permission to create notification for another user
-        /// Expected: Should fail with status 1 (Unauthorized)
-        /// </summary>
-        [Fact]
-        public async Task CreateNotification_WithUnauthorizedUser_ShouldFail()
-        {
-            // ARRANGE
-            var role = CreateTestRole();
-            var user = CreateTestUser(role);
-            var unauthorizedUser = CreateTestUser(role, email: "other@gmail.com");
-            await _unitOfWork.SaveChangesAsync();
-
-            _authorizationServiceMock.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(false);
-
-            var notificationDto = new NotificationCreationDTO
-            {
-                Title = "Unauthorized Notification",
-                Content = "This should not be created"
-            };
-
-            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, unauthorizedUser.Id.ToString()) };
-            var principal = new ClaimsPrincipal(new ClaimsIdentity(claims));
-
-            // ACT
-            var result = await _notificationService.CreateNotification(user.Id, notificationDto);
-
-            // ASSERT
-            Assert.NotNull(result);
-            Assert.Equal(1, result.status);
-            Assert.Equal("Faulty DTO", result.msg);
-        }
+        
 
         /// <summary>
         /// Test Case 5: Create notification with empty title

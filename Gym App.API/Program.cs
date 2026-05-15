@@ -1,4 +1,4 @@
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using Microsoft.EntityFrameworkCore.Design;
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
 using Gym_App.Application.Hubs;
@@ -9,6 +9,7 @@ using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -44,9 +45,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("CorsPolicy", builder =>
     {
         builder
-            .AllowAnyMethod()
+            .AllowAnyOrigin()
             .AllowAnyHeader()
-            .AllowCredentials();
+            .AllowAnyMethod();
     });
 });
 
@@ -86,10 +87,10 @@ builder.Services.AddSwaggerGen(c => {
 // ============================================
 // DATABASE CONFIGURATION
 // ============================================
-    builder.Services.AddDbContext<DbBase>(options =>
+builder.Services.AddDbContext<DbBase>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("VpsConnection"),
-        b => b.MigrationsAssembly("Gym App.API")));
+        b => b.MigrationsAssembly("Gym_App.Infrastructure")));
 
 // ============================================
 // UNIT OF WORK & REPOSITORIES
@@ -115,8 +116,14 @@ builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHand
 // ============================================
 // UTILITY SERVICES
 // ============================================
-builder.Services.AddSingleton<INotificationSink,NotificationNotifier>();
-builder.Services.AddHostedService<NotificationNotifier>();
+builder.Services.AddSingleton<NotificationNotifier>();
+builder.Services.AddSingleton<INotificationSink>(provider => provider.GetRequiredService<NotificationNotifier>());
+builder.Services.AddHostedService(provider => provider.GetRequiredService<NotificationNotifier>());
+
+builder.Services.AddSingleton<WorkoutNotifier>();
+builder.Services.AddSingleton<IWorkoutNotificationSink>(provider => provider.GetRequiredService<WorkoutNotifier>());
+builder.Services.AddHostedService(provider => provider.GetRequiredService<WorkoutNotifier>());
+
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();
 

@@ -1,4 +1,5 @@
 ﻿using Gym_App.Application.Authorization;
+using Gym_App.Application.Hubs;
 using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
 using Gym_App.Infastructure.DTOs.Notification;
@@ -11,14 +12,17 @@ using System.Security.Claims;
 namespace Gym_App.Application.Services
 {
 
-    public class NotificationService : INotificationService // Fuck this class. Needs a change again. relationship with users should not be many to many GRAAAAAA
+    public class NotificationService : INotificationService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICachedAuthorizationService _authorizationService;
-        public NotificationService(IUnitOfWork unitOfWork,ICachedAuthorizationService authorizationService)
+        private readonly INotificationSink _notificationSink;
+
+        public NotificationService(IUnitOfWork unitOfWork, ICachedAuthorizationService authorizationService, INotificationSink notificationSink)
         {
             _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
+            _notificationSink = notificationSink;
         }
 
         //        *********** Setters ***********
@@ -41,10 +45,11 @@ namespace Gym_App.Application.Services
             if (user == null)
                 return new SettersResponse { status = 0, msg = "User not found" };
 
-            //Authorization
-            var authResult = await _authorizationService.IsUserAsync(user.Id);
-            if (!authResult)
-                return new SettersResponse { status = 1, msg = "Faulty DTO" };
+            //removed for now cause making notifications is not up for the user anymore
+            ////Authorization
+            //var authResult = await _authorizationService.IsUserAsync(user.Id);
+            //if (!authResult)
+            //    return new SettersResponse { status = 1, msg = "Faulty DTO" };
 
             //Creating Notification
             Notification newNotification = new Notification
@@ -56,11 +61,14 @@ namespace Gym_App.Application.Services
                 User = user,
             };
 
+            //Push to notification channel for real-time delivery
+            await _notificationSink.PushAsync(newNotification);
             //Saving to the Database
             await _unitOfWork.Notifications.Create(newNotification);
             await _unitOfWork.SaveChangesAsync();
+            
+            
             return new SettersResponse { status = 2, msg = "Successful" };
-
         }
         public async Task<SettersResponse> DeleteNotification( Guid NotificationID)//0 == Invalid NotificationID || 1 == Notification not found || 2 == Unauthorized || 3 == Successful
         {

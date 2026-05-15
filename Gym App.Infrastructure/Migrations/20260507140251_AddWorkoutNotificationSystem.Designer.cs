@@ -4,6 +4,7 @@ using Gym_App.Infastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym_App.Migrations
 {
     [DbContext(typeof(DbBase))]
-    partial class DbBaseModelSnapshot : ModelSnapshot
+    [Migration("20260507140251_AddWorkoutNotificationSystem")]
+    partial class AddWorkoutNotificationSystem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -154,7 +157,7 @@ namespace Gym_App.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("PlannedWeight")
-                        .HasColumnType("decimal(5,2)");
+                        .HasColumnType("decimal(3,2)");
 
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("datetime2");
@@ -384,7 +387,7 @@ namespace Gym_App.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Weight")
-                        .HasColumnType("decimal(5,2)");
+                        .HasColumnType("decimal(3,2)");
 
                     b.Property<Guid?>("WorkoutSetId")
                         .HasColumnType("uniqueidentifier");
@@ -686,9 +689,6 @@ namespace Gym_App.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("hasStarted")
-                        .HasColumnType("bit");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ScheduleId");
@@ -708,7 +708,7 @@ namespace Gym_App.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("ActualWeight")
-                        .HasColumnType("decimal(5,2)");
+                        .HasColumnType("decimal(3,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -735,7 +735,7 @@ namespace Gym_App.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal?>("Weight")
-                        .HasColumnType("decimal(5,2)");
+                        .HasColumnType("decimal(3,2)");
 
                     b.HasKey("Id");
 

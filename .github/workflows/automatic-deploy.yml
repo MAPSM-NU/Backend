@@ -1,11 +1,11 @@
-name: Deploy Kawerk Backend
+name: Autmoatic Deploy Kawerk Backend
 
 on:
-  workflow_dispatch:
-  # workflow_run:
-  #   workflows: [".NET"]
-  #   types:
-  #     - completed
+  # workflow_dispatch:
+  workflow_run:
+    workflows: [".NET"]
+    types:
+      - completed
 
 jobs:
   deploy:

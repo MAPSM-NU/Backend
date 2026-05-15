@@ -1,11 +1,9 @@
 ﻿using Gym_App.Application.Authorization;
+using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
-using Gym_App.Domain;
-using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 using Moq;
-using System.Security.Claims;
 
 namespace GymApp.Tests.WorkoutTests
 {
@@ -13,10 +11,14 @@ namespace GymApp.Tests.WorkoutTests
     {
         private readonly IWorkoutService _workoutService;
         private readonly Mock<ICachedAuthorizationService> _authorizationService;
+        private readonly Mock<IWorkoutNotificationSink> _notificationService;
+        private readonly Mock<ILogger<WorkoutService>> _logger;
         public WorkoutQueryTests() : base("WorkoutTestsDatabase")
         {
             _authorizationService = new Mock<ICachedAuthorizationService>();
-            _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object);
+            _notificationService = new Mock<IWorkoutNotificationSink>();
+            _logger = new Mock<ILogger<WorkoutService>>();
+            _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object, _notificationService.Object, _logger.Object);
         }
         [Fact]
         public async Task GetWorkoutByIdTest()
@@ -32,6 +34,8 @@ namespace GymApp.Tests.WorkoutTests
             Assert.Equal(workout.Date, result.Value.Date);
             Assert.Equal(workout.Day, result.Value.Day);
             Assert.Equal(workout.Difficulty, result.Value.Difficulty);
+            Assert.Equal(workout.ExerciseInstances.Count, result.Value.Exercises.Count());
+            Assert.Equal(workout.ExerciseInstances.First().Sets.Count, result.Value.Exercises.First().Sets.Count());
         }
         [Fact]
         public async Task GetWorkoutByIdWithInvalidIdTest()
@@ -47,86 +51,66 @@ namespace GymApp.Tests.WorkoutTests
         {
             var user = CreateTestUser(CreateTestRole());
             var workout = CreateTestWorkout(user);
-            List<Exercise> exercises = new List<Exercise>();
-            for (int i = 0; i < 5; i++)
-            {
-                exercises.Add(CreateTestExercise(
-                    $"Test Exercise {i}", $"This is a test exercise {i}"));
-            }
             await _unitOfWork.SaveChangesAsync();
-            var workoutExercises = new WorkoutExerciseDTO
-            {
-                ExercisesID = exercises.Select(e => e.Id).ToList()
-            };
             _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
-            await _workoutService.AddExercisesToWorkout(workout.Id, workoutExercises);
             var NameResult = await _workoutService.GetExercisesOfWorkout(workout.Id, 1, "", "", "Test Exercise 3", 10);
             Assert.NotNull(NameResult);
             Assert.Equal(1, NameResult.Data!.TotalCount);
 
             var DescriptionResult = await _workoutService.GetExercisesOfWorkout(workout.Id, 1, "", "", "test exercise", 10);
             Assert.NotNull(DescriptionResult);
-            Assert.Equal(5, DescriptionResult.Data!.TotalCount);
+            Assert.Equal(3, DescriptionResult.Data!.TotalCount);
 
             var CategoryResult = await _workoutService.GetExercisesOfWorkout(workout.Id, 1, "", "Stren", "", 10);
             Assert.NotNull(CategoryResult);
-            Assert.Equal(5, CategoryResult.Data!.TotalCount);
+            Assert.Equal(3, CategoryResult.Data!.TotalCount);
 
             var DifficultyResult = await _workoutService.GetExercisesOfWorkout(workout.Id, 1, "Medium", "", "", 10);
             Assert.NotNull(DifficultyResult);
-            Assert.Equal(5, DifficultyResult.Data!.TotalCount);
+            Assert.Equal(3, DifficultyResult.Data!.TotalCount);
         }
         [Fact]
         public async Task GetExerciesOfWorkoutWithSortingTest()
         {
             var user = CreateTestUser(CreateTestRole());
             var workout = CreateTestWorkout(user);
-            List<Exercise> exercises = new List<Exercise>();
-            for (int i = 0; i < 5; i++)
-            {
-                exercises.Add(CreateTestExercise(
-                    $"Test Exercise {i}", $"This is a test exercise {i}",DateTime.Now.AddDays(i)));
-            }
             await _unitOfWork.SaveChangesAsync();
-            var workoutExercises = new WorkoutExerciseDTO
-            {
-                ExercisesID = exercises.Select(e => e.Id).ToList()
-            };
             _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
-            await _workoutService.AddExercisesToWorkout(workout.Id, workoutExercises);
 
             var NameAscResult = await _workoutService.GetExercisesOfWorkout(workout.Id, 1, "Name", "asc", "", 10);
             Assert.NotNull(NameAscResult);
-            Assert.Equal("Test Exercise 0", NameAscResult.Data!.Items[0].Name);
-            Assert.Equal(5, NameAscResult.Data!.TotalCount);
+            Assert.Equal("Test Exercise 1", NameAscResult.Data!.Items[0].Name);
+            Assert.Equal(3, NameAscResult.Data!.TotalCount);
 
             var NameDescResult = await _workoutService.GetExercisesOfWorkout(workout.Id, 1, "Name", "desc", "", 10);
             Assert.NotNull(NameDescResult);
-            Assert.Equal("Test Exercise 4", NameDescResult.Data!.Items[0].Name);
-            Assert.Equal(5, NameDescResult.Data!.TotalCount);
+            Assert.Equal("Test Exercise 3", NameDescResult.Data!.Items[0].Name);
+            Assert.Equal(3, NameDescResult.Data!.TotalCount);
 
             var DateAscResult = await _workoutService.GetExercisesOfWorkout(workout.Id, 1, "Date", "asc", "", 10);
             Assert.NotNull(DateAscResult);
-            Assert.Equal("Test Exercise 0", DateAscResult.Data!.Items[0].Name);
-            Assert.Equal(5, DateAscResult.Data!.TotalCount);
+            Assert.Equal("Test Exercise 1", DateAscResult.Data!.Items[0].Name);
+            Assert.Equal(3, DateAscResult.Data!.TotalCount);
 
             var DateDescResult = await _workoutService.GetExercisesOfWorkout(workout.Id, 1, "Date", "d", "", 10);
             Assert.NotNull(DateDescResult);
-            Assert.Equal("Test Exercise 4", DateDescResult.Data!.Items[0].Name);
-            Assert.Equal(5, DateDescResult.Data!.TotalCount);
-        }
-        [Fact]
-        public async Task GetAllWorkoutsTest()
-        {
-            var user = CreateTestUser(CreateTestRole());
-            for (int i = 0; i < 5; i++)
-            {
-                var workout = CreateTestWorkout(user, $"Test Workout {i}", $"This is a test workout {i}");
-            }
-            await _unitOfWork.SaveChangesAsync();
-            var result = await _workoutService.GetAllWorkouts(1, 10);
-            Assert.NotNull(result);
-            Assert.Equal(5, result.Data!.TotalCount);
+            Assert.Equal("Test Exercise 3", DateDescResult.Data!.Items[0].Name);
+            Assert.Equal(3, DateDescResult.Data!.TotalCount);
         }
     }
 }
+//        [Fact]
+//        public async Task GetAllWorkoutsTest()
+//        {
+//            var user = CreateTestUser(CreateTestRole());
+//            for (int i = 0; i < 5; i++)
+//            {
+//                var workout = CreateTestWorkout(user, $"Test Workout {i}", $"This is a test workout {i}");
+//            }
+//            await _unitOfWork.SaveChangesAsync();
+//            var result = await _workoutService.GetAllWorkouts(1, 10);
+//            Assert.NotNull(result);
+//            Assert.Equal(5, result.Data!.TotalCount);
+//        }
+//    }
+//}

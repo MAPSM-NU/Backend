@@ -60,12 +60,12 @@ namespace Gym_App.Application.Services
                 User = user,
             };
 
+            //Push to notification channel for real-time delivery
+            await _notificationSink.PushAsync(newNotification);
             //Saving to the Database
             await _unitOfWork.Notifications.Create(newNotification);
             await _unitOfWork.SaveChangesAsync();
             
-            //Push to notification channel for real-time delivery
-            await _notificationSink.PushAsync(newNotification);
             
             return new SettersResponse { status = 2, msg = "Successful" };
         }

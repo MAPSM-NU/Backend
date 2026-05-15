@@ -21,7 +21,9 @@ namespace Gym_App.Infastructure.Context
         public DbSet<Challenges> Challenges { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Role> Roles { get; set; }
-
+        public DbSet<PersonalRecord> PersonalRecords { get; set; }
+        public DbSet<ExerciseInstance> ExerciseInstances { get; set; }
+        public DbSet<WorkoutSet> WorkoutSets { get; set; }
         public DbSet<RefreshTokens> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -66,7 +68,13 @@ namespace Gym_App.Infastructure.Context
                 .WithOne(f => f.Workout)
                 .HasForeignKey<Feedback>(f => f.WorkoutID)
                 .OnDelete(DeleteBehavior.NoAction);
-            
+
+            modelBuilder.Entity<Workout>()
+                .HasMany(w => w.ExerciseInstances)
+                .WithOne(ei => ei.Workout)
+                .HasForeignKey(ei => ei.WorkoutId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<LiveFeedback>();
             
             modelBuilder.Entity<Transaction>()
@@ -83,6 +91,13 @@ namespace Gym_App.Infastructure.Context
                 .HasForeignKey(rt => rt.UserID)
                 .OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<RefreshTokens>();
+            modelBuilder.Entity<WorkoutSet>();
+            modelBuilder.Entity<ExerciseInstance>()
+                .HasMany(ei=>ei.Sets)
+                .WithOne(ws=>ws.ExerciseInstance)
+                .HasForeignKey(ws=>ws.ExerciseInstanceId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PersonalRecord>();
         }
     }
 }

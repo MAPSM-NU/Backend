@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Gym_App.Infrastructure</RootNamespace>
+    <AssemblyName>Gym_App.Infrastructure</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

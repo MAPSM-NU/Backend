@@ -23,6 +23,5 @@ namespace Gym_App.Domain
 
         //Relationships
         public ICollection<Muscles>? Muscles { get; set; } = new List<Muscles>();
-        public ICollection<Workout>? Workouts { get; set; } = new List<Workout>();
     }
 }

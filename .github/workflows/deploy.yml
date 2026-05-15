@@ -49,4 +49,4 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            systemctl restart gymapp
+            systemctl restart mapsm-backend

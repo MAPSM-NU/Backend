@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Gym_App</RootNamespace>
+    <AssemblyName>Gym_App.API</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

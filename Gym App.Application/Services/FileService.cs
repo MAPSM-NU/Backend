@@ -10,10 +10,25 @@ namespace Gym_App.Application.Services
     {
         private readonly ILogger<FileService> _logger;
         private readonly IWebHostEnvironment environment;
-        public FileService(ILogger<FileService> logger, IWebHostEnvironment environment)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public FileService(ILogger<FileService> logger, IWebHostEnvironment environment, IHttpContextAccessor httpContextAccessor)
         {
             _logger = logger;
             this.environment = environment ?? throw new ArgumentNullException(nameof(environment));
+            _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        }
+
+        private string GetBaseUrl()
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null)
+            {
+                return string.Empty;
+            }
+
+            var baseUrl = $"{request.Scheme}://{request.Host}";
+            return baseUrl;
         }
         public async Task<SettersResponse> UploadFileAsync(IFormFile image, string[] allowedFileExtensions)
         {
@@ -51,8 +66,12 @@ namespace Gym_App.Application.Services
                 {
                     await image.CopyToAsync(stream);
                 }
-                _logger.LogInformation($"Successful creation of file '{fileName}' at '{filePath}'.");
-                return new SettersResponse { status = 2, msg = fileName};
+
+                var baseUrl = GetBaseUrl();
+                var fileUrl = $"{baseUrl}/Uploads/{fileName}";
+
+                _logger.LogInformation($"Successful creation of file '{fileName}' at '{filePath}'. URL: {fileUrl}");
+                return new SettersResponse { status = 2, msg = fileUrl };
             }
             catch (Exception ex)
             {

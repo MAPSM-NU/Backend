@@ -5,8 +5,12 @@ using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
+using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.AspNet.Identity;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Asn1.Pkcs;
 using System.ComponentModel.DataAnnotations;
 
 namespace Gym_App.Application.Services;
@@ -15,11 +19,14 @@ public class UserService : IUserServise
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITokenHandler _tokenHandler;
-
-    public UserService(IUnitOfWork unitOfWork, ITokenHandler tokenHandler)
+    private readonly IFileService _fileService;
+    private readonly ILogger<UserService> _logger;
+    public UserService(IUnitOfWork unitOfWork, ITokenHandler tokenHandler,IFileService fileService,ILogger<UserService> logger)
     {
         _unitOfWork = unitOfWork;
         _tokenHandler = tokenHandler;
+        _fileService = fileService;
+        _logger = logger;
     }
 
     //0 == Error(Bad Request) || 1 == Unauthorized (Forbid) || 2 == Success (Ok)
@@ -79,26 +86,46 @@ public class UserService : IUserServise
         };
     }
 
-    public async Task<ResponseToken> SignUpUser(UserCreationDTO u)
+    public async Task<ResponseToken> SignUpUser( UserCreationDTO u)
     {
         if (u == null || string.IsNullOrEmpty(u.Name) || string.IsNullOrEmpty(u.Email) || string.IsNullOrEmpty(u.Password))
+        {
+            _logger.LogWarning("User creation failed due to missing information. Name: {Name}, Email: {Email}", u?.Name, u?.Email);
             return new ResponseToken { Status = 0, msg = "Missing Information" };
+        }
+            
 
         if (!await isNameValid(u.Name))
+        {
+            _logger.LogWarning("User creation failed due to name already in use. Name: {Name}", u.Name);
             return new ResponseToken { Status = 0, msg = "Name is already used" };
+        }
 
         if (!IsEmailValid(u.Email))
+        {
+            _logger.LogWarning("User creation failed due to invalid email format. Email: {Email}", u.Email);
             return new ResponseToken { Status = 0, msg = "Invalid Email" };
+        }
 
         if (await _unitOfWork.Users.isUserEmailExist(u.Email))
+        {
+            _logger.LogWarning("User creation failed due to email already in use. Email: {Email}", u.Email);
             return new ResponseToken { Status = 0, msg = "Email already in use" };
+        }
 
         if (!await IsPasswordValid(u.Password))
+        {
+            _logger.LogWarning("User creation failed due to invalid password. Email: {Email}", u.Email);
             return new ResponseToken { Status = 0, msg = "Invalid Password" };
+        }
 
         var role = await _unitOfWork.Roles.GetRoleByName("User");
         if (role == null)
+        {
+            _logger.LogWarning("User creation failed due to role not found. Role: {Role}", "User");
             return new ResponseToken { Status = 0, msg = "Role not found" };
+        }
+        
 
         var user = new User
         {
@@ -108,7 +135,7 @@ public class UserService : IUserServise
             Password = new PasswordHasher<User>().HashPassword(null, u.Password),
             CreatedAt = DateTime.Now,
             RoleID = role.Id,
-            Role = role
+            Role = role,
         };
 
         if (!string.IsNullOrEmpty(u.UserType))
@@ -129,7 +156,7 @@ public class UserService : IUserServise
         var refreshToken = await _tokenHandler.CreateRefreshToken(user.Id);
 
         await _unitOfWork.Users.Create(user);
-        
+       
         var refreshTokenEntity = new RefreshTokens
         {
             UserID = user.Id,
@@ -137,7 +164,7 @@ public class UserService : IUserServise
             Expires = DateTime.Now.AddDays(4)
         };
         await _unitOfWork.SaveChangesAsync();
-
+        _logger.LogInformation($"User created with email: {u.Email} and name: {u.Name}");
         return new ResponseToken
         {
             Status = 2,
@@ -198,19 +225,56 @@ public class UserService : IUserServise
             existingUser.Country = user.Country;
         if (!string.IsNullOrEmpty(user.PhoneNumber))
             existingUser.PhoneNumber = user.PhoneNumber;
-        if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
-            existingUser.ProfilePictureUrl = user.ProfilePictureUrl;
         if (user.HeightCm > 0)
             existingUser.HeightCm = user.HeightCm;
         if (user.WeightKg > 0)
             existingUser.WeightKg = user.WeightKg;
+
+        if(user.ProfilePicture != null)
+        {
+            _logger.LogInformation($"Saving pfp for user email: {existingUser.Email}\n name : {existingUser.Name}");
+            var imageResponse = await _fileService.UploadFileAsync(user.ProfilePicture!, new[] { ".jpg", ".png", ".jpeg" });
+            if (imageResponse.status == 0)
+            {
+                _logger.LogWarning("User creation failed due to profile picture upload error. Error: {Error}", imageResponse.msg);
+                return new SettersResponse { status = 0, msg = "Profile picture upload failed: " + imageResponse.msg };
+            }
+            string profilePictureUrl = imageResponse.msg;
+            existingUser.ProfilePictureUrl = profilePictureUrl;
+        }
 
         await _unitOfWork.Users.Update(existingUser);
         await _unitOfWork.SaveChangesAsync();
         
         return new SettersResponse { status = 2, msg = "User updated successfully." };
     }
+    public async Task<SettersResponse> ChangePfp(Guid userID, IFormFile pfp)
+    {
+        if (userID == Guid.Empty || pfp == null)
+        {
+            _logger.LogError("ChangePfp failed due to invalid input. UserID: {UserID}, PFP: {PFP}", userID, pfp != null ? pfp.FileName : "null");
+            return new SettersResponse { status = 0, msg = "Invalid user ID or profile picture" };
+        }
+        var user = await _unitOfWork.Users.GetById(userID);
+        if (user is null)
+        {
+            _logger.LogError("ChangePfp failed because user was not found. UserID: {UserID}", userID);
+            return new SettersResponse { status = 0, msg = "User not found" };
+        }
+            
+        var imageResponse = await _fileService.UploadFileAsync(pfp, new[] { ".jpg", ".png", ".jpeg" });
+        if (imageResponse.status == 0)
+        {
+            _logger.LogError("ChangePfp failed due to profile picture upload error. UserID: {UserID}, Error: {Error}", userID, imageResponse.msg);
+            return new SettersResponse { status = 0, msg = "Profile picture upload failed: " + imageResponse.msg };
+        }
+        user.ProfilePictureUrl = imageResponse.msg;
+        await _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync();
 
+        _logger.LogInformation($"New Pfp set successfullt for User : {user.Email}");
+        return new SettersResponse { status = 2, msg = "Profile picture updated successfully." };
+    }
     public async Task<SettersResponse> ChangeUserType(UserChangeTypeDTO userDto)
     {
         if (userDto == null || userDto.UserType == null)

@@ -15,8 +15,18 @@ namespace Gym_App.Api.Controllers
             _user = user;
             _authenticationService = authorizationService;
         }
+        [HttpPut("change-pfp")]
+        public async Task<IActionResult> ChangePfp([FromForm] Guid userId, IFormFile pfp)
+        {
+            var result = await _user.ChangePfp(userId, pfp);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else
+                return Ok(new { message = result.msg });
+        }
+
         [HttpPut("update")]
-        public async Task<IActionResult> UpdateUser([FromBody] UserUpdateDTO user)
+        public async Task<IActionResult> UpdateUser([FromForm] UserUpdateDTO user)
         {
             //Authentication
             

@@ -28,7 +28,7 @@ namespace Gym_App.Api.Controllers
                 Ok(result);
         }
         [HttpPost("sign-up")]
-        public async Task<IActionResult> NewUser([FromBody] UserCreationDTO user)
+        public async Task<IActionResult> NewUser([FromForm] UserCreationDTO user)
         {
             var result = await _userServiceService.SignUpUser(user);
             if (result.Status == 0)

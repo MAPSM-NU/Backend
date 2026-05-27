@@ -1,7 +1,9 @@
 ﻿using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -15,10 +17,14 @@ namespace GymApp.Tests.UserTests
     {
         private readonly IUserServise _userServiceMock;
         private readonly Mock<ITokenHandler> _tokenHandlerMock;
+        private readonly Mock<IFileService> _fileService;
+        private readonly Mock<ILogger<UserService>> _loggerMock;
         public UserDeleteTests() : base("UserTestDatabase")
         {
             _tokenHandlerMock = new Mock<ITokenHandler>();
-            _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object);
+            _fileService = new Mock<IFileService>();
+            _loggerMock = new Mock<ILogger<UserService>>();
+            _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object, _fileService.Object, _loggerMock.Object);
         }
         [Fact]
         public async Task UserDeleteTest()

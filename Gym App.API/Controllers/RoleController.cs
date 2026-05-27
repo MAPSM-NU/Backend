@@ -1,4 +1,5 @@
 ﻿using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Gym_App.Presentation.Controllers
@@ -13,7 +14,7 @@ namespace Gym_App.Presentation.Controllers
             _roleService = roleService;
         }
         [HttpPost("create")]
-        public async Task<IActionResult> createRole(string roleName)
+        public async Task<IActionResult> createRole([FromQuery] string roleName)
         {
             var result = await _roleService.createRole(roleName);
             if (result.status == 0)
@@ -22,7 +23,7 @@ namespace Gym_App.Presentation.Controllers
                 return Ok(result);
         }
         [HttpPut("update/{roleId}")]
-        public async Task<IActionResult> updateRole(Guid roleId, string roleName)
+        public async Task<IActionResult> updateRole([FromRoute] Guid roleId, [FromQuery] string roleName)
         {
             var result = await _roleService.updateRole(roleId, roleName);
             if (result.status == 0)
@@ -31,7 +32,7 @@ namespace Gym_App.Presentation.Controllers
                 return Ok(result);
         }
         [HttpDelete("delete/{roleId}")]
-        public async Task<IActionResult> deleteRole(Guid roleId)
+        public async Task<IActionResult> deleteRole([FromRoute] Guid roleId)
         {
             var result = await _roleService.deleteRole(roleId);
             if (result.status == 0)
@@ -40,7 +41,7 @@ namespace Gym_App.Presentation.Controllers
                 return Ok(result);
         }
         [HttpGet("get-users/{roleId}")]
-        public async Task<IActionResult> getUsersOfRole(Guid roleId, string roleName)
+        public async Task<IActionResult> getUsersOfRole([FromRoute] Guid roleId, [FromQuery] string roleName)
         {
             var result = await _roleService.getUsersOfRole(roleId, roleName);
             if (result.status == 0)

@@ -1,6 +1,5 @@
 ﻿using Gym_App.Infastructure.DTOs.Notification;
 using Gym_App.Infastructure.Interfaces.Services;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

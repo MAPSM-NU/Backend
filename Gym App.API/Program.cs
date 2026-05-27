@@ -16,6 +16,7 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text;
 using System.Text.Json.Serialization;
+using Gym_App.Infrastructure.Interfaces.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,6 +83,9 @@ builder.Services.AddSwaggerGen(c => {
             new string[] {}
         }
     });
+    // Ignore obsolete properties and methods
+    c.IgnoreObsoleteActions();
+    c.IgnoreObsoleteProperties();
 });
 
 // ============================================
@@ -89,7 +93,7 @@ builder.Services.AddSwaggerGen(c => {
 // ============================================
 builder.Services.AddDbContext<DbBase>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("VpsConnection"),
+        builder.Configuration.GetConnectionString("ModyConnection"),
         b => b.MigrationsAssembly("Gym_App.Infrastructure")));
 
 // ============================================
@@ -110,6 +114,7 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHandler>();
 
 
@@ -228,10 +233,13 @@ using (var scope = app.Services.CreateScope())
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseSwagger();
-app.UseSwaggerUI();
-
 app.UseRouting();
+
+app.UseSwagger(c =>
+{
+    c.SerializeAsV2 = false;
+});
+app.UseSwaggerUI();
 
 app.UseCors("CorsPolicy");
 app.UseAuthentication();

@@ -1,12 +1,16 @@
-﻿using Gym_App.Application.Services;
+﻿using Castle.Core.Logging;
+using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Repositries;
+using Gym_App.Infrastructure.Interfaces.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace GymApp.Tests.AuthTests;
@@ -15,10 +19,14 @@ public class AuthTests : TestBase
 {
     private readonly IUserServise _userServiceMock;
     private readonly Mock<ITokenHandler> _tokenHandlerMock;
+    private readonly Mock<IFileService> _fileService;
+    private readonly Mock<ILogger<UserService>> _loggerMock;    
     public AuthTests() : base("AuthTestDatabase")
     {
         _tokenHandlerMock = new Mock<ITokenHandler>();
-        _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object);
+        _fileService = new Mock<IFileService>();
+        _loggerMock = new Mock<ILogger<UserService>>();
+        _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object,_fileService.Object,_loggerMock.Object);
     }
 
     //Sign up tests
@@ -52,7 +60,12 @@ public class AuthTests : TestBase
         {
             refreshToken.UserID = Guid.NewGuid();
         }).ReturnsAsync(refreshToken.RefreshToken);
-        var result = await _userServiceMock.SignUpUser(dto);
+        _fileService.Setup(f => f.UploadFileAsync(//so the upload methodology doesnt return null
+            It.IsAny<IFormFile>(),//For other sad paths tests, it wont even reach this state so there is no use to
+            It.IsAny<string[]>()//copy paste it there
+        )).ReturnsAsync(new Gym_App.Infastructure.Transfer_Classes.SettersResponse { msg = "success",status = 2});
+
+        var result = await _userServiceMock.SignUpUser(null, dto);
 
         //Asserting the result
         Assert.NotNull(result);
@@ -71,11 +84,11 @@ public class AuthTests : TestBase
             UserType = "T",
             Password = "Test_2004"
         };
-        var Nameresult = await _userServiceMock.SignUpUser(dto);
+        var Nameresult = await _userServiceMock.SignUpUser(null, dto);
         //Asserting the result
         Assert.NotNull(Nameresult);
         Assert.Equal("Missing Information", Nameresult.msg);
-        var EmailResult = await _userServiceMock.SignUpUser(new UserCreationDTO
+        var EmailResult = await _userServiceMock.SignUpUser(null, new UserCreationDTO
         {
             Name = "Test",
             Email = "",
@@ -87,7 +100,7 @@ public class AuthTests : TestBase
         Assert.Equal("Missing Information", EmailResult.msg);
         Assert.Equal(0, EmailResult.Status);
 
-        var PasswordResult = await _userServiceMock.SignUpUser(new UserCreationDTO
+        var PasswordResult = await _userServiceMock.SignUpUser(null, new UserCreationDTO
         {
             Name = "Test",
             Email = "Test@gmail.com",
@@ -124,7 +137,7 @@ public class AuthTests : TestBase
             Password = "Test_2004",
             UserType = "T"
         };
-        var result = await _userServiceMock.SignUpUser(dto);
+        var result = await _userServiceMock.SignUpUser(null, dto);
         //Asserting the result
         Assert.NotNull(result);
         Assert.Equal("Name is already used", result.msg);
@@ -140,7 +153,7 @@ public class AuthTests : TestBase
             Password = "Test_2004",
             UserType = "T"
         };
-        var result = await _userServiceMock.SignUpUser(dto);
+        var result = await _userServiceMock.SignUpUser(null, dto);
         //Asserting the result
         Assert.NotNull(result);
         Assert.Equal("Invalid Email", result.msg);
@@ -158,7 +171,7 @@ public class AuthTests : TestBase
             Password = "Test_2004",
             UserType = "T"
         };
-        var result = await _userServiceMock.SignUpUser(dto);
+        var result = await _userServiceMock.SignUpUser(null, dto);
         //Asserting the result
         Assert.NotNull(result);
         Assert.Equal("Email already in use", result.msg);
@@ -174,7 +187,7 @@ public class AuthTests : TestBase
             Password = "invalidpassword",
             UserType = "T"
         };
-        var result = await _userServiceMock.SignUpUser(dto);
+        var result = await _userServiceMock.SignUpUser(null, dto);
         //Asserting the result
         Assert.NotNull(result);
         Assert.Equal("Invalid Password", result.msg);

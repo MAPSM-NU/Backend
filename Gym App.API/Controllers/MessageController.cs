@@ -1,9 +1,5 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
-using DocumentFormat.OpenXml.Wordprocessing;
-using Gym_App.Domain;
-using Gym_App.Infastructure.DTOs.Message;
+﻿using Gym_App.Infastructure.DTOs.Message;
 using Gym_App.Infastructure.Interfaces.Services;
-using MailKit.Search;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

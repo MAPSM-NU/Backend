@@ -91,7 +91,7 @@ builder.Services.AddSwaggerGen(c => {
 // ============================================
 builder.Services.AddDbContext<DbBase>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("ModyConnection"),
+        builder.Configuration.GetConnectionString("VpsConnection"),
         b => b.MigrationsAssembly("Gym_App.Infrastructure")));
 
 // ============================================

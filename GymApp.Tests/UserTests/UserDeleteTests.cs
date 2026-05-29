@@ -1,7 +1,11 @@
-﻿using Gym_App.Application.Services;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infrastructure.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -15,10 +19,17 @@ namespace GymApp.Tests.UserTests
     {
         private readonly IUserServise _userServiceMock;
         private readonly Mock<ITokenHandler> _tokenHandlerMock;
+        private readonly Mock<IFileService> _fileService;
+        private readonly Mock<ICachedAuthorizationService> _authorizationService;
+        private readonly Mock<ILogger<UserService>> _loggerMock;
         public UserDeleteTests() : base("UserTestDatabase")
         {
             _tokenHandlerMock = new Mock<ITokenHandler>();
-            _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object);
+            _fileService = new Mock<IFileService>();
+            _loggerMock = new Mock<ILogger<UserService>>();
+            _authorizationService = new Mock<ICachedAuthorizationService>();
+            _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object, _fileService.Object, _loggerMock.Object
+                ,_authorizationService.Object);
         }
         [Fact]
         public async Task UserDeleteTest()
@@ -40,6 +51,7 @@ namespace GymApp.Tests.UserTests
                 Id = userId
             });
             await _unitOfWork.SaveChangesAsync();
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
             var result = await _userServiceMock.DeleteUser(userId);
             Assert.Equal(2, result.status);
             var user = await _userServiceMock.GetUserByID(userId);

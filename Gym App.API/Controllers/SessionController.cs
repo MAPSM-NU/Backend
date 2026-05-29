@@ -1,9 +1,6 @@
-﻿using Gym_App.Domain;
-using Gym_App.Infastructure.DTOs;
-using Gym_App.Infastructure.DTOs.Session;
+﻿using Gym_App.Infastructure.DTOs.Session;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infrastructure.DTOs.Session;
-using MailKit.Search;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

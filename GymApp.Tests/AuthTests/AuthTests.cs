@@ -1,12 +1,17 @@
-﻿using Gym_App.Application.Services;
+﻿using Castle.Core.Logging;
+using Gym_App.Application.Authorization;
+using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Repositries;
+using Gym_App.Infrastructure.Interfaces.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace GymApp.Tests.AuthTests;
@@ -15,10 +20,17 @@ public class AuthTests : TestBase
 {
     private readonly IUserServise _userServiceMock;
     private readonly Mock<ITokenHandler> _tokenHandlerMock;
+    private readonly Mock<IFileService> _fileService;
+    private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
+    private readonly Mock<ILogger<UserService>> _loggerMock;    
     public AuthTests() : base("AuthTestDatabase")
     {
         _tokenHandlerMock = new Mock<ITokenHandler>();
-        _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object);
+        _fileService = new Mock<IFileService>();
+        _loggerMock = new Mock<ILogger<UserService>>();
+        _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
+        _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object,_fileService.Object,_loggerMock.Object
+            ,_authorizationServiceMock.Object);
     }
 
     //Sign up tests
@@ -52,6 +64,11 @@ public class AuthTests : TestBase
         {
             refreshToken.UserID = Guid.NewGuid();
         }).ReturnsAsync(refreshToken.RefreshToken);
+        _fileService.Setup(f => f.UploadFileAsync(//so the upload methodology doesnt return null
+            It.IsAny<IFormFile>(),//For other sad paths tests, it wont even reach this state so there is no use to
+            It.IsAny<string[]>()//copy paste it there
+        )).ReturnsAsync(new Gym_App.Infastructure.Transfer_Classes.SettersResponse { msg = "success",status = 2});
+
         var result = await _userServiceMock.SignUpUser(dto);
 
         //Asserting the result

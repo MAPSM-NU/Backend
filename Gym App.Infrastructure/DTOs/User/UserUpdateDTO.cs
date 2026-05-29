@@ -1,4 +1,6 @@
-﻿namespace Gym_App.Infastructure.DTOs.UserDTOs
+﻿using Microsoft.AspNetCore.Http;
+
+namespace Gym_App.Infastructure.DTOs.UserDTOs
 {
     public class UserUpdateDTO
     {
@@ -10,7 +12,7 @@
         public string? City { get; set; }
         public string? Country { get; set; }
         public string? PhoneNumber { get; set; }
-        public string? ProfilePictureUrl { get; set; }
+        public IFormFile? ProfilePicture { get; set; }
         public int? HeightCm { get; set; }
         public int? WeightKg { get; set; }
     }

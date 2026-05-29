@@ -1,6 +1,7 @@
 ﻿using Gym_App.Domain.Entities;
 using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Transfer_Classes;
+using Microsoft.AspNetCore.Http;
 
 namespace Gym_App.Infastructure.Interfaces.Services
 {
@@ -9,6 +10,8 @@ namespace Gym_App.Infastructure.Interfaces.Services
         Task<ResponseToken> CreateAdmin(UserCreationDTO user);   
         Task<ResponseToken> SignUpUser(UserCreationDTO user);
         Task<ResponseToken> SigninUser(string email, string password);
+        Task<SettersResponse> ChangePfp(Guid userID, IFormFile pfp);
+        Task<SettersResponse> DeletePfp(Guid userId);
         Task<SettersResponse> UpdateUser(UserUpdateDTO user);
         Task<SettersResponse> ChangeUserType(UserChangeTypeDTO user);
         Task<SettersResponse> DeleteUser(Guid userID);
@@ -16,6 +19,6 @@ namespace Gym_App.Infastructure.Interfaces.Services
         Task<GettersResponse<UserMiniViewDTO>> GetMiniUsers(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
         Task<GettersResponse<UserViewDTO>> GetUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
         Task<GettersResponse<UserViewDTO>> GetAllUsers(int page, int pageSize);
-
+        
     }
 }

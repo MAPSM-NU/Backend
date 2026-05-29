@@ -47,7 +47,7 @@ namespace Gym_App.Api.Controllers
         }
         [AllowAnonymous]
         [HttpGet("get")]
-        public async Task<IActionResult> GetAllMuscles(int page = 1, int pageSize = 15)
+        public async Task<IActionResult> GetAllMuscles([FromQuery] int page = 1, [FromQuery] int pageSize = 15)
         {
             var result = await _muscleService.GetAllMuscles(page, pageSize);
             if (result.status == 0)

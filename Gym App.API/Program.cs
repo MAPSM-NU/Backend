@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore.Design;
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
 using Gym_App.Application.Hubs;
@@ -9,13 +8,13 @@ using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text;
 using System.Text.Json.Serialization;
+using Gym_App.Infrastructure.Interfaces.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,6 +81,9 @@ builder.Services.AddSwaggerGen(c => {
             new string[] {}
         }
     });
+    // Ignore obsolete properties and methods
+    c.IgnoreObsoleteActions();
+    c.IgnoreObsoleteProperties();
 });
 
 // ============================================
@@ -110,6 +112,7 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHandler>();
 
 
@@ -228,10 +231,13 @@ using (var scope = app.Services.CreateScope())
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseSwagger();
-app.UseSwaggerUI();
-
 app.UseRouting();
+
+app.UseSwagger(c =>
+{
+    c.SerializeAsV2 = false;
+});
+app.UseSwaggerUI();
 
 app.UseCors("CorsPolicy");
 app.UseAuthentication();

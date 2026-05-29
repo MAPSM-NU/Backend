@@ -24,6 +24,15 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(new { message = result.msg });
         }
+        [HttpDelete("delete-pfp/{userId}")]
+        public async Task<IActionResult> DeletePfp([FromRoute] Guid userId)
+        {
+            var result = await _user.DeletePfp(userId);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else
+                return Ok(new { message = result.msg });
+        }
 
         [HttpPut("update")]
         public async Task<IActionResult> UpdateUser([FromForm] UserUpdateDTO user)

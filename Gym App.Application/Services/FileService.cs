@@ -89,7 +89,8 @@ namespace Gym_App.Application.Services
             }
 
             var contentPath = environment.ContentRootPath;
-            var path = Path.Combine(contentPath, "wwwroot", "Uploads", fileUrl);
+            var fileName = Path.GetFileName(fileUrl);
+            var path = Path.Combine(contentPath, "wwwroot", "Uploads", fileName);
 
             if (!File.Exists(path))
             {

@@ -1,4 +1,5 @@
-﻿using Gym_App.Application.Services;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infrastructure.Interfaces.Services;
@@ -18,13 +19,16 @@ namespace GymApp.Tests.UserTests
         private readonly IUserServise _userServiceMock;
         private readonly Mock<ITokenHandler> _tokenHandlerMock;
         private readonly Mock<IFileService> _fileService;
+        private readonly Mock<ICachedAuthorizationService> _authorizationService;
         private readonly Mock<ILogger<UserService>> _loggerMock;
         public UserQueryTests() : base("UserTestDatabase")
         {
             _tokenHandlerMock = new Mock<ITokenHandler>();
             _fileService = new Mock<IFileService>();
             _loggerMock = new Mock<ILogger<UserService>>();
-            _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object, _fileService.Object, _loggerMock.Object);
+            _authorizationService = new Mock<ICachedAuthorizationService>();
+            _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object, _fileService.Object, _loggerMock.Object
+                ,_authorizationService.Object);
         }
         [Fact]
         public async Task UserGetByIdTest()
@@ -46,6 +50,7 @@ namespace GymApp.Tests.UserTests
                 Id = userId
             });
             await _unitOfWork.SaveChangesAsync();
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
             var result = await _userServiceMock.GetUserByID(userId);
             Assert.NotNull(result.Value);
             Assert.Equal(2, result.status);
@@ -81,6 +86,7 @@ namespace GymApp.Tests.UserTests
                 });
             }
             await _unitOfWork.SaveChangesAsync();
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
             var result = await _userServiceMock.GetAllUsers(1, 5);
             Assert.NotNull(result.Data);
             Assert.Equal(2, result.status);
@@ -114,6 +120,7 @@ namespace GymApp.Tests.UserTests
                 });
             }
             await _unitOfWork.SaveChangesAsync();
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var Emailresult = await _userServiceMock.GetUsers("", "", 1, "", "", "Test City 3", 5);
             Assert.NotNull(Emailresult.Data);
@@ -163,6 +170,7 @@ namespace GymApp.Tests.UserTests
                 });
             }
             await _unitOfWork.SaveChangesAsync();
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var AscendinNamegResult = await _userServiceMock.GetUsers("", "", 1, "Name", "asc", "", 5);
             Assert.NotNull(AscendinNamegResult.Data);
@@ -217,6 +225,8 @@ namespace GymApp.Tests.UserTests
                 });
             }
             await _unitOfWork.SaveChangesAsync();
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+
             var InBetweenResult = await _userServiceMock.GetUsers(DateTime.Now.AddMinutes(-5).ToString(), DateTime.Now.AddMinutes(9).ToString(), 1, "", "asc", "", 5);
             Assert.NotNull(InBetweenResult.Data);
             Assert.Equal(2, InBetweenResult.status);
@@ -261,6 +271,7 @@ namespace GymApp.Tests.UserTests
                 });
             }
             await _unitOfWork.SaveChangesAsync();
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
             var filterResult = await _userServiceMock.GetUsers(DateTime.Now.AddMinutes(6).ToString(), DateTime.Now.AddMinutes(21).ToString(), 1, "Name", "desc", "Test City", 5);
             Assert.NotNull(filterResult.Data);

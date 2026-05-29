@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore.Design;
 using Gym_App.Application.Authorization;
 using Gym_App.Application.Authorization.Gym_App.Application.Authorization;
 using Gym_App.Application.Hubs;
@@ -9,7 +8,6 @@ using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;

@@ -1,4 +1,5 @@
 ﻿using Castle.Core.Logging;
+using Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Context;
@@ -20,13 +21,16 @@ public class AuthTests : TestBase
     private readonly IUserServise _userServiceMock;
     private readonly Mock<ITokenHandler> _tokenHandlerMock;
     private readonly Mock<IFileService> _fileService;
+    private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
     private readonly Mock<ILogger<UserService>> _loggerMock;    
     public AuthTests() : base("AuthTestDatabase")
     {
         _tokenHandlerMock = new Mock<ITokenHandler>();
         _fileService = new Mock<IFileService>();
         _loggerMock = new Mock<ILogger<UserService>>();
-        _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object,_fileService.Object,_loggerMock.Object);
+        _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
+        _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object,_fileService.Object,_loggerMock.Object
+            ,_authorizationServiceMock.Object);
     }
 
     //Sign up tests
@@ -65,7 +69,7 @@ public class AuthTests : TestBase
             It.IsAny<string[]>()//copy paste it there
         )).ReturnsAsync(new Gym_App.Infastructure.Transfer_Classes.SettersResponse { msg = "success",status = 2});
 
-        var result = await _userServiceMock.SignUpUser(null, dto);
+        var result = await _userServiceMock.SignUpUser(dto);
 
         //Asserting the result
         Assert.NotNull(result);
@@ -84,11 +88,11 @@ public class AuthTests : TestBase
             UserType = "T",
             Password = "Test_2004"
         };
-        var Nameresult = await _userServiceMock.SignUpUser(null, dto);
+        var Nameresult = await _userServiceMock.SignUpUser(dto);
         //Asserting the result
         Assert.NotNull(Nameresult);
         Assert.Equal("Missing Information", Nameresult.msg);
-        var EmailResult = await _userServiceMock.SignUpUser(null, new UserCreationDTO
+        var EmailResult = await _userServiceMock.SignUpUser(new UserCreationDTO
         {
             Name = "Test",
             Email = "",
@@ -100,7 +104,7 @@ public class AuthTests : TestBase
         Assert.Equal("Missing Information", EmailResult.msg);
         Assert.Equal(0, EmailResult.Status);
 
-        var PasswordResult = await _userServiceMock.SignUpUser(null, new UserCreationDTO
+        var PasswordResult = await _userServiceMock.SignUpUser(new UserCreationDTO
         {
             Name = "Test",
             Email = "Test@gmail.com",
@@ -137,7 +141,7 @@ public class AuthTests : TestBase
             Password = "Test_2004",
             UserType = "T"
         };
-        var result = await _userServiceMock.SignUpUser(null, dto);
+        var result = await _userServiceMock.SignUpUser(dto);
         //Asserting the result
         Assert.NotNull(result);
         Assert.Equal("Name is already used", result.msg);
@@ -153,7 +157,7 @@ public class AuthTests : TestBase
             Password = "Test_2004",
             UserType = "T"
         };
-        var result = await _userServiceMock.SignUpUser(null, dto);
+        var result = await _userServiceMock.SignUpUser(dto);
         //Asserting the result
         Assert.NotNull(result);
         Assert.Equal("Invalid Email", result.msg);
@@ -171,7 +175,7 @@ public class AuthTests : TestBase
             Password = "Test_2004",
             UserType = "T"
         };
-        var result = await _userServiceMock.SignUpUser(null, dto);
+        var result = await _userServiceMock.SignUpUser(dto);
         //Asserting the result
         Assert.NotNull(result);
         Assert.Equal("Email already in use", result.msg);
@@ -187,7 +191,7 @@ public class AuthTests : TestBase
             Password = "invalidpassword",
             UserType = "T"
         };
-        var result = await _userServiceMock.SignUpUser(null, dto);
+        var result = await _userServiceMock.SignUpUser(dto);
         //Asserting the result
         Assert.NotNull(result);
         Assert.Equal("Invalid Password", result.msg);

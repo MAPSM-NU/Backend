@@ -95,7 +95,7 @@ namespace Gym_App.Application.Services
             if (!File.Exists(path))
             {
                 _logger.LogWarning($"Attempted deletion of file at '{path}', but the file was not found.");
-                throw new FileNotFoundException("File not found.", path);
+                return Task.CompletedTask;
             }
 
             File.Delete(path);

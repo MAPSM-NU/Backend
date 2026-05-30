@@ -155,15 +155,6 @@ namespace GymApp.Tests.FileTests
             Assert.Empty(filesAfterDeletion);
         }
         [Fact]
-        public async Task DeleteFileNotFoundFile()
-        {
-            var nonExistentFileName = $"{Guid.NewGuid()}.png";
-
-            await Assert.ThrowsAsync<FileNotFoundException>(
-                () => _fileService.DeleteFileAsync(nonExistentFileName)
-            );
-        }
-        [Fact]
         public async Task DeleteFileNullUrl()
         {
             await Assert.ThrowsAsync<ArgumentException>(

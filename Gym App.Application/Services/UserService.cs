@@ -20,14 +20,16 @@ public class UserService : IUserServise
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITokenHandler _tokenHandler;
     private readonly IFileService _fileService;
+    private readonly IEmailSender _emailSender;
     private readonly ICachedAuthorizationService _authorizationService;
     private readonly ILogger<UserService> _logger;
-    public UserService(IUnitOfWork unitOfWork, ITokenHandler tokenHandler,IFileService fileService,ILogger<UserService> logger, ICachedAuthorizationService authorizationService)
+    public UserService(IUnitOfWork unitOfWork, ITokenHandler tokenHandler,IFileService fileService,ILogger<UserService> logger, ICachedAuthorizationService authorizationService, IEmailSender emailSender)
     {
         _unitOfWork = unitOfWork;
         _tokenHandler = tokenHandler;
         _fileService = fileService;
         _logger = logger;
+        _emailSender = emailSender;
         _authorizationService = authorizationService;
     }
 
@@ -176,6 +178,7 @@ public class UserService : IUserServise
             };
             await _unitOfWork.SaveChangesAsync();
             _logger.LogInformation($"User created with email: {u.Email} and name: {u.Name}");
+            await _emailSender.IntroductionEmail(u.Email);
             return new ResponseToken
             {
                 Status = 2,
@@ -186,7 +189,7 @@ public class UserService : IUserServise
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while creating a user. Email: {Email}, Name: {Name}", u?.Email, u?.Name);
+            _logger.LogError(ex, $"An error occurred while creating a user. Email: {u?.Email}, Name: {u?.Name}");
             return new ResponseToken { Status = 0, msg = "An error occurred while creating the user." };
         }
     }

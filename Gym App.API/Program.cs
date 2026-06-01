@@ -91,7 +91,7 @@ builder.Services.AddSwaggerGen(c => {
 // ============================================
 builder.Services.AddDbContext<DbBase>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("VpsConnection"),
+        builder.Configuration.GetConnectionString("Connection"),
         b => b.MigrationsAssembly("Gym_App.Infrastructure")));
 
 // ============================================
@@ -107,6 +107,7 @@ builder.Services.AddFluentEmail(builder.Configuration["EmailSettings:SenderEmail
     {
         Host = builder.Configuration["EmailSettings:SmtpHost"]!,
         Port = int.Parse(builder.Configuration["EmailSettings:SmtpPort"]!),
+        EnableSsl = true,
         Credentials = new System.Net.NetworkCredential(
             builder.Configuration["EmailSettings:SmtpUsername"]!,
             builder.Configuration["EmailSettings:SmtpPassword"]!)

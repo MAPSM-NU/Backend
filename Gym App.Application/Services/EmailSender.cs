@@ -54,7 +54,7 @@ namespace Gym_App.Application.Services
                 <html>
                     <body style="font-family: Arial; line-height: 1.6; color: #333;">
                         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                            <h1 style="color: #007bff;">Welcome to Gym App!</h1>
+                            <h1 style="color: #007bff;">Welcome to Fitpack!</h1>
                             <p>Hello,</p>
                             <p>Thank you for registering with our fitness application.</p>
                             <p>You can now:</p>
@@ -64,14 +64,14 @@ namespace Gym_App.Application.Services
                                 <li>Connect with other users</li>
                             </ul>
                             <p>
-                                <a href="https://gym-app.com/dashboard" 
+                                <a href="https://www.youtube.com/watch?v=M5ofvOP1Ybc" 
                                    style="display: inline-block; padding: 10px 20px; 
                                           background-color: #007bff; color: white; 
                                           text-decoration: none; border-radius: 5px;">
                                     Go to Dashboard
                                 </a>
                             </p>
-                            <p>Best regards,<br>The Gym App Team</p>
+                            <p>Best regards,<br>The Fitpack Team</p>
                         </div>
                     </body>
                 </html>

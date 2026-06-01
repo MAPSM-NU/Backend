@@ -100,6 +100,20 @@ builder.Services.AddDbContext<DbBase>(options =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // ============================================
+// EMAIL SENDER CONFIGURATION
+// ============================================
+builder.Services.AddFluentEmail(builder.Configuration["EmailSettings:SenderEmail"])
+    .AddSmtpSender(new System.Net.Mail.SmtpClient
+    {
+        Host = builder.Configuration["EmailSettings:SmtpHost"]!,
+        Port = int.Parse(builder.Configuration["EmailSettings:SmtpPort"]!),
+        Credentials = new System.Net.NetworkCredential(
+            builder.Configuration["EmailSettings:SmtpUsername"]!,
+            builder.Configuration["EmailSettings:SmtpPassword"]!)
+    });
+builder.Services.AddScoped<IEmailSender, EmailSender>();
+
+// ============================================
 // APPLICATION SERVICES
 // ============================================
 builder.Services.AddScoped<IUserServise, UserService>();

@@ -1,30 +1,81 @@
-﻿using Gym_App.Infastructure.Interfaces.Services;
+﻿using FluentEmail.Core;
 using Gym_App.Infastructure.Interfaces.Services;
-using MimeKit;
-using MimeKit.Text;
+using Microsoft.Extensions.Logging;
 
 namespace Gym_App.Application.Services
 {
     public class EmailSender : IEmailSender
     {
-        public async Task SendEmailAsync(string toEmail)
+        private readonly IFluentEmail _fluentEmail;
+        private readonly ILogger<EmailSender> _logger;
+
+        public EmailSender(
+            IFluentEmail fluentEmail,
+            ILogger<EmailSender> logger)
         {
-            var msg = new MimeMessage();
-            var from = new MailboxAddress("Gym App", "Modymansour2004@gmail.com");
-            var to = new MailboxAddress("", toEmail);
-            msg.To.Add(to);
-            msg.From.Add(from);
-            msg.Subject = "Hello and welcome";
-            msg.Body = new TextPart(TextFormat.Plain){
-                Text = """
-                Hello and welcome again
-                """
-            };
-            using var smtp = new MailKit.Net.Smtp.SmtpClient();
-            smtp.Connect("smtp.gmail.com", 587, false);
-            smtp.Authenticate("Modymansour2004@gmail.com", "Mody_1152004");
-            await smtp.SendAsync(msg);
-            await smtp.DisconnectAsync(true);
+            _fluentEmail = fluentEmail;
+            _logger = logger;
+        }
+
+        public async Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml = false)
+        {
+            try
+            {
+                _logger.LogInformation($"Sending email to: {toEmail}");
+
+                var response = await _fluentEmail
+                    .To(toEmail)
+                    .Subject("Welcome to Gym App!")
+                    .Body(GetWelcomeEmailBody(), true)  // true = isHtml
+                    .SendAsync();
+
+                if (response.Successful)
+                {
+                    _logger.LogInformation($"Email sent successfully to: {toEmail} with content {body}");
+                }
+                else
+                {
+                    _logger.LogError($"Email failed: {string.Join(", ", response.ErrorMessages)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Email exception: {ex.Message}");
+                throw;
+            }
+        }
+        public Task IntroductionEmail(string toEmail)
+        {
+            return SendEmailAsync(toEmail, "Welcome to Gym App!", GetWelcomeEmailBody(), true);
+        }
+        private string GetWelcomeEmailBody()
+        {
+            return """
+                <html>
+                    <body style="font-family: Arial; line-height: 1.6; color: #333;">
+                        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                            <h1 style="color: #007bff;">Welcome to Gym App!</h1>
+                            <p>Hello,</p>
+                            <p>Thank you for registering with our fitness application.</p>
+                            <p>You can now:</p>
+                            <ul>
+                                <li>Track your workouts</li>
+                                <li>Monitor your progress</li>
+                                <li>Connect with other users</li>
+                            </ul>
+                            <p>
+                                <a href="https://gym-app.com/dashboard" 
+                                   style="display: inline-block; padding: 10px 20px; 
+                                          background-color: #007bff; color: white; 
+                                          text-decoration: none; border-radius: 5px;">
+                                    Go to Dashboard
+                                </a>
+                            </p>
+                            <p>Best regards,<br>The Gym App Team</p>
+                        </div>
+                    </body>
+                </html>
+                """;
         }
     }
 }

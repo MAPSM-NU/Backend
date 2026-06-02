@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Gym_App.Core;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Gym_App.Domain
@@ -51,6 +52,7 @@ namespace Gym_App.Domain
         public ICollection<RefreshTokens>? RefreshTokens { get; set; } = new List<RefreshTokens>();
         public ICollection<Session>? Sessions { get; set; } = new List<Session>();
         public required Role Role { get; set; }
+        public ICollection<PasswordResetToken> passwordResetTokens { get; set; } = new List<PasswordResetToken>();
 
     }
 }

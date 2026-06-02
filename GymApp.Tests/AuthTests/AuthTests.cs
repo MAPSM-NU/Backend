@@ -22,6 +22,7 @@ public class AuthTests : TestBase
     private readonly Mock<ITokenHandler> _tokenHandlerMock;
     private readonly Mock<IFileService> _fileService;
     private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
+    private readonly Mock<IEmailSender> _EmailSender;
     private readonly Mock<ILogger<UserService>> _loggerMock;    
     public AuthTests() : base("AuthTestDatabase")
     {
@@ -29,8 +30,9 @@ public class AuthTests : TestBase
         _fileService = new Mock<IFileService>();
         _loggerMock = new Mock<ILogger<UserService>>();
         _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
+        _EmailSender = new Mock<IEmailSender>();
         _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object,_fileService.Object,_loggerMock.Object
-            ,_authorizationServiceMock.Object);
+            ,_authorizationServiceMock.Object,_EmailSender.Object);
     }
 
     //Sign up tests

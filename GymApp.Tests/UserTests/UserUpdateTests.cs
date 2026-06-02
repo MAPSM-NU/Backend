@@ -19,6 +19,7 @@ namespace GymApp.Tests.UserTests
         private readonly Mock<ITokenHandler> _tokenHandlerMock;
         private readonly Mock<IFileService> _fileService;
         private readonly Mock<ICachedAuthorizationService> _authorizationService;
+        private readonly Mock<IEmailSender> _EmailSender;
         private readonly Mock<ILogger<UserService>> _loggerMock;
         public UserUpdateTests() : base("UserTestDatabase")
         {
@@ -26,8 +27,9 @@ namespace GymApp.Tests.UserTests
             _fileService = new Mock<IFileService>();
             _loggerMock = new Mock<ILogger<UserService>>();
             _authorizationService = new Mock<ICachedAuthorizationService>();
+            _EmailSender = new Mock<IEmailSender>();
             _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object, _fileService.Object, _loggerMock.Object
-                ,_authorizationService.Object);
+                , _authorizationService.Object, _EmailSender.Object);
         }
         [Fact]
         public async Task UserUpdateTest()

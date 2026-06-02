@@ -216,7 +216,10 @@ public class UserService : IUserServise
             msg = "Login successful"
         };
     }
-
+    public async Task<SettersResponse> ForgotPassword(string email)
+    {
+        throw new NotImplementedException();
+    }
     public async Task<SettersResponse> UpdateUser(UserUpdateDTO user)
     {
         if (user == null)

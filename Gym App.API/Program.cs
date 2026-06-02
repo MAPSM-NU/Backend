@@ -217,7 +217,7 @@ Log.Information("Starting Gym App API...");
 Log.Information("Issuer: {Issuer}", builder.Configuration["JwtSettings:Issuer"]);
 Log.Information("Audience: {Audience}", builder.Configuration["JwtSettings:Audience"]);
 Log.Information("Token Key: {Key}", builder.Configuration["JwtSettings:Token"]);
-Log.Information("Database Connection: {ConnectionString}", builder.Configuration.GetConnectionString("VpsConnection"));
+Log.Information("Database Connection: {ConnectionString}", builder.Configuration.GetConnectionString("Connection"));
 
 // ============================================
 // BUILD APPLICATION

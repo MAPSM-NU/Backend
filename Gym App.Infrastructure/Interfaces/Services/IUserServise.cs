@@ -10,6 +10,7 @@ namespace Gym_App.Infastructure.Interfaces.Services
         Task<ResponseToken> CreateAdmin(UserCreationDTO user);   
         Task<ResponseToken> SignUpUser(UserCreationDTO user);
         Task<ResponseToken> SigninUser(string email, string password);
+        Task<SettersResponse> ForgotPassword(string email);
         Task<SettersResponse> ChangePfp(Guid userID, IFormFile pfp);
         Task<SettersResponse> DeletePfp(Guid userId);
         Task<SettersResponse> UpdateUser(UserUpdateDTO user);

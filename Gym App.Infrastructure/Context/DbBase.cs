@@ -1,4 +1,5 @@
-﻿using Gym_App.Domain;
+﻿using Gym_App.Core;
+using Gym_App.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gym_App.Infastructure.Context
@@ -25,6 +26,7 @@ namespace Gym_App.Infastructure.Context
         public DbSet<ExerciseInstance> ExerciseInstances { get; set; }
         public DbSet<WorkoutSet> WorkoutSets { get; set; }
         public DbSet<RefreshTokens> RefreshTokens { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -57,6 +59,9 @@ namespace Gym_App.Infastructure.Context
                 .HasKey(r => r.Id);
             modelBuilder.Entity<Transaction>()
                 .HasKey(t => t.Id);
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasKey(pt => pt.Id);
+
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Role)
                 .WithMany(r => r.Users)
@@ -80,24 +85,36 @@ namespace Gym_App.Infastructure.Context
             modelBuilder.Entity<Transaction>()
                 .Property(t => t.Amount)
                 .HasColumnType("decimal(18,2)");
+
             modelBuilder.Entity<Transaction>()
                 .HasOne(t => t.User)
                 .WithMany(u=>u.Transactions)
                 .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
+
             modelBuilder.Entity<RefreshTokens>()
                 .HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(rt => rt.UserID)
                 .OnDelete(DeleteBehavior.NoAction);
+
             modelBuilder.Entity<RefreshTokens>();
+
             modelBuilder.Entity<WorkoutSet>();
+
             modelBuilder.Entity<ExerciseInstance>()
                 .HasMany(ei=>ei.Sets)
                 .WithOne(ws=>ws.ExerciseInstance)
                 .HasForeignKey(ws=>ws.ExerciseInstanceId)
                 .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<PersonalRecord>();
+
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasOne(pt => pt.User)
+                .WithMany(u => u.passwordResetTokens)
+                .HasForeignKey(pt => pt.userId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

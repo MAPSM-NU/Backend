@@ -45,6 +45,15 @@ namespace Gym_App.Api.Controllers
             return
                 Ok(result);
         }
+        [HttpPut("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromQuery] string email)
+        {
+            var result = await _userServiceService.ForgotPassword(email);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            return
+                Ok(result);
+        }
         [HttpPost("token-login")]
         public async Task<IActionResult> LoginByToken([FromQuery] string Refreshtoken)
         {

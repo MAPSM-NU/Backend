@@ -1,5 +1,7 @@
 ﻿using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
+using Gym_App.Infrastructure.Interfaces.Repositries;
+using Gym_App.Infrastructure.Repositries;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 namespace Gym_App.Infastructure.Repositries;
@@ -24,6 +26,7 @@ public class UnitOfWork : IUnitOfWork
     private IPersonalRecordRepository? _personalRecordRepository;
     private IWorkoutSetRepository? _workoutSetRepository;
     private IExerciseInstanceRepository? _exerciseInstanceRepository;
+    private IPasswordResetTokenRepositry? _passwordResetToken;
 
     public UnitOfWork(DbBase context)
     {
@@ -69,6 +72,8 @@ public class UnitOfWork : IUnitOfWork
         => _workoutSetRepository ??= new WorkoutSetRepository(_context);
     public IExerciseInstanceRepository ExerciseInstance
         => _exerciseInstanceRepository ??= new ExerciseInstanceRepository(_context);
+    public IPasswordResetTokenRepositry PasswordResetToken
+        => _passwordResetToken ??= new PasswordResetTokenRepository(_context);
 
     /// <summary>
     /// Saves all changes in a single database transaction

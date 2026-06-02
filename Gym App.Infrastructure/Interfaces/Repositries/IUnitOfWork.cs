@@ -1,4 +1,6 @@
-﻿namespace Gym_App.Infastructure.Interfaces.Repositries;
+﻿using Gym_App.Infrastructure.Interfaces.Repositries;
+
+namespace Gym_App.Infastructure.Interfaces.Repositries;
 
 /// <summary>
 /// Represents a unit of work for managing repository operations as a single transaction
@@ -20,6 +22,7 @@ public interface IUnitOfWork : IAsyncDisposable
     IPersonalRecordRepository? PersonalRecords { get; }
     IWorkoutSetRepository? WorkoutSet { get; }
     IExerciseInstanceRepository? ExerciseInstance { get; }
+    IPasswordResetTokenRepositry? PasswordResetToken { get; }
 
     /// <summary>
     /// Saves all changes made to repositories in a single database transaction

@@ -1,10 +1,8 @@
 ﻿using Gym_App.Core;
-using Gym_App.Domain;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Repositries;
 using Gym_App.Infrastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Gym_App.Infrastructure.Repositries
 {

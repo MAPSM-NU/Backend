@@ -1,4 +1,5 @@
 ﻿using Gym_App.Application.Authorization;
+using Gym_App.Core;
 using Gym_App.Domain;
 using Gym_App.Domain.Entities;
 using Gym_App.Domain.Transfer_Classes;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography;
 
 namespace Gym_App.Application.Services;
 
@@ -218,7 +220,93 @@ public class UserService : IUserServise
     }
     public async Task<SettersResponse> ForgotPassword(string email)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var user = await _unitOfWork.Users.GetUserByEmail(email, true);
+            if (user == null)
+            {
+                _logger.LogError($"Trying to create forget password token for non existing email: {email}");
+                return new SettersResponse { status = 0, msg = "User not found" };
+            }
+            var otpCode = GenerateOtpCode();
+            var existingToken = await _unitOfWork.PasswordResetToken.GetTokenByUserId(user.Id);
+            if (existingToken != null)
+            {
+                existingToken.OTP = otpCode;
+                existingToken.Expiration = DateTime.Now.AddMinutes(15);
+                existingToken.isUsed = false;
+                await _unitOfWork.PasswordResetToken.Update(existingToken);
+
+            }
+            else
+            {
+                var resetToken = new PasswordResetToken
+                {
+                    userId = user.Id,
+                    OTP = otpCode,
+                    Expiration = DateTime.Now.AddMinutes(15),
+                    Email = email,
+                    UpdatedAt = DateTime.Now,
+                    CreatedAt = DateTime.Now,
+                    User = user
+
+                };
+                await _unitOfWork.PasswordResetToken.Create(resetToken);
+            }
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation($"Password reset OTP generated for email: {email}");
+            string body = $"Your OTP code for password reset is: {otpCode}. This code will expire in 15 minutes.";
+            await _emailSender.SendEmailAsync(email, "Password Reset OTP", body);
+            return new SettersResponse { status = 2, msg = "Password reset OTP sent successfully" };
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, $"An error occurred while processing forgot password for email: {email}");
+            return new SettersResponse { status = 0, msg = "An error occurred while processing the request." };
+        }
+    }
+    public async Task<SettersResponse> ResetPassword(string email, string otp, string newPassword)
+    {
+        try
+        {
+            var user = await _unitOfWork.Users.GetUserByEmail(email, true);
+            if (user == null)
+            {
+                _logger.LogError($"Password reset failed: User not found for email: {email}");
+                return new SettersResponse { status = 0, msg = "User not found" };
+            }
+
+            var verificationResult = await VerifyOTP(email, otp);
+            if (verificationResult.status != 2)
+            {
+                _logger.LogWarning($"Password reset failed during OTP verification for email: {email}. Reason: {verificationResult.msg}");
+                return new SettersResponse { status = 0, msg = "OTP verification failed: " + verificationResult.msg };
+            }
+
+            if (!await IsPasswordValid(newPassword))
+            {
+                _logger.LogWarning($"Password reset failed due to invalid new password for email: {email}");
+                return new SettersResponse { status = 0, msg = "Invalid new password" };
+            }
+
+            if(new PasswordHasher<User>().VerifyHashedPassword(user, user.Password, newPassword) == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Success)
+            {
+                _logger.LogWarning($"User inputed right otp {otp} yet the new password is the same as the old password for email: {email}");
+                return new SettersResponse { status = 0, msg = "New password cannot be the same as the old password" };
+            }
+            user.Password = new PasswordHasher<User>().HashPassword(user, newPassword);
+
+            await _unitOfWork.Users.Update(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation($"Password reset successfully for email: {email}");
+            return new SettersResponse { status = 2, msg = "Password reset successfully" };
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, $"An error occurred while resetting password for email: {email}");
+            return new SettersResponse { status = 0, msg = "An error occurred while processing the request." };
+        }
     }
     public async Task<SettersResponse> UpdateUser(UserUpdateDTO user)
     {
@@ -744,6 +832,46 @@ public class UserService : IUserServise
         var result = await PasswordPolicy.ValidateAsync(password);
         return result.Succeeded;
     }
+    private string GenerateOtpCode()
+    {
+        Random random = new Random();
+        int otp = random.Next(100000, 999999);
+        return otp.ToString();
+    }
+    private async Task<SettersResponse> VerifyOTP(string email, string otp)
+    {
+        try
+        {
+            var resetToken = await _unitOfWork.PasswordResetToken.GetTokenByUserEmail(email);
+            if (resetToken == null)
+            {
+                _logger.LogWarning($"OTP verification failed: No reset token found for email: {email}");
+                return new SettersResponse { status = 0, msg = "Invalid OTP or email" };
+            }
+            if (resetToken.isUsed)
+            {
+                _logger.LogWarning($"OTP verification failed: OTP already used for email: {email}");
+                return new SettersResponse { status = 0, msg = "OTP has already been used" };
+            }
+            if (resetToken.Expiration < DateTime.Now)
+            {
+                _logger.LogWarning($"OTP verification failed: OTP expired for email: {email}");
+                return new SettersResponse { status = 0, msg = "OTP has expired" };
+            }
+            if (resetToken.OTP != otp)
+            {
+                _logger.LogWarning($"OTP verification failed: Invalid OTP provided for email: {email}");
+                return new SettersResponse { status = 0, msg = "Invalid OTP" };
+            }
+            resetToken.isUsed = true;
+            await _unitOfWork.PasswordResetToken.Update(resetToken);
+            return new SettersResponse { status = 2, msg = "OTP verified successfully" };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"An error occurred while verifying OTP for email: {email}");
+            return new SettersResponse { status = 0, msg = "An error occurred while processing the request." };
+        }
+    }
 
-    
 }

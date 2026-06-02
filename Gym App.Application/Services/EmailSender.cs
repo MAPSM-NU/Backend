@@ -25,8 +25,8 @@ namespace Gym_App.Application.Services
 
                 var response = await _fluentEmail
                     .To(toEmail)
-                    .Subject("Welcome to Gym App!")
-                    .Body(GetWelcomeEmailBody(), true)  // true = isHtml
+                    .Subject(subject)
+                    .Body(body, true)  // true = isHtml
                     .SendAsync();
 
                 if (response.Successful)

@@ -1,18 +1,17 @@
-﻿using Castle.Core.Logging;
-using Gym_App.Application.Authorization;
+﻿using Gym_App.Application.Authorization;
+using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
-using Gym_App.Infastructure.Context;
+using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.UserDTOs;
-using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
-using Gym_App.Infastructure.Repositries;
 using Gym_App.Infrastructure.Interfaces.Services;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Runtime.CompilerServices;
 
 namespace GymApp.Tests.AuthTests;
 
@@ -22,6 +21,7 @@ public class AuthTests : TestBase
     private readonly Mock<ITokenHandler> _tokenHandlerMock;
     private readonly Mock<IFileService> _fileService;
     private readonly Mock<ICachedAuthorizationService> _authorizationServiceMock;
+    private readonly Mock<IEmailSender> _EmailSender;
     private readonly Mock<ILogger<UserService>> _loggerMock;    
     public AuthTests() : base("AuthTestDatabase")
     {
@@ -29,8 +29,9 @@ public class AuthTests : TestBase
         _fileService = new Mock<IFileService>();
         _loggerMock = new Mock<ILogger<UserService>>();
         _authorizationServiceMock = new Mock<ICachedAuthorizationService>();
+        _EmailSender = new Mock<IEmailSender>();
         _userServiceMock = new UserService(_unitOfWork, _tokenHandlerMock.Object,_fileService.Object,_loggerMock.Object
-            ,_authorizationServiceMock.Object);
+            ,_authorizationServiceMock.Object,_EmailSender.Object);
     }
 
     //Sign up tests
@@ -125,12 +126,12 @@ public class AuthTests : TestBase
             Id = Guid.NewGuid()
         };
         await _unitOfWork.Roles.Create(role);
-        await _unitOfWork.Users.Create(new User
+        await _unitOfWork.Users.Create(new Gym_App.Domain.User
         {
             Name = "Test",
             Email = "Test@gmail.com",
             UserType = "T",
-            Password = new PasswordHasher<User>().HashPassword(null, "Test_2004"),
+            Password = new PasswordHasher<Gym_App.Domain.User>().HashPassword(null, "Test_2004"),
             Role = role
         });
         await _unitOfWork.SaveChangesAsync();
@@ -208,12 +209,12 @@ public class AuthTests : TestBase
             Id = Guid.NewGuid()
         };
         await _unitOfWork.Roles.Create(role);
-        await _unitOfWork.Users.Create(new User
+        await _unitOfWork.Users.Create(new Gym_App.Domain.User
         {
             Name = "Test User",
             Email = "Test@gmail.com",
             UserType = "T",
-            Password = new PasswordHasher<User>().HashPassword(null, "Test_2004"),
+            Password = new PasswordHasher<Gym_App.Domain.User>().HashPassword(null, "Test_2004"),
             Role = role
         });
         await _unitOfWork.SaveChangesAsync();
@@ -246,12 +247,12 @@ public class AuthTests : TestBase
             Id = Guid.NewGuid()
         };
         await _unitOfWork.Roles.Create(role);
-        await _unitOfWork.Users.Create(new User
+        await _unitOfWork.Users.Create(new Gym_App.Domain.User
         {
             Name = "Test User",
             Email = "Test@gmail.com",
             UserType = "T",
-            Password = new PasswordHasher<User>().HashPassword(null, "Test_2004"),
+            Password = new PasswordHasher<Gym_App.Domain.User>().HashPassword(null, "Test_2004"),
             Role = role
         });
         await _unitOfWork.SaveChangesAsync();
@@ -296,6 +297,116 @@ public class AuthTests : TestBase
         Assert.Equal("User not found", result.msg);
         Assert.Equal(0, result.Status);
     }
-    
-    
+    //Forget Password Tests
+    [Fact]
+    public async Task ForgetPasswordSuccessfully()
+    {
+        var user = CreateTestUser(CreateTestRole());
+        await _unitOfWork.SaveChangesAsync();
+        var passResult = await _userServiceMock.ForgotPassword(user.Email);
+        Assert.NotNull(passResult);
+        Assert.Equal("Password reset OTP sent successfully", passResult.msg);
+        Assert.Equal(2, passResult.status);
+    }
+    [Fact]
+    public async Task ForgetPasswordButUserNotFound()
+    {
+        var passResult = await _userServiceMock.ForgotPassword("nonexistent@example.com");
+        Assert.NotNull(passResult);
+        Assert.Equal("User not found", passResult.msg);
+        Assert.Equal(0, passResult.status);
+    }
+    [Fact]
+    public async Task ForgetPasswordEmailFailed()
+    {
+        var user = CreateTestUser(CreateTestRole());
+        await _unitOfWork.SaveChangesAsync();
+        _EmailSender.Setup(e => e.SendEmailAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<bool>()
+        )).ThrowsAsync(new Exception("Email sending failed"));
+        var passResult = await _userServiceMock.ForgotPassword(user.Email);
+        Assert.NotNull(passResult);
+        Assert.Equal("An error occurred while processing the request.", passResult.msg);
+        Assert.Equal(0, passResult.status);
+    }
+    //Resetting Passsword
+    [Fact]
+    public async Task ResetPasswordSuccessfully()
+    {
+        var user = CreateTestUser(CreateTestRole());
+        await _unitOfWork.SaveChangesAsync();
+        var passResult = await _userServiceMock.ForgotPassword(user.Email);
+        Assert.Equal(2, passResult.status);
+        var token = await _unitOfWork.PasswordResetToken.GetTokenByUserEmail(user.Email);
+        var resetResult = await _userServiceMock.ResetPassword(user.Email, token.OTP, "NewPassword_2004");
+        Assert.NotNull(resetResult);
+        Assert.Equal("Password reset successfully", resetResult.msg);
+        Assert.Equal(2, resetResult.status);
+    }
+    [Fact]
+    public async Task ResetPasswordEmailNotFound()
+    {
+        var resetResult = await _userServiceMock.ResetPassword("nonexistent@example.com", "invalid-otp", "NewPassword_2004");
+        Assert.NotNull(resetResult);
+        Assert.Equal("User not found", resetResult.msg);
+        Assert.Equal(0, resetResult.status);
+    }
+    [Fact]
+    public async Task ResetPasswordInvalidOTP()
+    {
+        var user = CreateTestUser(CreateTestRole());
+        await _unitOfWork.SaveChangesAsync();
+        var passResult = await _userServiceMock.ForgotPassword(user.Email);
+        Assert.Equal(2, passResult.status);
+        var resetResult = await _userServiceMock.ResetPassword(user.Email, "invalid-otp", "NewPassword_2004");
+        Assert.NotNull(resetResult);
+        Assert.Equal("OTP verification failed: Invalid OTP", resetResult.msg);
+        Assert.Equal(0, resetResult.status);
+    }
+    [Fact]
+    public async Task ResetPasswordUsedOTP()
+    {
+        var user = CreateTestUser(CreateTestRole());
+        await _unitOfWork.SaveChangesAsync();
+        var passResult = await _userServiceMock.ForgotPassword(user.Email);
+        Assert.Equal(2, passResult.status);
+        var token = await _unitOfWork.PasswordResetToken.GetTokenByUserEmail(user.Email);
+        // Simulate using the OTP
+        token.isUsed = true;
+        await _unitOfWork.PasswordResetToken.Update(token);
+        await _unitOfWork.SaveChangesAsync();
+        var resetResult = await _userServiceMock.ResetPassword(user.Email, token.OTP, "NewPassword_2004");
+        Assert.NotNull(resetResult);
+        Assert.Equal("OTP verification failed: OTP has already been used", resetResult.msg);
+        Assert.Equal(0, resetResult.status);
+    }
+    [Fact]
+    public async Task ResetPasswordInvalidPassword()
+    {
+        var user = CreateTestUser(CreateTestRole());
+        await _unitOfWork.SaveChangesAsync();
+        var passResult = await _userServiceMock.ForgotPassword(user.Email);
+        Assert.Equal(2, passResult.status);
+        var token = await _unitOfWork.PasswordResetToken.GetTokenByUserEmail(user.Email);
+        var resetResult = await _userServiceMock.ResetPassword(user.Email, token.OTP, "test_2004");
+        Assert.NotNull(resetResult);
+        Assert.Equal("Invalid new password", resetResult.msg);
+        Assert.Equal(0, resetResult.status);
+    }
+    [Fact]
+    public async Task ResetPasswordSamePassword()
+    {
+        var user = CreateTestUser(CreateTestRole());
+        await _unitOfWork.SaveChangesAsync();
+        var passResult = await _userServiceMock.ForgotPassword(user.Email);
+        Assert.Equal(2, passResult.status);
+        var token = await _unitOfWork.PasswordResetToken.GetTokenByUserEmail(user.Email);
+        var resetResult = await _userServiceMock.ResetPassword(user.Email, token.OTP, "Test_2004");
+        Assert.NotNull(resetResult);
+        Assert.Equal("New password cannot be the same as the old password", resetResult.msg);
+        Assert.Equal(0, resetResult.status);
+    }
 }

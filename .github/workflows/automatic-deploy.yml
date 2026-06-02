@@ -18,7 +18,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 9.0.x
 
       - name: Publish backend
         run: |
@@ -33,7 +33,10 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             mkdir -p /root/MAPSM
+            # Backup the uploads folder if it exists
+            [ -d /root/MAPSM/MAPSM-Prod/Uploads ] && cp -r /root/MAPSM/MAPSM-Prod/Uploads /tmp/Uploads
             rm -rf /root/MAPSM/MAPSM-Prod
+            
       - name: Upload files to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -42,6 +45,18 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "MAPSM-Prod"
           target: "/root/MAPSM/"
+          
+      - name: Return Upload folder
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            if [ -d /tmp/Uploads ]; then
+              mv -v /tmp/Uploads /root/MAPSM/MAPSM-Prod/
+            fi
+      
       - name: Restart service
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -49,4 +64,4 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            systemctl restart mapsm-backend
+            sudo systemctl restart mapsm-backend

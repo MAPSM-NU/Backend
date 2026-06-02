@@ -202,7 +202,12 @@ Log.Information("Starting Gym App API...");
 Log.Information("Issuer: {Issuer}", builder.Configuration["JwtSettings:Issuer"]);
 Log.Information("Audience: {Audience}", builder.Configuration["JwtSettings:Audience"]);
 Log.Information("Token Key: {Key}", builder.Configuration["JwtSettings:Token"]);
-Log.Information("Database Connection: {ConnectionString}", builder.Configuration.GetConnectionString("VpsConnection"));
+Log.Information("Database Connection: {ConnectionString}", builder.Configuration.GetConnectionString("Connection"));
+Log.Information("Email Sender: {EmailSender}", builder.Configuration["EmailSettings:SenderEmail"]);
+Log.Information("SMTP Host: {SmtpHost}", builder.Configuration["EmailSettings:SmtpHost"]);
+Log.Information("SMTP Port: {SmtpPort}", builder.Configuration["EmailSettings:SmtpPort"]);
+Log.Information("SMTP Username: {SmtpUsername}", builder.Configuration["EmailSettings:SmtpUsername"]);
+Log.Information("SMTP Password: {SmtpPassword}", builder.Configuration["EmailSettings:SmtpPassword"]);
 
 // ============================================
 // BUILD APPLICATION

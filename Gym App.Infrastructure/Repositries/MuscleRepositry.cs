@@ -3,6 +3,7 @@ using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace Gym_App.Infastructure.Repositries
 {
@@ -16,15 +17,15 @@ namespace Gym_App.Infastructure.Repositries
             table = _db.Set<Muscles>();
         }
 
-        public async Task<Muscles> getMuscleByName(string name)
+        public async Task<Muscles> getMuscleByName(string name, CancellationToken cancellationToken = default)
         {
             name = name.ToLower();
-            return await table.FirstOrDefaultAsync(m => m.Name.Contains(name));
+            return await table.FirstOrDefaultAsync(m => m.Name.Contains(name), cancellationToken);
         }
 
-        public async Task<bool> isMuscleExist(string name)
+        public async Task<bool> isMuscleExist(string name, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(m=>m.Name.ToLower() == name.ToLower());
+            return await table.AnyAsync(m => m.Name.ToLower() == name.ToLower(), cancellationToken);
         }
         public override IQueryable<Muscles> FilterSortColumn(string columnName, string sortOrder, IQueryable<Muscles> query)
         {
@@ -38,7 +39,7 @@ namespace Gym_App.Infastructure.Repositries
             bool descending = orderLower == "desc" || orderLower == "descending";
             return descending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
         }
-         public override IQueryable<Muscles> Search(string searchTerm, IQueryable<Muscles> query)
+        public override IQueryable<Muscles> Search(string searchTerm, IQueryable<Muscles> query)
         {
             if (string.IsNullOrEmpty(searchTerm)) return query;
             searchTerm = searchTerm.ToLower();

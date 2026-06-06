@@ -3,6 +3,7 @@ using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace Gym_App.Infastructure.Repositries
 {
@@ -15,9 +16,9 @@ namespace Gym_App.Infastructure.Repositries
             _db = db;
             table = _db.Set<Schedule>();
         }
-        public async Task<bool> DeleteUserSchedules(Guid userId)
+        public async Task<bool> DeleteUserSchedules(Guid userId, CancellationToken cancellationToken = default)
         {
-            var schedules = await table.Where(s => s.User.Id == userId).ToListAsync();
+            var schedules = await table.Where(s => s.User.Id == userId).ToListAsync(cancellationToken);
             if (schedules.Count == 0)
                 return false;
 
@@ -25,19 +26,19 @@ namespace Gym_App.Infastructure.Repositries
             return true;
         }
 
-        public async Task<Schedule> GetScheduleById(Guid schedId)
+        public async Task<Schedule> GetScheduleById(Guid schedId, CancellationToken cancellationToken = default)
         {
-            return await table.Include(s=>s.User).Include(s=>s.Workouts).Where(s => s.Id == schedId).FirstOrDefaultAsync();
+            return await table.Include(s => s.User).Include(s => s.Workouts).Where(s => s.Id == schedId).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<ICollection<Schedule>> GetUserSchedules(Guid userId)
+        public async Task<ICollection<Schedule>> GetUserSchedules(Guid userId, CancellationToken cancellationToken = default)
         {
-            return await table.Where(s => s.User.Id == userId).ToListAsync();
+            return await table.Where(s => s.User.Id == userId).ToListAsync(cancellationToken);
         }
 
-        public async Task<int> GetUserSchedulesCount(Guid userId)
+        public async Task<int> GetUserSchedulesCount(Guid userId, CancellationToken cancellationToken = default)
         {
-            return await table.CountAsync(s => s.User.Id == userId);
+            return await table.CountAsync(s => s.User.Id == userId, cancellationToken);
         }
 
         public IQueryable<Schedule> GetUserSchedulesQueryable(Guid userId)
@@ -45,14 +46,14 @@ namespace Gym_App.Infastructure.Repositries
             return table.Where(s => s.User.Id == userId).AsNoTracking();
         }
 
-        public Task<bool> isScheduleExist(Guid schedId)
+        public async Task<bool> isScheduleExist(Guid schedId, CancellationToken cancellationToken = default)
         {
-            return table.AnyAsync(s => s.Id == schedId);
+            return await table.AnyAsync(s => s.Id == schedId, cancellationToken);
         }
 
-        public Task<bool> isUserHasSchedules(Guid userId)
+        public async Task<bool> isUserHasSchedules(Guid userId, CancellationToken cancellationToken = default)
         {
-            return table.AnyAsync(s => s.User.Id == userId);
+            return await table.AnyAsync(s => s.User.Id == userId, cancellationToken);
         }
         public override IQueryable<Schedule> Search(string searchTerm, IQueryable<Schedule> query)
         {

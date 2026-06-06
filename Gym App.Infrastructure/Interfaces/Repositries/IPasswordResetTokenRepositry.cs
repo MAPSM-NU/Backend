@@ -10,8 +10,8 @@ namespace Gym_App.Infrastructure.Interfaces.Repositries
 {
     public interface IPasswordResetTokenRepositry : IBaseRepositry<PasswordResetToken>
     {
-        public Task<bool> isTokenUsed(string email);
-        public Task<PasswordResetToken> GetTokenByUserId(Guid userId);
-        public Task<PasswordResetToken> GetTokenByUserEmail(string email);
+        public Task<bool> isTokenUsed(string email, CancellationToken cancellationToken = default);
+        public Task<PasswordResetToken> GetTokenByUserId(Guid userId, CancellationToken cancellationToken = default);
+        public Task<PasswordResetToken> GetTokenByUserEmail(string email, CancellationToken cancellationToken = default);
     }
 }

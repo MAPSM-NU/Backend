@@ -3,6 +3,7 @@ using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace Gym_App.Infastructure.Repositries
 {
@@ -15,7 +16,7 @@ namespace Gym_App.Infastructure.Repositries
             _db = db;
             table = _db.Set<Workout>();
         }
-        public async Task<Workout> GetWorkoutById(Guid workoutID)
+        public async Task<Workout> GetWorkoutById(Guid workoutID, CancellationToken cancellationToken = default)
         {
             return await table
                         .Include(w => w.User)
@@ -25,9 +26,9 @@ namespace Gym_App.Infastructure.Repositries
                         .Include(w => w.ExerciseInstances)
                             .ThenInclude(ei => ei.Exercise)
                         .AsSplitQuery()
-                        .FirstOrDefaultAsync(w => w.Id == workoutID);
+                        .FirstOrDefaultAsync(w => w.Id == workoutID, cancellationToken);
         }
-        public async Task<Workout> GetWorkoutByUserId(Guid userId)
+        public async Task<Workout> GetWorkoutByUserId(Guid userId, CancellationToken cancellationToken = default)
         {
             return await table
                         .Include(w => w.User)
@@ -37,9 +38,9 @@ namespace Gym_App.Infastructure.Repositries
                         .Include(w => w.ExerciseInstances)
                             .ThenInclude(ei => ei.Exercise)
                         .AsSplitQuery()
-                        .FirstOrDefaultAsync(w => w.User.Id == userId);
+                        .FirstOrDefaultAsync(w => w.User.Id == userId, cancellationToken);
         }
-        public async Task<IEnumerable<Workout>> GetWorkoutsByUserId(Guid userID, int pageNumber = 1, int pageSize = 10)
+        public async Task<IEnumerable<Workout>> GetWorkoutsByUserId(Guid userID, int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
         {
             return await table.Where(w => w.User.Id == userID)
                         .Include(w => w.User)
@@ -51,17 +52,17 @@ namespace Gym_App.Infastructure.Repositries
                         .AsSplitQuery()
                         .Skip((pageNumber - 1) * pageSize)
                         .Take(pageSize)
-                        .ToListAsync();
+                        .ToListAsync(cancellationToken);
         }
 
-        public async Task<bool> isWorkoutExist(Guid workoutID)
+        public async Task<bool> isWorkoutExist(Guid workoutID, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(w => w.Id == workoutID);
+            return await table.AnyAsync(w => w.Id == workoutID, cancellationToken);
         }
 
-        public async Task<bool> isWorkoutNameExist(string name)
+        public async Task<bool> isWorkoutNameExist(string name, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(w => w.Name == name);
+            return await table.AnyAsync(w => w.Name == name, cancellationToken);
         }
         public override IQueryable<Workout> FilterSortColumn(string columnName, string sortOrder, IQueryable<Workout> query)
         {

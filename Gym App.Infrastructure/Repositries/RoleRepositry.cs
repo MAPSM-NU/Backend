@@ -2,6 +2,7 @@
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace Gym_App.Infastructure.Repositries
 {
@@ -14,24 +15,24 @@ namespace Gym_App.Infastructure.Repositries
             _db = db;
             table = _db.Set<Role>();
         }
-        public async Task<Role> GetRoleById(Guid roleId)
+        public async Task<Role> GetRoleById(Guid roleId, CancellationToken cancellationToken = default)
         {
-            return await table.FirstOrDefaultAsync(r => r.Id == roleId);
+            return await table.FirstOrDefaultAsync(r => r.Id == roleId, cancellationToken);
         }
 
-        public async Task<Role> GetRoleByName(string roleName)
+        public async Task<Role> GetRoleByName(string roleName, CancellationToken cancellationToken = default)
         {
-            return await table.FirstOrDefaultAsync(r => r.RoleName == roleName);
+            return await table.FirstOrDefaultAsync(r => r.RoleName == roleName, cancellationToken);
         }
 
-        public async Task<bool> IsRoleExist(Guid roleId)
+        public async Task<bool> IsRoleExist(Guid roleId, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(r => r.Id == roleId);   
+            return await table.AnyAsync(r => r.Id == roleId, cancellationToken);
         }
 
-        public async Task<bool> IsRoleNameExist(string roleName)
+        public async Task<bool> IsRoleNameExist(string roleName, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(r => r.RoleName == roleName);
+            return await table.AnyAsync(r => r.RoleName == roleName, cancellationToken);
         }
     }
 }

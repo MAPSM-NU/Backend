@@ -1,6 +1,7 @@
 using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace Gym_App.Infastructure.Repositries
 {
@@ -8,33 +9,33 @@ namespace Gym_App.Infastructure.Repositries
     {
         private readonly DbContext _context;
         private readonly DbSet<ExerciseInstance> table;
-        public ExerciseInstanceRepository(DbContext context) : base(context) 
-        { 
+        public ExerciseInstanceRepository(DbContext context) : base(context)
+        {
             _context = context;
             table = _context.Set<ExerciseInstance>();
         }
 
-        public async Task<IEnumerable<ExerciseInstance>> GetExercisesByWorkoutAsync(Guid workoutId)
+        public async Task<IEnumerable<ExerciseInstance>> GetExercisesByWorkoutAsync(Guid workoutId, CancellationToken cancellationToken = default)
         {
             return await table
                 .Where(e => e.WorkoutId == workoutId)
                 .OrderBy(e => e.ExerciseOrder)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<ExerciseInstance?> GetWithSetsAsync(Guid exerciseInstanceId)
+        public async Task<ExerciseInstance?> GetWithSetsAsync(Guid exerciseInstanceId, CancellationToken cancellationToken = default)
         {
             return await table
                 .Include(e => e.Sets)
                 .Include(e => e.Exercise)
-                .FirstOrDefaultAsync(e => e.Id == exerciseInstanceId);
+                .FirstOrDefaultAsync(e => e.Id == exerciseInstanceId, cancellationToken);
         }
 
-        public async Task<int> GetCompletedExercisesCountAsync(Guid workoutId)
+        public async Task<int> GetCompletedExercisesCountAsync(Guid workoutId, CancellationToken cancellationToken = default)
         {
             return await table
                 .Where(e => e.WorkoutId == workoutId && e.IsCompleted)
-                .CountAsync();
+                .CountAsync(cancellationToken);
         }
     }
 }

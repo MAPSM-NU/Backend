@@ -8,16 +8,16 @@ namespace Gym_App.Infastructure.Interfaces.Repositries
         /// <summary>
         /// Get all exercise instances for a workout
         /// </summary>
-        Task<IEnumerable<ExerciseInstance>> GetExercisesByWorkoutAsync(Guid workoutId);
+        Task<IEnumerable<ExerciseInstance>> GetExercisesByWorkoutAsync(Guid workoutId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get exercise instances with their sets loaded
         /// </summary>
-        Task<ExerciseInstance?> GetWithSetsAsync(Guid exerciseInstanceId);
+        Task<ExerciseInstance?> GetWithSetsAsync(Guid exerciseInstanceId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get count of completed exercises in a workout
         /// </summary>
-        Task<int> GetCompletedExercisesCountAsync(Guid workoutId);
+        Task<int> GetCompletedExercisesCountAsync(Guid workoutId, CancellationToken cancellationToken = default);
     }
 }

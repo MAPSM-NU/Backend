@@ -3,6 +3,7 @@ using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Repositries;
 using Gym_App.Infrastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace Gym_App.Infrastructure.Repositries
 {
@@ -15,19 +16,19 @@ namespace Gym_App.Infrastructure.Repositries
             _db = db;
             table = _db.Set<PasswordResetToken>();
         }
-        public async Task<PasswordResetToken> GetTokenByUserEmail(string email)
+        public async Task<PasswordResetToken> GetTokenByUserEmail(string email, CancellationToken cancellationToken = default)
         {
-            return await table.Include(t=>t.User).FirstOrDefaultAsync(t => t.Email == email);
+            return await table.Include(t => t.User).FirstOrDefaultAsync(t => t.Email == email, cancellationToken);
         }
 
-        public async Task<PasswordResetToken> GetTokenByUserId(Guid userId)
+        public async Task<PasswordResetToken> GetTokenByUserId(Guid userId, CancellationToken cancellationToken = default)
         {
-            return await table.Include(t=>t.User).FirstOrDefaultAsync(t => t.userId == userId);
+            return await table.Include(t => t.User).FirstOrDefaultAsync(t => t.userId == userId, cancellationToken);
         }
 
-        public async Task<bool> isTokenUsed(string email)
+        public async Task<bool> isTokenUsed(string email, CancellationToken cancellationToken = default)
         {
-            return await table.FirstOrDefaultAsync(t=>t.Email == email) is PasswordResetToken token && token.isUsed;    
+            return await table.FirstOrDefaultAsync(t => t.Email == email, cancellationToken) is PasswordResetToken token && token.isUsed;
         }
     }
 }

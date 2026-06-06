@@ -2,6 +2,7 @@
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace Gym_App.Infastructure.Repositries
 {
@@ -16,33 +17,33 @@ namespace Gym_App.Infastructure.Repositries
             table = _db.Set<RefreshTokens>();
         }
 
-        public async Task<RefreshTokens> GetRefreshTokenByUserId(Guid userId)
+        public async Task<RefreshTokens> GetRefreshTokenByUserId(Guid userId, CancellationToken cancellationToken = default)
         {
             return await table
                 .Include(rt => rt.User)
-                .FirstOrDefaultAsync(rt => rt.UserID == userId);
+                .FirstOrDefaultAsync(rt => rt.UserID == userId, cancellationToken);
         }
 
-        public async Task<RefreshTokens> GetRefreshTokenByToken(string token)
+        public async Task<RefreshTokens> GetRefreshTokenByToken(string token, CancellationToken cancellationToken = default)
         {
             return await table
                 .Include(rt => rt.User)
-                .FirstOrDefaultAsync(rt => rt.RefreshToken == token);
+                .FirstOrDefaultAsync(rt => rt.RefreshToken == token, cancellationToken);
         }
 
-        public async Task<bool> TokenExists(string token)
+        public async Task<bool> TokenExists(string token, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(rt => rt.RefreshToken == token);
+            return await table.AnyAsync(rt => rt.RefreshToken == token, cancellationToken);
         }
 
-        public async Task<bool> UserHasRefreshToken(Guid userId)
+        public async Task<bool> UserHasRefreshToken(Guid userId, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(rt => rt.UserID == userId);
+            return await table.AnyAsync(rt => rt.UserID == userId, cancellationToken);
         }
 
-        public async Task UpdateRefreshToken(Guid userId, string newToken, DateTime newExpiry)
+        public async Task UpdateRefreshToken(Guid userId, string newToken, DateTime newExpiry, CancellationToken cancellationToken = default)
         {
-            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.UserID == userId);
+            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.UserID == userId, cancellationToken);
             if (refreshToken != null)
             {
                 refreshToken.RefreshToken = newToken;
@@ -50,24 +51,24 @@ namespace Gym_App.Infastructure.Repositries
             }
         }
 
-        public async Task RevokeRefreshToken(Guid userId)
+        public async Task RevokeRefreshToken(Guid userId, CancellationToken cancellationToken = default)
         {
-            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.UserID == userId);
+            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.UserID == userId, cancellationToken);
             if (refreshToken != null)
             {
-                await Delete(refreshToken.Id);
+                await Delete(refreshToken.Id, cancellationToken);
             }
         }
 
-        public async Task<bool> IsTokenValid(string token)
+        public async Task<bool> IsTokenValid(string token, CancellationToken cancellationToken = default)
         {
-            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.RefreshToken == token);
+            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.RefreshToken == token, cancellationToken);
             return refreshToken != null && refreshToken.Expires > DateTime.UtcNow;
         }
 
-        public async Task<bool> IsTokenExpired(string token)
+        public async Task<bool> IsTokenExpired(string token, CancellationToken cancellationToken = default)
         {
-            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.RefreshToken == token);
+            var refreshToken = await table.FirstOrDefaultAsync(rt => rt.RefreshToken == token, cancellationToken);
             return refreshToken == null || refreshToken.Expires <= DateTime.UtcNow;
         }
 

@@ -5,6 +5,7 @@ using Gym_App.Infastructure.Interfaces.Repositries;
 using MailKit.Search;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace Gym_App.Infastructure.Repositries
 {
@@ -17,59 +18,59 @@ namespace Gym_App.Infastructure.Repositries
             _db = db;
             table = _db.Set<Notification>();
         }
-        public Task DeleteNotificationsOlderThan(DateTime date)
+        public async Task DeleteNotificationsOlderThan(DateTime date, CancellationToken cancellationToken = default)
         {
             var notifications = table.Where(n => n.CreatedAt < date);
             table.RemoveRange(notifications);
-            return Task.CompletedTask;
+            await Task.CompletedTask;
         }
 
-        public async Task<bool> DeleteUserNotifications(Guid userId)
+        public async Task<bool> DeleteUserNotifications(Guid userId, CancellationToken cancellationToken = default)
         {
-            var notifications = await table.Where(n => n.User.Id == userId).ToListAsync();
+            var notifications = await table.Where(n => n.User.Id == userId).ToListAsync(cancellationToken);
             if (notifications.Count == 0) return false;
             table.RemoveRange(notifications);
             return true;
         }
 
-        public async Task<Notification> GetNotificationById(Guid notificationId)
+        public async Task<Notification> GetNotificationById(Guid notificationId, CancellationToken cancellationToken = default)
         {
-            return await table!.Include(n=>n.User).FirstOrDefaultAsync(n => n.Id == notificationId);   
+            return await table!.Include(n => n.User).FirstOrDefaultAsync(n => n.Id == notificationId, cancellationToken);
         }
 
-        public async Task<IEnumerable<Notification>> GetRecentNotifications(Guid userId, int count = 10)
+        public async Task<IEnumerable<Notification>> GetRecentNotifications(Guid userId, int count = 10, CancellationToken cancellationToken = default)
         {
             var notifications = await table.Where(n => n.User.Id == userId)
                                         .OrderByDescending(n => n.CreatedAt)
                                         .Take(count)
-                                        .ToListAsync();
+                                        .ToListAsync(cancellationToken);
             return notifications;
         }
 
-        public async Task<int> GetUserNotificationCount(Guid userId)
+        public async Task<int> GetUserNotificationCount(Guid userId, CancellationToken cancellationToken = default)
         {
-            return await table.CountAsync(n => n.User.Id == userId);
+            return await table.CountAsync(n => n.User.Id == userId, cancellationToken);
 
         }
 
-        public async Task<IEnumerable<Notification>> GetUserNotifications(Guid userId)
+        public async Task<IEnumerable<Notification>> GetUserNotifications(Guid userId, CancellationToken cancellationToken = default)
         {
-            return await table.Where(n => n.User.Id == userId).ToListAsync();
+            return await table.Where(n => n.User.Id == userId).ToListAsync(cancellationToken);
         }
 
         public IQueryable<Notification> GetUserNotificationsQueryable(Guid userId)
         {
-           return table.Where(n => n.User.Id == userId).AsQueryable();
+            return table.Where(n => n.User.Id == userId).AsQueryable();
         }
 
-        public Task<bool> isNotificationExist(Guid notificationId)
+        public async Task<bool> isNotificationExist(Guid notificationId, CancellationToken cancellationToken = default)
         {
-            return table.AnyAsync(n => n.Id == notificationId);
+            return await table.AnyAsync(n => n.Id == notificationId, cancellationToken);
         }
 
-        public Task<bool> isUserHasNotifications(Guid userId)
+        public async Task<bool> isUserHasNotifications(Guid userId, CancellationToken cancellationToken = default)
         {
-            return table.AnyAsync(n => n.User.Id == userId);
+            return await table.AnyAsync(n => n.User.Id == userId, cancellationToken);
         }
         public override IQueryable<Notification> Search(string searchTerm, IQueryable<Notification> query)
         {

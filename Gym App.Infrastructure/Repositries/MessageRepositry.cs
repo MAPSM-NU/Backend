@@ -3,6 +3,7 @@ using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace Gym_App.Infastructure.Repositries
 {
@@ -17,21 +18,21 @@ namespace Gym_App.Infastructure.Repositries
             table = _db.Set<Message>();
         }
 
-        public async Task<Message> GetMessageById(Guid messageId)
+        public async Task<Message> GetMessageById(Guid messageId, CancellationToken cancellationToken = default)
         {
             return await table
                 .Include(m => m.Sender)
                 .Include(m => m.Session)
-                .FirstOrDefaultAsync(m => m.Id == messageId);
+                .FirstOrDefaultAsync(m => m.Id == messageId, cancellationToken);
         }
 
-        public async Task<IEnumerable<Message>> GetSessionMessages(Guid sessionId)
+        public async Task<IEnumerable<Message>> GetSessionMessages(Guid sessionId, CancellationToken cancellationToken = default)
         {
             return await table
                 .Where(m => m.Session.Id == sessionId)
                 .Include(m => m.Sender)
                 .Include(m => m.Session)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
         public IQueryable<Message> GetSessionMessagesQueryable(Guid sessionId)
@@ -49,60 +50,60 @@ namespace Gym_App.Infastructure.Repositries
                 .Include(m => m.Session);
         }
 
-        public async Task<IEnumerable<Message>> GetUnreadMessages(Guid receiverId)
+        public async Task<IEnumerable<Message>> GetUnreadMessages(Guid receiverId, CancellationToken cancellationToken = default)
         {
             return await table
                 .Where(m => m.Session.Users.Any(u => u.Id == receiverId) && !m.IsRead)
                 .Include(m => m.Sender)
                 .Include(m => m.Session)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<int> GetUnreadMessageCount(Guid receiverId)
+        public async Task<int> GetUnreadMessageCount(Guid receiverId, CancellationToken cancellationToken = default)
         {
             return await table
                 .Where(m => m.Session.Users.Any(u => u.Id == receiverId) && !m.IsRead)
-                .CountAsync();
+                .CountAsync(cancellationToken);
         }
 
-        public async Task<bool> HasUnreadMessages(Guid userId)
+        public async Task<bool> HasUnreadMessages(Guid userId, CancellationToken cancellationToken = default)
         {
             return await table
-                .AnyAsync(m => m.Session.Users.Any(u => u.Id == userId) && !m.IsRead);
+                .AnyAsync(m => m.Session.Users.Any(u => u.Id == userId) && !m.IsRead, cancellationToken);
         }
 
-        public async Task MarkAsRead(Guid messageId)
+        public async Task MarkAsRead(Guid messageId, CancellationToken cancellationToken = default)
         {
-            var message = await table.FirstOrDefaultAsync(m => m.Id == messageId);
+            var message = await table.FirstOrDefaultAsync(m => m.Id == messageId, cancellationToken);
             if (message != null)
             {
                 message.IsRead = true;
             }
         }
 
-        public async Task MarkMultipleAsRead(IEnumerable<Guid> messageIds)
+        public async Task MarkMultipleAsRead(IEnumerable<Guid> messageIds, CancellationToken cancellationToken = default)
         {
-            var messages = await table.Where(m => messageIds.Contains(m.Id)).ToListAsync();
+            var messages = await table.Where(m => messageIds.Contains(m.Id)).ToListAsync(cancellationToken);
             foreach (var message in messages)
             {
                 message.IsRead = true;
             }
         }
 
-        public async Task MarkConversationAsRead(Guid senderId, Guid receiverId)
+        public async Task MarkConversationAsRead(Guid senderId, Guid receiverId, CancellationToken cancellationToken = default)
         {
             var messages = await table
                 .Where(m => (m.Sender.Id == senderId || m.Sender.Id == receiverId) && !m.IsRead)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
             foreach (var message in messages)
             {
                 message.IsRead = true;
             }
         }
 
-        public async Task<bool> MessageExists(Guid messageId)
+        public async Task<bool> MessageExists(Guid messageId, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(m => m.Id == messageId);
+            return await table.AnyAsync(m => m.Id == messageId, cancellationToken);
         }
 
         public override IQueryable<Message> FilterSortColumn(string columnName, string sortOrder, IQueryable<Message> query)

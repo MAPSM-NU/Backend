@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Context;
@@ -19,7 +20,7 @@ namespace Gym_App.Infastructure.Repositries
             table = _db.Set<T>();
         }
 
-        public async Task Create(T entity)
+        public async Task Create(T entity, CancellationToken cancellationToken = default)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
@@ -27,14 +28,14 @@ namespace Gym_App.Infastructure.Repositries
             table.Add(entity);
         }
 
-        public async Task Delete(Guid id)
+        public async Task Delete(Guid id, CancellationToken cancellationToken = default)
         {
-            var entity = await table.FindAsync(id);
+            var entity = await table.FindAsync(new object[] { id }, cancellationToken: cancellationToken);
             if (entity == null)
                 throw new KeyNotFoundException($"Entity with id {id} not found.");
             table.Remove(entity);
         }
-        public async Task Delete(T entity)
+        public async Task Delete(T entity, CancellationToken cancellationToken = default)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
@@ -55,18 +56,18 @@ namespace Gym_App.Infastructure.Repositries
             return query;
         }
 
-        public async Task<IEnumerable<T>> GetAll(int pageNumber = 1, int pageSize = 10)
+        public async Task<IEnumerable<T>> GetAll(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
         {
-            return await table.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+            return await table.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
         }
         public IQueryable<T> GetAll()
         {
-            return  table.AsQueryable();
+            return table.AsQueryable();
         }
 
-        public async Task<T> GetById(Guid id)
+        public async Task<T> GetById(Guid id, CancellationToken cancellationToken = default)
         {
-            return await table.FindAsync(id);
+            return await table.FindAsync(new object[] { id }, cancellationToken: cancellationToken);
         }
 
         // search should be implemented in the derived class as it depends on the specific properties of T
@@ -76,7 +77,7 @@ namespace Gym_App.Infastructure.Repositries
             return query;
         }
 
-        public async Task Update(T entity)
+        public async Task Update(T entity, CancellationToken cancellationToken = default)
         {
             table.Update(entity);
         }

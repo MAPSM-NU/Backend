@@ -4,6 +4,7 @@ using Gym_App.Infastructure.Interfaces.Repositries;
 using MailKit.Search;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace Gym_App.Infastructure.Repositries
 {
@@ -17,20 +18,20 @@ namespace Gym_App.Infastructure.Repositries
             table = _db.Set<Feedback>();
         }
 
-        public async Task<Feedback> GetFeedbackwithUser(Guid feedbackId)
+        public async Task<Feedback> GetFeedbackwithUser(Guid feedbackId, CancellationToken cancellationToken = default)
         {
-            return await table.Include(f => f.Workout).FirstOrDefaultAsync(f => f.Id == feedbackId);
+            return await table.Include(f => f.Workout).FirstOrDefaultAsync(f => f.Id == feedbackId, cancellationToken);
         }
 
-        public async Task<Feedback> GetFeedbackwithWorkout(Guid feedbackId)
+        public async Task<Feedback> GetFeedbackwithWorkout(Guid feedbackId, CancellationToken cancellationToken = default)
         {
-            return await table.Include(f => f.User).FirstOrDefaultAsync(f => f.Id == feedbackId);
+            return await table.Include(f => f.User).FirstOrDefaultAsync(f => f.Id == feedbackId, cancellationToken);
         }
         public IQueryable<Feedback> GetFeedbacks()
         {
             return table.Include(f => f.User).Include(f => f.Workout).AsQueryable();
         }
-        public async Task<IQueryable<Feedback>> GetFeedbacksOfUser(Guid userId)
+        public async Task<IQueryable<Feedback>> GetFeedbacksOfUser(Guid userId, CancellationToken cancellationToken = default)
         {
             return table.Include(f => f.User)
                   .Include(f => f.Workout)

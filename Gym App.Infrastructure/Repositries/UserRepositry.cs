@@ -3,6 +3,7 @@ using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace Gym_App.Infastructure.Repositries
 {
@@ -16,49 +17,49 @@ namespace Gym_App.Infastructure.Repositries
             table = _db.Set<User>();
         }
 
-        public async Task<User> GetUserById(Guid userID, bool includeRole)
+        public async Task<User> GetUserById(Guid userID, bool includeRole, CancellationToken cancellationToken = default)
         {
             if (includeRole)
-                return await table.Include(u=>u.Role).FirstOrDefaultAsync(u => u.Id == userID);
+                return await table.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == userID, cancellationToken);
             else
-                return await table.FirstOrDefaultAsync(u => u.Id == userID);
+                return await table.FirstOrDefaultAsync(u => u.Id == userID, cancellationToken);
         }
-        public async Task<User> GetUserByEmail(string email, bool includeRole)
+        public async Task<User> GetUserByEmail(string email, bool includeRole, CancellationToken cancellationToken = default)
         {
             if (includeRole)
-                return await table.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
+                return await table.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
             else
-                return await table.FirstOrDefaultAsync(u => u.Email == email);
+                return await table.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         }
-        public async Task<User> GetUserByName(string name, bool includeRole)
+        public async Task<User> GetUserByName(string name, bool includeRole, CancellationToken cancellationToken = default)
         {
             if (includeRole)
-                return await table.Include(u => u.Role).FirstOrDefaultAsync(u => u.Name == name);
+                return await table.Include(u => u.Role).FirstOrDefaultAsync(u => u.Name == name, cancellationToken);
             else
-                return await table.FirstOrDefaultAsync(u => u.Name == name);
+                return await table.FirstOrDefaultAsync(u => u.Name == name, cancellationToken);
         }
-        public async Task<ICollection<User>> GetUsersByRole(Guid roleID)
+        public async Task<ICollection<User>> GetUsersByRole(Guid roleID, CancellationToken cancellationToken = default)
         {
-            return await table.Where(u => u.RoleID == roleID).ToListAsync();
+            return await table.Where(u => u.RoleID == roleID).ToListAsync(cancellationToken);
         }
-        public async Task<IQueryable<User>> GetUsersByRoleAsQueryable(Guid roleID)
+        public async Task<IQueryable<User>> GetUsersByRoleAsQueryable(Guid roleID, CancellationToken cancellationToken = default)
         {
             return table.Where(u => u.RoleID == roleID);
         }
 
-        public async Task<bool> isUserEmailExist(string email)
+        public async Task<bool> isUserEmailExist(string email, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(u => u.Email == email);
+            return await table.AnyAsync(u => u.Email == email, cancellationToken);
         }
 
-        public async Task<bool> isUserExist(Guid userID)
+        public async Task<bool> isUserExist(Guid userID, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(u => u.Id == userID);
+            return await table.AnyAsync(u => u.Id == userID, cancellationToken);
         }
 
-        public async Task<bool> isUserNameExist(string name)
+        public async Task<bool> isUserNameExist(string name, CancellationToken cancellationToken = default)
         {
-            return await table.AnyAsync(u => u.Name == name);
+            return await table.AnyAsync(u => u.Name == name, cancellationToken);
         }
 
         public override IQueryable<User> FilterSortColumn(string columnName, string sortOrder, IQueryable<User> query)

@@ -5,12 +5,12 @@ namespace Gym_App.Infastructure.Interfaces.Repositries
 {
     public interface IPersonalRecordRepository : IBaseRepositry<PersonalRecord>
     {
-        Task<IEnumerable<PersonalRecord>> GetUserPersonalRecordsAsync(Guid userId);
+        Task<IEnumerable<PersonalRecord>> GetUserPersonalRecordsAsync(Guid userId, CancellationToken cancellationToken = default);
 
-        Task<PersonalRecord?> GetUserExercisePRAsync(Guid userId, Guid exerciseId);
+        Task<PersonalRecord?> GetUserExercisePRAsync(Guid userId, Guid exerciseId, CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<PersonalRecord>> GetUnsentNotificationsAsync();
+        Task<IEnumerable<PersonalRecord>> GetUnsentNotificationsAsync(CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<PersonalRecord>> GetPRsByDateRangeAsync(Guid userId, DateTime startDate, DateTime endDate);
+        Task<IEnumerable<PersonalRecord>> GetPRsByDateRangeAsync(Guid userId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
     }
 }

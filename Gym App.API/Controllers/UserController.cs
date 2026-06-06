@@ -2,6 +2,7 @@
 using Gym_App.Infastructure.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading;
 
 namespace Gym_App.Api.Controllers
 {
@@ -10,24 +11,24 @@ namespace Gym_App.Api.Controllers
     {
         private readonly IUserServise _user;
         private readonly IAuthorizationService _authenticationService;
-        public UserController(IUserServise user,IAuthorizationService authorizationService)
+        public UserController(IUserServise user, IAuthorizationService authorizationService)
         {
             _user = user;
             _authenticationService = authorizationService;
         }
         [HttpPut("change-pfp")]
-        public async Task<IActionResult> ChangePfp([FromForm] Guid userId, IFormFile pfp)
+        public async Task<IActionResult> ChangePfp([FromForm] Guid userId, IFormFile pfp, CancellationToken cancellationToken)
         {
-            var result = await _user.ChangePfp(userId, pfp);
+            var result = await _user.ChangePfp(userId, pfp, cancellationToken);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else
                 return Ok(new { message = result.msg });
         }
         [HttpDelete("delete-pfp/{userId}")]
-        public async Task<IActionResult> DeletePfp([FromRoute] Guid userId)
+        public async Task<IActionResult> DeletePfp([FromRoute] Guid userId, CancellationToken cancellationToken)
         {
-            var result = await _user.DeletePfp(userId);
+            var result = await _user.DeletePfp(userId, cancellationToken);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else
@@ -35,30 +36,30 @@ namespace Gym_App.Api.Controllers
         }
 
         [HttpPut("update")]
-        public async Task<IActionResult> UpdateUser([FromForm] UserUpdateDTO user)
+        public async Task<IActionResult> UpdateUser([FromForm] UserUpdateDTO user, CancellationToken cancellationToken)
         {
             //Authentication
-            
-            if(user == null)return BadRequest(new { message = "Invalid Data" });
-            
+
+            if (user == null) return BadRequest(new { message = "Invalid Data" });
+
             var authResult = await _authenticationService.AuthorizeAsync(User, user.Id, "SameUserPolicy");
-            if(!authResult.Succeeded)
+            if (!authResult.Succeeded)
                 return Forbid();
-            
+
             //Talking to Database
-            
-            var result = await _user.UpdateUser(user);
-            
-            if(result.status == 0)
+
+            var result = await _user.UpdateUser(user, cancellationToken);
+
+            if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else
                 return Ok(new { message = result.msg });
         }
-        [Authorize(Policy ="ElevatedPower")]
+        [Authorize(Policy = "ElevatedPower")]
         [HttpPut("change-user-type")]
-        public async Task<IActionResult> ChangeUserType([FromBody] UserChangeTypeDTO user)
+        public async Task<IActionResult> ChangeUserType([FromBody] UserChangeTypeDTO user, CancellationToken cancellationToken)
         {
-            var result = await _user.ChangeUserType(user);
+            var result = await _user.ChangeUserType(user, cancellationToken);
 
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
@@ -66,26 +67,26 @@ namespace Gym_App.Api.Controllers
                 return Ok(new { message = result.msg });
         }
         [HttpDelete("delete/{userID}")]
-        public async Task<IActionResult> DeleteUser([FromRoute] Guid userID)
+        public async Task<IActionResult> DeleteUser([FromRoute] Guid userID, CancellationToken cancellationToken)
         {
             //Authentication
 
             var authResult = await _authenticationService.AuthorizeAsync(User, userID, "SameUserPolicy");
-            if(!authResult.Succeeded)
+            if (!authResult.Succeeded)
                 return Forbid();
 
             //Talking to Database
 
-            var result = await _user.DeleteUser(userID);
+            var result = await _user.DeleteUser(userID, cancellationToken);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else
                 return Ok(new { message = result.msg });
         }
         [HttpGet("get/{userID}")]
-        public async Task<IActionResult> GetUserByID([FromRoute] Guid userID)
+        public async Task<IActionResult> GetUserByID([FromRoute] Guid userID, CancellationToken cancellationToken)
         {
-            var result = await _user.GetUserByID(userID);
+            var result = await _user.GetUserByID(userID, cancellationToken);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)
@@ -94,9 +95,9 @@ namespace Gym_App.Api.Controllers
                 return Ok(result.Value);
         }
         [HttpGet("get-mini-users")]
-        public async Task<IActionResult> GetUsers([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> GetUsers([FromQuery] string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
         {
-            var result = await _user.GetMiniUsers(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            var result = await _user.GetMiniUsers(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize, cancellationToken);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)
@@ -105,9 +106,9 @@ namespace Gym_App.Api.Controllers
                 return Ok(result.Data);
         }
         [HttpGet("get-users")]
-        public async Task<IActionResult> GetUsersBasicInfo([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> GetUsersBasicInfo([FromQuery] string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
         {
-            var result = await _user.GetUsers(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize);
+            var result = await _user.GetUsers(startDate, endDate, page, sortColumn, OrderBy, SearchTerm, pageSize, cancellationToken);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)
@@ -116,9 +117,9 @@ namespace Gym_App.Api.Controllers
                 return Ok(result.Data);
         }
         [HttpGet("get")]
-        public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, int pageSize = 10)
+        public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
         {
-            var result = await _user.GetAllUsers(page,pageSize);
+            var result = await _user.GetAllUsers(page, pageSize, cancellationToken);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)

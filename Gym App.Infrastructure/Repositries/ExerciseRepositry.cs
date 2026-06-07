@@ -31,6 +31,8 @@ namespace Gym_App.Infastructure.Repositries
         {
             return await table.Where(e => exerciseIDsToRemove.Contains(e.Id)).ToListAsync(cancellationToken);
         }
+
+        public override IQueryable<Exercise> FilterSortColumn(string columnName, string sortOrder, IQueryable<Exercise> query)
         {
             if (string.IsNullOrEmpty(columnName)) return query;
             Expression<Func<Exercise, object>> keySelector = columnName.ToLower() switch
@@ -42,10 +44,11 @@ namespace Gym_App.Infastructure.Repositries
                 "createdat" or "created" or "c" or "date" or "d" => e => e.CreatedAt,
                 _ => e => e.Id,
             };
-        var orderLower = (sortOrder ?? string.Empty).ToLowerInvariant();
-        bool descending = orderLower == "desc" || orderLower == "descending" || orderLower == "descend" || orderLower == "d";
-            return descending? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
+            var orderLower = (sortOrder ?? string.Empty).ToLowerInvariant();
+            bool descending = orderLower == "desc" || orderLower == "descending" || orderLower == "descend" || orderLower == "d";
+            return descending ? query.OrderByDescending(keySelector) : query.OrderBy(keySelector);
         }
+
         public override IQueryable<Exercise> Search(string searchTerm, IQueryable<Exercise> query)
         {
             if (string.IsNullOrEmpty(searchTerm)) return query;
@@ -55,11 +58,6 @@ namespace Gym_App.Infastructure.Repositries
                 e.Description!.ToLower().Contains(searchTerm) ||
                 e.Category!.ToLower().Contains(searchTerm) ||
                 e.Difficulty!.ToLower().Contains(searchTerm));
-        }
-
-        public async Task<IEnumerable<Exercise>> GetExercisesByIds(List<Guid> exerciseIDsToRemove)
-        {
-            return await table.Where(e => exerciseIDsToRemove.Contains(e.Id)).ToListAsync();
         }
     }
 }

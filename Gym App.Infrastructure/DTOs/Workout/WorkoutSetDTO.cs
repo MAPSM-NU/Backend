@@ -12,12 +12,12 @@ namespace Gym_App.Infrastructure.DTOs.Workout
         public Guid SetId { get; set; }
         public int Reps { get; set; }
         public int SetNumber { get; set; }
-        public decimal? Weight { get; set; }
+        public float? Weight { get; set; }
         public int? RestSeconds { get; set; }
         public string? Notes { get; set; }
         public bool IsCompleted { get; set; } = false;
         public int? ActualReps { get; set; }
-        public decimal? ActualWeight { get; set; }
+        public float? ActualWeight { get; set; }
 
     }
 }

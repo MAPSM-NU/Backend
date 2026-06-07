@@ -93,7 +93,7 @@ namespace Gym_App.Application.Services
                         ExerciseId = exerciseDto.ExerciseId,
                         ExerciseOrder = exerciseOrder++,
                         PlannedReps = exerciseDto.PlannedReps,
-                        PlannedWeight = exerciseDto.PlannedWeight,
+                        PlannedWeight = (decimal?)exerciseDto.PlannedWeight,
                         Notes = exerciseDto.Notes,
                         IsCompleted = false,
                         CreatedAt = DateTime.Now,
@@ -111,7 +111,7 @@ namespace Gym_App.Application.Services
                             ExerciseInstanceId = exerciseInstance.Id,
                             SetNumber = setDto.SetNumber,
                             Reps = setDto.Reps,
-                            Weight = setDto.Weight,
+                            Weight = (decimal?)setDto.Weight,
                             RestSeconds = setDto.RestSeconds,
                             Notes = setDto.Notes,
                             IsCompleted = false,
@@ -513,7 +513,7 @@ namespace Gym_App.Application.Services
                    ExerciseId = exerciseEntity.Id,
                    WorkoutId = workout.Id,
                    PlannedReps = exercise.PlannedReps,
-                   PlannedWeight = exercise.PlannedWeight,
+                   PlannedWeight = (decimal?)exercise.PlannedWeight,
                    Notes = exercise.Notes,
                    ExerciseOrder = exercise.ExerciseOrder != 0 ? exercise.ExerciseOrder : workout.ExerciseInstances.Count + 1,
                 };
@@ -525,7 +525,7 @@ namespace Gym_App.Application.Services
                        ExerciseInstanceId = exerciseInstance.Id,
                        SetNumber = setDto.SetNumber,
                        Reps = setDto.Reps,
-                       Weight = setDto.Weight,
+                       Weight = (decimal?)setDto.Weight,
                        RestSeconds = setDto.RestSeconds,
                        Notes = setDto.Notes,
                        IsCompleted = false
@@ -584,7 +584,7 @@ namespace Gym_App.Application.Services
                         {
                             ExerciseInstanceId = exerciseInstance.Id,
                             Reps = set.Reps,
-                            Weight = set.Weight,
+                            Weight = (decimal?)set.Weight,
                             RestSeconds = set.RestSeconds,
                             Notes = set.Notes,
                             IsCompleted = false,
@@ -688,7 +688,7 @@ namespace Gym_App.Application.Services
                             SetId = ws.Id,
                             SetNumber = ws.SetNumber,
                             Reps = ws.Reps,
-                            Weight = ws.Weight,
+                            Weight = (float?)ws.Weight,
                             RestSeconds = ws.RestSeconds,
                             Notes = ws.Notes
                         }).ToList()
@@ -745,7 +745,7 @@ namespace Gym_App.Application.Services
                         SetId = ws.Id,
                         SetNumber = ws.SetNumber,
                         Reps = ws.Reps,
-                        Weight = ws.Weight,
+                        Weight = (float?)ws.Weight,
                         RestSeconds = ws.RestSeconds,
                         Notes = ws.Notes
                     }).ToList()
@@ -833,7 +833,7 @@ namespace Gym_App.Application.Services
                         SetId = s.Id,
                         SetNumber = s.SetNumber,
                         Reps = s.Reps,
-                        Weight = s.Weight,
+                        Weight = (float?)s.Weight,
                         RestSeconds = s.RestSeconds,
                         Notes = s.Notes
                     }).ToList(),
@@ -905,7 +905,7 @@ namespace Gym_App.Application.Services
                             SetId = ws.Id,
                             SetNumber = ws.SetNumber,
                             Reps = ws.Reps,
-                            Weight = ws.Weight,
+                            Weight = (float?)ws.Weight,
                             RestSeconds = ws.RestSeconds,
                             Notes = ws.Notes
                         }).ToList()

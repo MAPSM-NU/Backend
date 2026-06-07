@@ -5,10 +5,8 @@ using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infrastructure.DTOs.Exercise;
 using Gym_App.Infrastructure.DTOs.Workout;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Security.Claims;
 
 namespace GymApp.Tests.WorkoutTests
 {
@@ -48,7 +46,7 @@ namespace GymApp.Tests.WorkoutTests
                         Name = exercise.Name,
                         Notes = "Test notes",
                         PlannedReps = 10,
-                        PlannedWeight = 50,
+                        PlannedWeight = 50.2022f,
 
                         Sets = new List<WorkoutSetDTO>
                         {
@@ -56,13 +54,13 @@ namespace GymApp.Tests.WorkoutTests
                             {
                                 SetNumber = 1,
                                 ActualReps = 10,
-                                ActualWeight = 50
+                                ActualWeight = 50.20f
                             },
                             new WorkoutSetDTO
                             {
                                 SetNumber = 2,
                                 ActualReps = 8,
-                                ActualWeight = 60
+                                ActualWeight = 60.60f
                             }
                         }
                     }
@@ -161,7 +159,7 @@ namespace GymApp.Tests.WorkoutTests
                             {
                                 SetNumber = 1,
                                 ActualReps = 10,
-                                ActualWeight = 50
+                                ActualWeight = 50.90f
                             }
                         }
                     }

@@ -9,7 +9,7 @@ namespace Gym_App.Infrastructure.DTOs.Exercise
         public Guid ExerciseId { get; set; }
         public string Name { get; set; } = string.Empty;
         public int PlannedReps { get; set; }
-        public int PlannedWeight { get; set; }
+        public float PlannedWeight { get; set; }
         public string Notes { get; set; } = string.Empty;
         public int ExerciseOrder { get; set; }
         public DateTime? StartedAt { get; set; }

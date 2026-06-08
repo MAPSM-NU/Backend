@@ -321,11 +321,9 @@ public class AuthTests : TestBase
     {
         var user = CreateTestUser(CreateTestRole());
         await _unitOfWork.SaveChangesAsync();
-        _EmailSender.Setup(e => e.SendEmailAsync(
+        _EmailSender.Setup(e => e.SendPasswordResetEmail(
             It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<bool>()
+            It.IsAny<string>()
         )).ThrowsAsync(new Exception("Email sending failed"));
         var passResult = await _userServiceMock.ForgotPassword(user.Email);
         Assert.NotNull(passResult);

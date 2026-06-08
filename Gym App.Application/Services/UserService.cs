@@ -255,8 +255,7 @@ public class UserService : IUserServise
             }
             await _unitOfWork.SaveChangesAsync();
             _logger.LogInformation($"Password reset OTP generated for email: {email}");
-            string body = $"Your OTP code for password reset is: {otpCode}. This code will expire in 15 minutes.";
-            await _emailSender.SendEmailAsync(email, "Password Reset OTP", body);
+            await _emailSender.SendPasswordResetEmail(email,otpCode);
             return new SettersResponse { status = 2, msg = "Password reset OTP sent successfully" };
         }
         catch(Exception ex)

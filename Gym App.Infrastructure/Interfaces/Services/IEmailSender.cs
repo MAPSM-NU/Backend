@@ -4,5 +4,6 @@
     {
         public Task IntroductionEmail(string toEmail);
         public Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml = false);
+        public Task SendPasswordResetEmail(string toEmail, string otpCode);
     }
 }

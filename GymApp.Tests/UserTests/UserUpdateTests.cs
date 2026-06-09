@@ -124,7 +124,7 @@ namespace GymApp.Tests.UserTests
             _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
             var result2 = await _userServiceMock.UpdateUser(dto2);
             Assert.NotNull(result2);
-            Assert.Equal("Name is not valid", result2.msg);
+            Assert.Equal("Name is already in use", result2.msg);
             Assert.Equal(0, result2.status);
         }
     }

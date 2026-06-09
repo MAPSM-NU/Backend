@@ -46,20 +46,35 @@ public class UserService : IUserServise
         try
         {
             if (!await isNameValid(u.Name))
+            {
+                _logger.LogInformation($"Attempting to create admin with Name: {u.Name}, Email: {u.Email} failed cause name is already used");
                 return new ResponseToken { Status = 0, msg = "Name is already used" };
+            }
 
             if (!IsEmailValid(u.Email))
+            {
+                _logger.LogInformation($"Attempting to create admin with Name: {u.Name}, Email: {u.Email} failed cause invalid email format");
                 return new ResponseToken { Status = 0, msg = "Invalid Email" };
+            }
 
             if (await _unitOfWork.Users.isUserEmailExist(u.Email))
+            {
+                _logger.LogInformation($"Attempting to create admin with Name: {u.Name}, Email: {u.Email} failed cause email is already used");
                 return new ResponseToken { Status = 0, msg = "Email already in use" };
+            }
 
             if (!await IsPasswordValid(u.Password))
+            {
+                _logger.LogInformation($"Attempting to create admin with Name: {u.Name}, Email: {u.Email} failed cause invalid password format");
                 return new ResponseToken { Status = 0, msg = "Invalid Password" };
+            }
 
             var role = await _unitOfWork.Roles.GetRoleByName("Admin");
             if (role == null)
+            {
+                _logger.LogInformation("WHERE IS THE ADMIN ROLE");
                 return new ResponseToken { Status = 0, msg = "Role not found" };
+            }
 
             var user = new User
             {
@@ -85,7 +100,7 @@ public class UserService : IUserServise
                 Expires = DateTime.Now.AddDays(4)
             };
             await _unitOfWork.SaveChangesAsync();
-
+            _logger.LogInformation($"Admin created with email: {u.Email} and name: {u.Name}");
             return new ResponseToken
             {
                 Status = 2,
@@ -334,7 +349,7 @@ public class UserService : IUserServise
             if (!string.IsNullOrEmpty(user.Name))
             {
                 if (!await isNameValid(user.Name))
-                    return new SettersResponse { status = 0, msg = "Name is not valid" };
+                    return new SettersResponse { status = 0, msg = "Name is already in use" };
                 existingUser.Name = user.Name;
             }
 
@@ -804,10 +819,7 @@ public class UserService : IUserServise
     // ========== Helper Methods ==========
 
     private async Task<bool> isNameValid(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) 
-            return false;
-        
+    {   
         var exists = await _unitOfWork.Users.isUserNameExist(name);
         return !exists;
     }

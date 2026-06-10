@@ -15,14 +15,15 @@ public interface IUnitOfWork : IAsyncDisposable
     IMessageRepositry Messages { get; }
     INotificationRepositry Notifications { get; }
     IRoleRepositry Roles { get; }
-    ITokenRepositry? Tokens { get; }
-    IExerciseRepositry? Exercises { get; }
-    IMuscleRepositry? Muscles { get; }
-    IFeedbackRepositry? Feedbacks { get; }
-    IPersonalRecordRepository? PersonalRecords { get; }
-    IWorkoutSetRepository? WorkoutSet { get; }
-    IExerciseInstanceRepository? ExerciseInstance { get; }
-    IPasswordResetTokenRepositry? PasswordResetToken { get; }
+    ITokenRepositry Tokens { get; }
+    IExerciseRepositry Exercises { get; }
+    IMuscleRepositry Muscles { get; }
+    IFeedbackRepositry Feedbacks { get; }
+    IPersonalRecordRepository PersonalRecords { get; }
+    IWorkoutSetRepository WorkoutSet { get; }
+    IExerciseInstanceRepository ExerciseInstance { get; }
+    IPasswordResetTokenRepositry PasswordResetToken { get; }
+    IUserStatsRepositry UserStats { get; } 
 
     /// <summary>
     /// Saves all changes made to repositories in a single database transaction

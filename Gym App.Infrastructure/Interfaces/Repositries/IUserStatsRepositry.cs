@@ -7,6 +7,6 @@ namespace Gym_App.Infrastructure.Interfaces.Repositries
     {
         public Task<bool> IsUserStatsExistByUserId(Guid userId);
         public Task<UserStats> GetUserStatsByUserName(string userName);
-        public Task<UserStats> GetUserStatsByUserId(string userId);
+        public Task<UserStats> GetUserStatsByUserId(Guid userId);
     }
 }

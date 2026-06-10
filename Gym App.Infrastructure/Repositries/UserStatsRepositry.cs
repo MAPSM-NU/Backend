@@ -15,9 +15,9 @@ namespace Gym_App.Infrastructure.Repositries
             _context = context;
             table = _context.Set<UserStats>();
         }
-        public async Task<UserStats> GetUserStatsByUserId(string userId)
+        public async Task<UserStats> GetUserStatsByUserId(Guid userId)
         {
-            return await table.Include(u => u.user).FirstOrDefaultAsync(u => u.userId.ToString() == userId)!;
+            return await table.Include(u => u.user).FirstOrDefaultAsync(u => u.userId == userId)!;
         }
 
         public async Task<UserStats> GetUserStatsByUserName(string userName)

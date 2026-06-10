@@ -7,13 +7,13 @@ using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
+using Gym_App.Infrastructure.DTOs.User;
 using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
-using System.Security.Cryptography;
 
 namespace Gym_App.Application.Services;
 
@@ -156,7 +156,6 @@ public class UserService : IUserServise
                 return new ResponseToken { Status = 0, msg = "Role not found" };
             }
 
-
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -193,6 +192,21 @@ public class UserService : IUserServise
                 RefreshToken = refreshToken,
                 Expires = DateTime.Now.AddDays(4)
             };
+
+            var userStats = new UserStats
+            {
+                userId = user.Id,
+                user = user,
+                totalWorkouts = 0,
+                totalHours = 0,
+                longestStreak = 0,
+                workoutStreak = 0,
+                goalCompletionRate = 0,
+                goalsCompleted = 0,
+                goalsFailed = 0,
+                totalExercises = 0
+            };
+
             await _unitOfWork.SaveChangesAsync();
             _logger.LogInformation($"User created with email: {u.Email} and name: {u.Name}");
             await _emailSender.IntroductionEmail(u.Email);
@@ -631,7 +645,76 @@ public class UserService : IUserServise
             };
         }
     }
+    public async Task<GettersResponse<UserStatsDTO>> GetUserStatsByID(Guid userID)
+    {
+        if (userID == Guid.Empty)
+            return new GettersResponse<UserStatsDTO>
+            {
+                status = 0,
+                msg = "Invalid user ID"
+            };
 
+        try
+        {
+            var user = await _unitOfWork.Users.GetUserById(userID, false);
+            if (user == null)
+                return new GettersResponse<UserStatsDTO>
+                {
+                    status = 0,
+                    msg = "User not found"
+                };
+
+            if(user.UserStats == null)
+            {
+                _logger.LogWarning($"User stats not found for user. UserID: {userID}. Making new user stats.");
+                var userStats = new UserStats
+                {
+                    userId = user.Id,
+                    user = user,
+                    totalWorkouts = 0,
+                    totalHours = 0,
+                    longestStreak = 0,
+                    workoutStreak = 0,
+                    goalCompletionRate = 0,
+                    goalsCompleted = 0,
+                    goalsFailed = 0,
+                    totalExercises = 0
+                };
+                user.UserStats = userStats;
+                await _unitOfWork.Users.Update(user);
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            var userStatsDto = new UserStatsDTO
+            {
+                userId = user.UserStats.userId,
+                totalWorkouts = user.UserStats.totalWorkouts,
+                totalHours = user.UserStats.totalHours,
+                longestStreak = user.UserStats.longestStreak,
+                workoutStreak = user.UserStats.workoutStreak,
+                goalCompletionRate = user.UserStats.goalCompletionRate,
+                goalsCompleted = user.UserStats.goalsCompleted,
+                goalsFailed = user.UserStats.goalsFailed,
+                totalExercises = user.UserStats.totalExercises,
+            };
+
+            return new GettersResponse<UserStatsDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Value = userStatsDto
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while retrieving the user stats by ID. UserID: {UserID}", userID);
+            return new GettersResponse<UserStatsDTO>
+            {
+                status = 0,
+                msg = "An error occurred while retrieving the user stats."
+            };
+        }
+    }
     public async Task<GettersResponse<UserMiniViewDTO>> GetMiniUsers(
         string startDate,
         string endDate,

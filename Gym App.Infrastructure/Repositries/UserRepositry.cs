@@ -19,9 +19,9 @@ namespace Gym_App.Infastructure.Repositries
         public async Task<User> GetUserById(Guid userID, bool includeRole)
         {
             if (includeRole)
-                return await table.Include(u=>u.Role).FirstOrDefaultAsync(u => u.Id == userID);
+                return await table.Include(u => u.Role).Include(u => u.UserStats).FirstOrDefaultAsync(u => u.Id == userID);
             else
-                return await table.FirstOrDefaultAsync(u => u.Id == userID);
+                return await table.Include(u => u.UserStats).FirstOrDefaultAsync(u => u.Id == userID);
         }
         public async Task<User> GetUserByEmail(string email, bool includeRole)
         {

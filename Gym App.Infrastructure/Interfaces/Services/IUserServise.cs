@@ -1,6 +1,7 @@
 ﻿using Gym_App.Domain.Entities;
 using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Transfer_Classes;
+using Gym_App.Infrastructure.DTOs.User;
 using Microsoft.AspNetCore.Http;
 
 namespace Gym_App.Infastructure.Interfaces.Services
@@ -18,9 +19,9 @@ namespace Gym_App.Infastructure.Interfaces.Services
         Task<SettersResponse> ChangeUserType(UserChangeTypeDTO user);
         Task<SettersResponse> DeleteUser(Guid userID);
         Task<GettersResponse<UserViewDTO>> GetUserByID(Guid userID);
+        Task<GettersResponse<UserStatsDTO>> GetUserStatsByID(Guid userID);
         Task<GettersResponse<UserMiniViewDTO>> GetMiniUsers(string startDate,string endDate,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
         Task<GettersResponse<UserViewDTO>> GetUsers(string startDate, string endDate, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize = 5);
         Task<GettersResponse<UserViewDTO>> GetAllUsers(int page, int pageSize);
-        
     }
 }

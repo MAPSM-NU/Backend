@@ -197,14 +197,13 @@ public class UserService : IUserServise
             {
                 userId = user.Id,
                 user = user,
-                totalWorkouts = 0,
+                totalWorkoutsCompleted = 0,
+                totalWorkoutsMissed = 0,
+                totalExercisesCompleted = 0,
                 totalHours = 0,
                 longestStreak = 0,
                 workoutStreak = 0,
-                goalCompletionRate = 0,
-                goalsCompleted = 0,
-                goalsFailed = 0,
-                totalExercises = 0
+                workoutCompletionRate = 0
             };
 
             await _unitOfWork.SaveChangesAsync();
@@ -671,14 +670,12 @@ public class UserService : IUserServise
                 {
                     userId = user.Id,
                     user = user,
-                    totalWorkouts = 0,
+                    totalWorkoutsCompleted = 0,
+                    totalWorkoutsMissed = 0,
                     totalHours = 0,
                     longestStreak = 0,
                     workoutStreak = 0,
-                    goalCompletionRate = 0,
-                    goalsCompleted = 0,
-                    goalsFailed = 0,
-                    totalExercises = 0
+                    totalExercisesCompleted = 0
                 };
                 user.UserStats = userStats;
                 await _unitOfWork.Users.Update(user);
@@ -688,14 +685,13 @@ public class UserService : IUserServise
             var userStatsDto = new UserStatsDTO
             {
                 userId = user.UserStats.userId,
-                totalWorkouts = user.UserStats.totalWorkouts,
+                totalWorkoutsCompleted = user.UserStats.totalWorkoutsCompleted,
+                totalWorkoutsMissed = user.UserStats.totalWorkoutsMissed,
+                totalExercisesCompleted = user.UserStats.totalExercisesCompleted,
                 totalHours = user.UserStats.totalHours,
                 longestStreak = user.UserStats.longestStreak,
                 workoutStreak = user.UserStats.workoutStreak,
-                goalCompletionRate = user.UserStats.goalCompletionRate,
-                goalsCompleted = user.UserStats.goalsCompleted,
-                goalsFailed = user.UserStats.goalsFailed,
-                totalExercises = user.UserStats.totalExercises,
+                workoutCompletionRate = user.UserStats.workoutCompletionRate,
             };
 
             return new GettersResponse<UserStatsDTO>

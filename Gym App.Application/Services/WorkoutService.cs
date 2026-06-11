@@ -2,7 +2,6 @@
 using Gym_App.Application.Hubs;
 using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.DTOs.Exercise;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
@@ -318,8 +317,11 @@ namespace Gym_App.Application.Services
                 if (!authResult)
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
 
+
                 if (!workout.hasStarted)
                     return new SettersResponse { status = 0, msg = "Workout hasn't started" };
+
+                var userStats = await _unitOfWork.UserStats.GetUserStatsByUserId(userId);
 
                 // Update workout timing
                 if (progressDto.ActualStartTime != default)
@@ -340,9 +342,24 @@ namespace Gym_App.Application.Services
 
                     if (exerciseInstance != null)
                     {
-                        exerciseInstance.StartedAt = exerciseProgress.StartedAt;
-                        exerciseInstance.CompletedAt = exerciseProgress.CompletedAt;
-                        exerciseInstance.IsCompleted = exerciseProgress.IsCompleted;
+                        if(exerciseInstance.StartedAt != null)
+                        {
+                            _logger.LogInformation($"Starting exercise instance {exerciseInstance.Id} as part of workout progress update");
+                            exerciseInstance.StartedAt = exerciseProgress.StartedAt;
+                        }
+
+                        if(exerciseInstance.IsCompleted != exerciseProgress.IsCompleted)
+                        {
+                            _logger.LogInformation($"Updating completion status for exercise instance {exerciseInstance.Id} as part of workout progress update");
+                            exerciseInstance.IsCompleted = exerciseProgress.IsCompleted;
+                            userStats.totalExercisesCompleted++; 
+                        }
+
+                        if(exerciseInstance.CompletedAt != null)
+                        {
+                            _logger.LogInformation($"Completing exercise instance {exerciseInstance.Id} as part of workout progress update");
+                            exerciseInstance.CompletedAt = exerciseProgress.CompletedAt;
+                        }
 
                         _unitOfWork.ExerciseInstance.Update(exerciseInstance);
 
@@ -372,6 +389,7 @@ namespace Gym_App.Application.Services
                     }
                 }
 
+                await _unitOfWork.UserStats.Update(userStats);
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation($"Workout progress updated for {progressDto.WorkoutId}");
@@ -402,10 +420,14 @@ namespace Gym_App.Application.Services
                 if (!workout.hasStarted)
                     return new SettersResponse { status = 0, msg = "Workout hasn't even started yet" };
 
+                var userStats = await _unitOfWork.UserStats.GetUserStatsByUserId(userId);
+
                 workout.IsCompleted = true;
                 workout.ActualEndTime = DateTime.UtcNow;
+                userStats.totalWorkoutsCompleted++;
 
-                _unitOfWork.Workouts.Update(workout);
+                await _unitOfWork.UserStats.Update(userStats);
+                await _unitOfWork.Workouts.Update(workout);
                 await _unitOfWork.SaveChangesAsync();
 
                 // Send completion notification with stats

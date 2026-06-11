@@ -37,7 +37,7 @@ namespace Gym_App.Application.Hubs
         private readonly IServiceScopeFactory _serviceProvider;
         private readonly ILogger<WorkoutNotifier> _logger;
         private readonly Channel<PersonalRecord> _channel;
-        private readonly TimeSpan _interval = TimeSpan.FromMinutes(1); // Check every 5 minutes
+        private readonly TimeSpan _interval = TimeSpan.FromMinutes(10); // Check every 10 minutes
         private const int REMINDER_MINUTES_BEFORE = 30; // Send reminder 30 mins before
 
         public WorkoutNotifier(

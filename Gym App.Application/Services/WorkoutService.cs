@@ -64,10 +64,13 @@ namespace Gym_App.Application.Services
                 // Parse scheduled start time if provided
                 if (!string.IsNullOrEmpty(createWorkoutDto.ScheduledStartTime))
                 {
-                    if (!TimeSpan.TryParse(createWorkoutDto.ScheduledStartTime, out var startTime))
+                    if(DateTime.TryParse(createWorkoutDto.ScheduledStartTime, out DateTime scheduledStart))
                     {
-                        workout.ScheduledStartTime = startTime;
-                        workout.ScheduledEndTime = startTime.Add(TimeSpan.FromMinutes(createWorkoutDto.Duration));
+                        workout.ScheduledStartTime = scheduledStart;
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Invalid scheduled start time format: {createWorkoutDto.ScheduledStartTime}");
                     }
                 }
 
@@ -421,10 +424,21 @@ namespace Gym_App.Application.Services
                     return new SettersResponse { status = 0, msg = "Workout hasn't even started yet" };
 
                 var userStats = await _unitOfWork.UserStats.GetUserStatsByUserId(userId);
+                var hoursInExercise = workout.ActualStartTime != null && workout.ActualEndTime != null
+                    ? (workout.ActualEndTime.Value - workout.ActualStartTime.Value).TotalSeconds
+                    : 0;
+                hoursInExercise /= 3600; // Convert to hours
+                userStats.totalHours += hoursInExercise;
 
                 workout.IsCompleted = true;
                 workout.ActualEndTime = DateTime.UtcNow;
                 userStats.totalWorkoutsCompleted++;
+                userStats.workoutStreak++;
+                if(userStats.workoutStreak > userStats.longestStreak)
+                {
+                    _logger.LogInformation($"New longest workout streak achieved: {userStats.workoutStreak} for user {userId}");
+                    userStats.longestStreak = userStats.workoutStreak;
+                }
 
                 await _unitOfWork.UserStats.Update(userStats);
                 await _unitOfWork.Workouts.Update(workout);

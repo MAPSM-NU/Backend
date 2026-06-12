@@ -16,9 +16,9 @@ namespace Gym_App.Application.Hubs
     public class StatsChecker : BackgroundService, IStatsChecker
     {
         private readonly IServiceScopeFactory _serviceProvider;
-        private readonly ILogger<WorkoutNotifier> _logger;
+        private readonly ILogger<StatsChecker> _logger;
         private readonly TimeSpan _interval = TimeSpan.FromHours(12); // Check every 12 hours
-        public StatsChecker(IServiceScopeFactory serviceProvider, ILogger<WorkoutNotifier> logger)
+        public StatsChecker(IServiceScopeFactory serviceProvider, ILogger<StatsChecker> logger)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -32,11 +32,12 @@ namespace Gym_App.Application.Hubs
             {
 
                 var yesterdayWorkouts = unitOfWork.Workouts.GetAll().Include(w => w.User).ThenInclude(u=>u.UserStats).Where(w =>
-                        w.ScheduledStartTime > DateTime.Today.AddDays(-1) && w.ScheduledStartTime <= DateTime.Today && !w.IsCompleted
+                        w.ScheduledStartTime >= DateTime.Today.AddDays(-1) && w.ScheduledStartTime <= DateTime.Today && !w.IsCompleted
                     );
                 foreach (var workout in yesterdayWorkouts)
                 {
                     workout.User.UserStats.totalWorkoutsMissed++;
+                    workout.User.UserStats.totalWorkoutsCompleted = 200;
                     workout.User.UserStats.workoutStreak = 0;
                     workout.User.UserStats.workoutCompletionRate = workout.User.UserStats.totalWorkoutsCompleted > 0 ? 
                             (double)workout.User.UserStats.totalWorkoutsCompleted / (workout.User.UserStats.totalWorkoutsCompleted + workout.User.UserStats.totalWorkoutsMissed) * 100

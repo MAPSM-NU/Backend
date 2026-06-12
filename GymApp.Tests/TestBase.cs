@@ -89,6 +89,21 @@ namespace GymApp.Tests
                 WeightKg = weightKg,
                 isEmailConfirmed = isEmailConfirmed
             };
+            var userStats = new Gym_App.Core.UserStats
+            {
+                user = user,
+                userId = user.Id,
+                totalWorkoutsCompleted = 0,
+                longestStreak = 0,
+                workoutStreak = 0,
+                totalExercisesCompleted = 0,
+                totalHours = 0,
+                totalWorkoutsMissed = 0,
+                workoutCompletionRate = 0,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            user.UserStats = userStats;
             _unitOfWork.Users.Create(user);
             return user;
         }

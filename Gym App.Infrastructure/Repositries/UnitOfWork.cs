@@ -27,6 +27,7 @@ public class UnitOfWork : IUnitOfWork
     private IWorkoutSetRepository? _workoutSetRepository;
     private IExerciseInstanceRepository? _exerciseInstanceRepository;
     private IPasswordResetTokenRepositry? _passwordResetToken;
+    private IUserStatsRepositry? _userStatsRepositry;
 
     public UnitOfWork(DbBase context)
     {
@@ -74,6 +75,8 @@ public class UnitOfWork : IUnitOfWork
         => _exerciseInstanceRepository ??= new ExerciseInstanceRepository(_context);
     public IPasswordResetTokenRepositry PasswordResetToken
         => _passwordResetToken ??= new PasswordResetTokenRepository(_context);
+    public IUserStatsRepositry UserStats
+        => _userStatsRepositry ??= new UserStatsRepositry(_context);
 
     /// <summary>
     /// Saves all changes in a single database transaction

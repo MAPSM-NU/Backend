@@ -4,6 +4,7 @@ using Gym_App.Infastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym_App.Migrations
 {
     [DbContext(typeof(DbBase))]
-    partial class DbBaseModelSnapshot : ModelSnapshot
+    [Migration("20260610001355_UserStats")]
+    partial class UserStats
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -100,26 +103,29 @@ namespace Gym_App.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<double>("goalCompletionRate")
+                        .HasColumnType("float");
+
+                    b.Property<int>("goalsCompleted")
+                        .HasColumnType("int");
+
+                    b.Property<int>("goalsFailed")
+                        .HasColumnType("int");
+
                     b.Property<int>("longestStreak")
                         .HasColumnType("int");
 
-                    b.Property<int>("totalExercisesCompleted")
+                    b.Property<int>("totalExercises")
                         .HasColumnType("int");
 
                     b.Property<double>("totalHours")
                         .HasColumnType("float");
 
-                    b.Property<int>("totalWorkoutsCompleted")
-                        .HasColumnType("int");
-
-                    b.Property<int>("totalWorkoutsMissed")
+                    b.Property<int>("totalWorkouts")
                         .HasColumnType("int");
 
                     b.Property<Guid>("userId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<double>("workoutCompletionRate")
-                        .HasColumnType("float");
 
                     b.Property<int>("workoutStreak")
                         .HasColumnType("int");

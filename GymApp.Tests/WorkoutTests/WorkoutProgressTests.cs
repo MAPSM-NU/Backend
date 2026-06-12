@@ -81,7 +81,6 @@ namespace GymApp.Tests.WorkoutTests
             var progressDto = new WorkoutUpdateProgressDTO
             {
                 WorkoutId = workout.Id,
-                ActualStartTime = DateTime.UtcNow,
                 Exercises = new List<ExerciseUpdateProgressDTO>
                 {
                     new ExerciseUpdateProgressDTO
@@ -119,7 +118,6 @@ namespace GymApp.Tests.WorkoutTests
             var progressDto = new WorkoutUpdateProgressDTO
             {
                 WorkoutId = Guid.Empty,
-                ActualStartTime = DateTime.UtcNow,
                 Exercises = new List<ExerciseUpdateProgressDTO>
                 {
                     new ExerciseUpdateProgressDTO
@@ -157,7 +155,6 @@ namespace GymApp.Tests.WorkoutTests
             var progressDto = new WorkoutUpdateProgressDTO
             {
                 WorkoutId = Guid.NewGuid(),
-                ActualStartTime = DateTime.UtcNow,
                 Exercises = new List<ExerciseUpdateProgressDTO>
                 {
                     new ExerciseUpdateProgressDTO
@@ -195,7 +192,6 @@ namespace GymApp.Tests.WorkoutTests
             var progressDto = new WorkoutUpdateProgressDTO
             {
                 WorkoutId = workout.Id,
-                ActualStartTime = DateTime.UtcNow,
                 Exercises = new List<ExerciseUpdateProgressDTO>
                 {
                     new ExerciseUpdateProgressDTO
@@ -232,7 +228,6 @@ namespace GymApp.Tests.WorkoutTests
             var progressDto = new WorkoutUpdateProgressDTO
             {
                 WorkoutId = workout.Id,
-                ActualStartTime = DateTime.UtcNow,
                 Exercises = new List<ExerciseUpdateProgressDTO>
                 {
                     new ExerciseUpdateProgressDTO
@@ -268,6 +263,14 @@ namespace GymApp.Tests.WorkoutTests
             workout.hasStarted = true;
             await _unitOfWork.SaveChangesAsync();
             _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            foreach(var exercise in workout.ExerciseInstances)
+            {
+                exercise.IsCompleted = true;
+                foreach (var set in exercise.Sets)
+                {
+                    set.IsCompleted = true;
+                }
+            }
             var result = await _workoutService.CompleteWorkoutAsync(workout.Id, user.Id);
             Assert.NotNull(result);
             Assert.Equal("Workout completed", result.msg);

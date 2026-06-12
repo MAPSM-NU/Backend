@@ -2,7 +2,6 @@
 using Gym_App.Application.Hubs;
 using Gym_App.Domain;
 using Gym_App.Domain.Transfer_Classes;
-using Gym_App.Infastructure.DTOs.Exercise;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
@@ -65,10 +64,13 @@ namespace Gym_App.Application.Services
                 // Parse scheduled start time if provided
                 if (!string.IsNullOrEmpty(createWorkoutDto.ScheduledStartTime))
                 {
-                    if (!TimeSpan.TryParse(createWorkoutDto.ScheduledStartTime, out var startTime))
+                    if(DateTime.TryParse(createWorkoutDto.ScheduledStartTime, out DateTime scheduledStart))
                     {
-                        workout.ScheduledStartTime = startTime;
-                        workout.ScheduledEndTime = startTime.Add(TimeSpan.FromMinutes(createWorkoutDto.Duration));
+                        workout.ScheduledStartTime = scheduledStart;
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Invalid scheduled start time format: {createWorkoutDto.ScheduledStartTime}");
                     }
                 }
 
@@ -281,9 +283,15 @@ namespace Gym_App.Application.Services
                 if (workout.hasStarted)
                     return new SettersResponse { status = 0, msg = "Workout has already started" };
 
+                if(workout.ExerciseInstances.Count <= 2)
+                {
+                    _logger.LogInformation($"Workout {workoutId} cannot be started as it has only {workout.ExerciseInstances.Count} exercises");
+                    return new SettersResponse { status = 0, msg = "Workout cannot be started with less than 3 exercises" };
+                }
+
                 workout.ActualStartTime = DateTime.UtcNow;
                 workout.hasStarted = true;
-                _unitOfWork.Workouts.Update(workout);
+                await _unitOfWork.Workouts.Update(workout);
                 await _unitOfWork.SaveChangesAsync();
 
                 // Send notification
@@ -303,7 +311,7 @@ namespace Gym_App.Application.Services
         {
             try
             {
-                if(progressDto == null || progressDto.WorkoutId == Guid.Empty)
+                if(progressDto == null || progressDto.WorkoutId == Guid.Empty || progressDto.Exercises == null)
                 {
                     if (progressDto == null) _logger.LogInformation("progressDto is empty");
                     return new SettersResponse { status = 0, msg = "Invalid progress data" };
@@ -318,20 +326,15 @@ namespace Gym_App.Application.Services
                 if (!authResult)
                     return new SettersResponse { status = 1, msg = "Unauthorized" };
 
+
                 if (!workout.hasStarted)
                     return new SettersResponse { status = 0, msg = "Workout hasn't started" };
-
-                // Update workout timing
-                if (progressDto.ActualStartTime != default)
-                    workout.ActualStartTime = progressDto.ActualStartTime;
-
-                if (progressDto.ActualEndTime != default)
-                    workout.ActualEndTime = progressDto.ActualEndTime;
 
                 workout.IsCompleted = progressDto.IsCompleted;
 
                 _unitOfWork.Workouts.Update(workout);
 
+                
                 // Update exercise instances and sets
                 foreach (var exerciseProgress in progressDto.Exercises)
                 {
@@ -340,12 +343,31 @@ namespace Gym_App.Application.Services
 
                     if (exerciseInstance != null)
                     {
-                        exerciseInstance.StartedAt = exerciseProgress.StartedAt;
-                        exerciseInstance.CompletedAt = exerciseProgress.CompletedAt;
-                        exerciseInstance.IsCompleted = exerciseProgress.IsCompleted;
+                        if(exerciseInstance.StartedAt != null)
+                        {
+                            _logger.LogInformation($"Starting exercise instance {exerciseInstance.Id} as part of workout progress update");
+                            exerciseInstance.StartedAt = exerciseProgress.StartedAt;
+                        }
+
+                        if(exerciseInstance.IsCompleted != exerciseProgress.IsCompleted)
+                        {
+                            _logger.LogInformation($"Updating completion status for exercise instance {exerciseInstance.Id} as part of workout progress update");
+                            exerciseInstance.IsCompleted = exerciseProgress.IsCompleted;
+                        }
+
+                        if(exerciseInstance.CompletedAt != null)
+                        {
+                            _logger.LogInformation($"Completing exercise instance {exerciseInstance.Id} as part of workout progress update");
+                            exerciseInstance.CompletedAt = exerciseProgress.CompletedAt;
+                        }
 
                         _unitOfWork.ExerciseInstance.Update(exerciseInstance);
 
+                        if(exerciseProgress.Sets == null)
+                        {
+                            _logger.LogInformation($"No sets provided for exercise instance {exerciseInstance.Id} in workout progress update");
+                            continue;
+                        }
                         // Update sets and detect PRs
                         foreach (var setProgress in exerciseProgress.Sets)
                         {
@@ -357,7 +379,7 @@ namespace Gym_App.Application.Services
                                 workoutSet.ActualWeight = (decimal?)setProgress.ActualWeight;
                                 workoutSet.Notes = setProgress.Notes;
 
-                                _unitOfWork.WorkoutSet.Update(workoutSet);
+                                await _unitOfWork.WorkoutSet.Update(workoutSet);
 
                                 // Detect if this is a new PR
                                 if (setProgress.ActualWeight.HasValue && setProgress.ActualReps.HasValue)
@@ -371,7 +393,6 @@ namespace Gym_App.Application.Services
                         }
                     }
                 }
-
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation($"Workout progress updated for {progressDto.WorkoutId}");
@@ -404,8 +425,49 @@ namespace Gym_App.Application.Services
 
                 workout.IsCompleted = true;
                 workout.ActualEndTime = DateTime.UtcNow;
+                var utcnow = DateTime.UtcNow;
 
-                _unitOfWork.Workouts.Update(workout);
+                //stats update
+
+                var userStats = await _unitOfWork.UserStats.GetUserStatsByUserId(userId);
+
+                var exercisesBeforeUpdate = userStats.totalExercisesCompleted;
+                foreach (var exerciseInstance in workout.ExerciseInstances)
+                {
+                    if (exerciseInstance.IsCompleted)
+                    {
+                        userStats.totalExercisesCompleted++;
+                    }
+                }
+                var exercisesInWorkout = workout.ExerciseInstances.Count;
+                var exercisesDone = exercisesBeforeUpdate == userStats.totalExercisesCompleted ? 0 : userStats.totalExercisesCompleted - exercisesBeforeUpdate;
+                if (exercisesInWorkout <= 0 || exercisesDone == 0 || ((double) exercisesDone / exercisesInWorkout) < 0.5)
+                {//Check if exercises are little to finish the the workout or the user done less than 50% of the exercises
+                    _logger.LogInformation($"User {userId} missed this workout as they completed only {exercisesDone} out of {exercisesInWorkout} exercises");
+                    return new SettersResponse { status = 0, msg = "Either you didn't finish atleast 50% of the exercises in the workout or there were less than 3" };
+                }
+                var startTime = workout.ActualStartTime;
+                var endTime = workout.ActualEndTime;
+                TimeSpan hoursInExercise = workout.ActualStartTime != null && workout.ActualEndTime != null
+                    ? (workout.ActualEndTime.Value - workout.ActualStartTime.Value)
+                    : TimeSpan.Zero;
+                userStats.totalHours += hoursInExercise.TotalHours;
+
+                userStats.totalWorkoutsCompleted++;
+                userStats.workoutStreak++;
+                if(userStats.workoutStreak > userStats.longestStreak)
+                {
+                    _logger.LogInformation($"New longest workout streak achieved: {userStats.workoutStreak} for user {userId}");
+                    userStats.longestStreak = userStats.workoutStreak;
+                }
+                userStats.workoutCompletionRate = userStats.totalWorkoutsMissed == 0 ? 100 :
+                    (double)userStats.totalWorkoutsCompleted / (userStats.totalWorkoutsCompleted + userStats.totalWorkoutsMissed) * 100;
+
+                
+                
+
+                await _unitOfWork.UserStats.Update(userStats);
+                await _unitOfWork.Workouts.Update(workout);
                 await _unitOfWork.SaveChangesAsync();
 
                 // Send completion notification with stats

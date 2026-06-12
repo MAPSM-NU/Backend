@@ -51,8 +51,9 @@ namespace Gym_App.Domain
         public ICollection<Workout>? Workouts { get; set; } = new List<Workout>();
         public ICollection<RefreshTokens>? RefreshTokens { get; set; } = new List<RefreshTokens>();
         public ICollection<Session>? Sessions { get; set; } = new List<Session>();
-        public required Role Role { get; set; }
         public ICollection<PasswordResetToken> passwordResetTokens { get; set; } = new List<PasswordResetToken>();
+        public required Role Role { get; set; }
+        public UserStats? UserStats { get; set; }
 
     }
 }

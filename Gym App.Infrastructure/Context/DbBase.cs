@@ -27,6 +27,7 @@ namespace Gym_App.Infastructure.Context
         public DbSet<WorkoutSet> WorkoutSets { get; set; }
         public DbSet<RefreshTokens> RefreshTokens { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<UserStats> UserStats { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -114,6 +115,12 @@ namespace Gym_App.Infastructure.Context
                 .HasOne(pt => pt.User)
                 .WithMany(u => u.passwordResetTokens)
                 .HasForeignKey(pt => pt.userId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<UserStats>()
+                .HasOne(us => us.user)
+                .WithOne(u => u.UserStats)
+                .HasForeignKey<UserStats>(us => us.userId)
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }

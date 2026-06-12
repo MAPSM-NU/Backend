@@ -141,6 +141,9 @@ builder.Services.AddHostedService(provider => provider.GetRequiredService<Notifi
 builder.Services.AddSingleton<WorkoutNotifier>();
 builder.Services.AddSingleton<IWorkoutNotificationSink>(provider => provider.GetRequiredService<WorkoutNotifier>());
 builder.Services.AddHostedService(provider => provider.GetRequiredService<WorkoutNotifier>());
+builder.Services.AddSingleton<StatsChecker>();
+builder.Services.AddSingleton<IStatsChecker>(provider => provider.GetRequiredService<StatsChecker>());
+builder.Services.AddHostedService(provider => provider.GetRequiredService<StatsChecker>());
 
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IExerciseData, ExerciseData>();

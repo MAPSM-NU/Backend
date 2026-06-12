@@ -21,8 +21,8 @@ namespace Gym_App.Domain
         public int DurationRemaining { get; set; }
         public bool hasStarted { get; set; }
         public bool IsCompleted { get; set; }
-        public TimeSpan? ScheduledStartTime { get; set; }
-        public TimeSpan? ScheduledEndTime { get; set; }
+        public DateTime? ScheduledStartTime { get; set; }
+        public DateTime? ScheduledEndTime { get; set; }
         public DateTime? ActualStartTime { get; set; }
         public DateTime? ActualEndTime { get; set; }
         public bool NotificationSent { get; set; } = false;

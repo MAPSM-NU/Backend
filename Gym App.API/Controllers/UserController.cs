@@ -93,6 +93,17 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(result.Value);
         }
+        [HttpGet("get-user-stats/{userID}")]
+        public async Task<IActionResult> GetUserStatsByID([FromRoute] Guid userID)
+        {
+            var result = await _user.GetUserStatsByID(userID);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Value);
+        }
         [HttpGet("get-mini-users")]
         public async Task<IActionResult> GetUsers([FromQuery]string startDate, string endDate, string sortColumn, string OrderBy, string SearchTerm, int page = 1, int pageSize = 10)
         {

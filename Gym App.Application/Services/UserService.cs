@@ -678,6 +678,7 @@ public class UserService : IUserServise
                     totalExercisesCompleted = 0
                 };
                 user.UserStats = userStats;
+                await _unitOfWork.UserStats.Create(userStats);
                 await _unitOfWork.Users.Update(user);
                 await _unitOfWork.SaveChangesAsync();
             }

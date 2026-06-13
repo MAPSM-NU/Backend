@@ -54,6 +54,9 @@ namespace Gym_App.Domain
         public ICollection<PasswordResetToken> passwordResetTokens { get; set; } = new List<PasswordResetToken>();
         public required Role Role { get; set; }
         public UserStats? UserStats { get; set; }
+        public ICollection<UserStatsDaily>? UserStatsDaily { get; set; } = new List<UserStatsDaily>();
+        public ICollection<UserStatsWeekly>? UserStatsWeekly { get; set; } = new List<UserStatsWeekly>();
+        public ICollection<UserStatsMonthly>? UserStatsMonthly { get; set; } = new List<UserStatsMonthly>();
 
     }
 }

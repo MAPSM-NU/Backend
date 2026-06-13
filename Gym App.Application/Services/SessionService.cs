@@ -8,7 +8,6 @@ using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using Gym_App.Infrastructure.DTOs.Session;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
 namespace Gym_App.Application.Services

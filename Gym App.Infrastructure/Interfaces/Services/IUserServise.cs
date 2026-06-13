@@ -1,7 +1,7 @@
 ﻿using Gym_App.Domain.Entities;
 using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Transfer_Classes;
-using Gym_App.Infrastructure.DTOs.User;
+using Gym_App.Infrastructure.DTOs.UserStats;
 using Microsoft.AspNetCore.Http;
 
 namespace Gym_App.Infastructure.Interfaces.Services

@@ -1,5 +1,4 @@
-﻿
-namespace Gym_App.Infrastructure.DTOs.User
+﻿namespace Gym_App.Infrastructure.DTOs.UserStats
 {
     public class UserStatsDTO
     {

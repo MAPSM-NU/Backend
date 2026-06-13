@@ -1,8 +1,10 @@
 ﻿using Gym_App.Domain;
+using System;
+using System.Collections.Generic;
 
-namespace Gym_App.Core
+namespace Gym_App.Infrastructure.DTOs.UserStats
 {
-    public class UserStatsMonthly : BaseEntity
+    public class UserStatsMonthlyDTO
     {
         public Guid userId { get; set; }
         public required User user { get; set; }
@@ -20,10 +22,9 @@ namespace Gym_App.Core
         public int personalRecordsBroken { get; set; }
         public bool weeklyGoalAchieved { get; set; }
         public double IKcaloriesBurned { get; set; } = 0;
-        public DateOnly monthDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
-        public string monthName { get; set; } = DateTime.Now.ToString("MMMM");
-        public int monthNumber { get; set; } = DateTime.Now.Month;
-        public int year { get; set; } = DateTime.Now.Year;
-        public ICollection<UserStatsWeekly> userStatsWeekly { get; set; } = new List<UserStatsWeekly>();
+        public DateOnly monthDate { get; set; }
+        public string monthName { get; set; }
+        public int monthNumber {  get; set; }
+        public int year { get; set; }
     }
 }

@@ -28,6 +28,10 @@ public class UnitOfWork : IUnitOfWork
     private IExerciseInstanceRepository? _exerciseInstanceRepository;
     private IPasswordResetTokenRepositry? _passwordResetToken;
     private IUserStatsRepositry? _userStatsRepositry;
+    private IUserStatDailyRepositry? _userStatDailyRepositry;
+    private IUserStatWeeklyRepositry? _userStatWeeklyRepositry;
+    private IUserStatMonthlyRepositry? _userStatMonthlyRepositry;
+
 
     public UnitOfWork(DbBase context)
     {
@@ -77,10 +81,13 @@ public class UnitOfWork : IUnitOfWork
         => _passwordResetToken ??= new PasswordResetTokenRepository(_context);
     public IUserStatsRepositry UserStats
         => _userStatsRepositry ??= new UserStatsRepositry(_context);
+    public IUserStatDailyRepositry UserStatDaily
+        => _userStatDailyRepositry ??= new UserStatDailyRepositry(_context);
+    public IUserStatWeeklyRepositry UserStatWeekly
+        => _userStatWeeklyRepositry ??= new UserStatWeeklyRepoistry(_context);
+    public IUserStatMonthlyRepositry UserStatMonthly
+        => _userStatMonthlyRepositry ??= new UserStatMonthlyRepositry(_context);
 
-    /// <summary>
-    /// Saves all changes in a single database transaction
-    /// </summary>
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         try

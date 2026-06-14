@@ -9,6 +9,7 @@ namespace Gym_App.Core
         public required User user { get; set; }
         public int totalExercisesCompleted { get; set; } = 0;
         public double totalHours { get; set; } = 0;
+        public int totalReps {  get; set; } = 0;
         public DateOnly date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public string dayOfWeek { get; set; } = DateTime.Now.DayOfWeek.ToString();
         public int year { get; set; } = DateTime.Now.Year;

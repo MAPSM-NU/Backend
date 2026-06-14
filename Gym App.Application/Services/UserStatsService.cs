@@ -1,4 +1,5 @@
 ﻿using Gym_App.Application.Authorization;
+using Gym_App.Core;
 using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Transfer_Classes;
@@ -24,12 +25,20 @@ namespace Gym_App.Application.Services
             throw new NotImplementedException();
         }
 
-        public Task<SettersResponse> AddMonthlyStats(Workout workout)
+        public Task<SettersResponse> AddWeeklyStats(Workout workout)
+        {
+            throw new NotImplementedException();
+        }
+        public Task<SettersResponse> AddWeeklyStats(Workout workout, UserStatsDaily usd)
         {
             throw new NotImplementedException();
         }
 
-        public Task<SettersResponse> AddWeeklyStats(Workout workout)
+        public Task<SettersResponse> AddMonthlyStats(Workout workout)
+        {
+            throw new NotImplementedException();
+        }
+        public Task<SettersResponse> AddMonthlyStats(Workout workout, UserStatsWeekly usw)
         {
             throw new NotImplementedException();
         }
@@ -52,6 +61,7 @@ namespace Gym_App.Application.Services
         {
             throw new NotImplementedException();
         }
+
 
     }
 }

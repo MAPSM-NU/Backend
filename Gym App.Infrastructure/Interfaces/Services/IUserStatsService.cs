@@ -1,4 +1,5 @@
-﻿using Gym_App.Domain;
+﻿using Gym_App.Core;
+using Gym_App.Domain;
 using Gym_App.Infastructure.Transfer_Classes;
 using Gym_App.Infrastructure.DTOs.UserStats;
 
@@ -8,7 +9,9 @@ namespace Gym_App.Infrastructure.Interfaces.Services
     {
         public Task<SettersResponse> AddDailyStats(Workout workout);
         public Task<SettersResponse> AddWeeklyStats(Workout workout);
+        public Task<SettersResponse> AddWeeklyStats(Workout workout, UserStatsDaily usd);
         public Task<SettersResponse> AddMonthlyStats(Workout workout);
+        public Task<SettersResponse> AddMonthlyStats(Workout workout, UserStatsWeekly usw);
         public Task<GettersResponse<UserStatsDTO>> GetOverallStats(Guid userId);
         public Task<GettersResponse<UserStatsDailyDTO>> GetDailyStats(Guid userId, DateOnly date);
         public Task<GettersResponse<UserStatsWeeklyDTO>> GetWeeklyStats(Guid userId, int weekNumber, int year);

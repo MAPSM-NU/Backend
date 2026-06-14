@@ -1,9 +1,11 @@
-﻿using Gym_App.Domain;
+﻿using Gym_App.Core;
+using Gym_App.Domain;
 using Gym_App.Infastructure.Context;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.InteropServices;
 
 namespace GymApp.Tests
 {
@@ -129,7 +131,7 @@ namespace GymApp.Tests
             var exercises = new List<ExerciseInstance>();
             for (int i = 0; i < 3; i++)
             {
-                exercises.Add(CreateTestExerciseInstance(workout, exerciseList[i], $"Test Notes {i + 1}"));
+                exercises.Add(CreateTestExerciseInstance(workout, exerciseList[i], $"Test Notes {i + 1}"));// every exercise instance has one set
                 var set = CreateTestWorkoutSet(exercises[i], $"Test Notes {i + 1}");
             }
             workout.ExerciseInstances = exercises;
@@ -252,6 +254,22 @@ namespace GymApp.Tests
             };
             _unitOfWork.Feedbacks.Create(feedback);
             return feedback;
+        }
+        protected UserStatsDaily CreateTestDailyStat(User user, int Kclaories = 0, int totalReps = 12, int totalHours = 12, int totalExercisesCompleted = 3)
+        {
+            var dailyStat = new UserStatsDaily
+            {
+                user = user,
+                userId = user.Id,
+                dayOfWeek = DateTime.Now.DayOfWeek.ToString(),
+                KcaloriesBurned = Kclaories,
+                year = DateTime.Now.Year,
+                totalReps = totalReps,
+                totalHours = totalHours,
+                totalExercisesCompleted = totalExercisesCompleted,
+            };
+            _unitOfWork.UserStatDaily.Create(dailyStat);
+            return dailyStat;
         }
     }
 }

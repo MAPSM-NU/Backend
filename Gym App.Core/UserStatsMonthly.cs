@@ -19,7 +19,7 @@ namespace Gym_App.Core
         public double totalWeightLifted { get; set; }
         public int personalRecordsBroken { get; set; }
         public bool weeklyGoalAchieved { get; set; }
-        public double IKcaloriesBurned { get; set; } = 0;
+        public double KcaloriesBurned { get; set; } = 0;
         public DateOnly monthDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public string monthName { get; set; } = DateTime.Now.ToString("MMMM");
         public int monthNumber { get; set; } = DateTime.Now.Month;

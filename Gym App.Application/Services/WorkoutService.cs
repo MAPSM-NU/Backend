@@ -376,7 +376,7 @@ namespace Gym_App.Application.Services
                             {
                                 workoutSet.IsCompleted = setProgress.IsCompleted;
                                 workoutSet.ActualReps = setProgress.ActualReps;
-                                workoutSet.ActualWeight = (decimal?)setProgress.ActualWeight;
+                                workoutSet.ActualWeight = setProgress.ActualWeight;
                                 workoutSet.Notes = setProgress.Notes;
 
                                 await _unitOfWork.WorkoutSet.Update(workoutSet);

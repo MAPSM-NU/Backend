@@ -1,4 +1,5 @@
 ﻿using Gym_App.Domain;
+using System.Globalization;
 
 namespace Gym_App.Core
 {
@@ -18,10 +19,10 @@ namespace Gym_App.Core
         public double totalWeightLifted { get; set; }
         public int personalRecordsBroken { get; set; }
         public bool weeklyGoalAchieved { get; set; }
-        public double IKcaloriesBurned { get; set; } = 0;
-        public DateOnly weekDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+        public double KcaloriesBurned { get; set; } = 0;
+        public DateOnly weekDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek));
         public int year { get; set; } = DateTime.Now.Year;
-        public int weekNumber { get; set; }
+        public int weekNumber { get; set; } = ISOWeek.GetWeekOfYear(DateTime.Now);
         public ICollection<UserStatsDaily> userStatsDaily { get; set; } = new List<UserStatsDaily>();
     }
 }

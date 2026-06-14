@@ -8,10 +8,10 @@ namespace Gym_App.Infrastructure.Interfaces.Services
     public interface IUserStatsService
     {
         public Task<SettersResponse> AddDailyStats(Workout workout);
-        public Task<SettersResponse> AddWeeklyStats(Workout workout);
-        public Task<SettersResponse> AddWeeklyStats(Workout workout, UserStatsDaily usd);
-        public Task<SettersResponse> AddMonthlyStats(Workout workout);
-        public Task<SettersResponse> AddMonthlyStats(Workout workout, UserStatsWeekly usw);
+        public Task<SettersResponse> AddWeeklyStats(User user);
+        public Task<SettersResponse> AddWeeklyStats(UserStatsDaily usd);
+        public Task<SettersResponse> AddMonthlyStats(User user);
+        public Task<SettersResponse> AddMonthlyStats(UserStatsWeekly usw);
         public Task<GettersResponse<UserStatsDTO>> GetOverallStats(Guid userId);
         public Task<GettersResponse<UserStatsDailyDTO>> GetDailyStats(Guid userId, DateOnly date);
         public Task<GettersResponse<UserStatsWeeklyDTO>> GetWeeklyStats(Guid userId, int weekNumber, int year);

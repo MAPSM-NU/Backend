@@ -5,6 +5,8 @@ using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Repositries;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 namespace GymApp.Tests
@@ -255,14 +257,16 @@ namespace GymApp.Tests
             _unitOfWork.Feedbacks.Create(feedback);
             return feedback;
         }
-        protected UserStatsDaily CreateTestDailyStat(User user, int Kclaories = 0, int totalReps = 12, int totalHours = 12, int totalExercisesCompleted = 3)
+        protected UserStatsDaily CreateTestDailyStat(User user, DateOnly date, int Kclaories = 12,int totalSetsCompleted = 3, int totalReps = 12, int totalHours = 12, int totalExercisesCompleted = 3)
         {
             var dailyStat = new UserStatsDaily
             {
                 user = user,
                 userId = user.Id,
-                dayOfWeek = DateTime.Now.DayOfWeek.ToString(),
+                date = date,
+                dayOfWeek = date.DayOfWeek.ToString(),
                 KcaloriesBurned = Kclaories,
+                totalSetsCompleted = totalSetsCompleted,
                 year = DateTime.Now.Year,
                 totalReps = totalReps,
                 totalHours = totalHours,
@@ -270,6 +274,37 @@ namespace GymApp.Tests
             };
             _unitOfWork.UserStatDaily.Create(dailyStat);
             return dailyStat;
+        }
+        protected UserStatsWeekly CreateTestWeeklyStat(User user, DateOnly weekDate, int weekNumber)
+        {
+            
+            var weeklystat = new UserStatsWeekly
+            {
+                user = user,
+                userId = user.Id,
+                weekDate = weekDate,
+                weekNumber = weekNumber,
+                year = DateTime.Now.Year,
+            };
+            var list = new List<UserStatsDaily>{ 
+                CreateTestDailyStat(user, date:DateOnly.FromDateTime(DateTime.Now)),
+                CreateTestDailyStat(user, date:DateOnly.FromDateTime(DateTime.Now.AddDays(1))),
+                CreateTestDailyStat(user, date:DateOnly.FromDateTime(DateTime.Now.AddDays(2)))
+            };
+
+            foreach (var item in list)
+            {
+                weeklystat.totalRepsCompleted += item.totalReps;
+                weeklystat.totalExercisesCompleted += item.totalExercisesCompleted;
+                weeklystat.totalWorkoutsCompleted++;
+                weeklystat.KcaloriesBurned += item.KcaloriesBurned;
+                weeklystat.totalSetsCompleted += item.totalSetsCompleted;
+                weeklystat.workoutStreak++;
+                weeklystat.userStatsDaily.Add(item);
+                weeklystat.activeDays++;
+            }
+            _unitOfWork.UserStatWeekly.Create(weeklystat);
+            return weeklystat;
         }
     }
 }

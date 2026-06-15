@@ -13,5 +13,11 @@ namespace Gym_App.Core
         public int workoutStreak { get; set; } = 0;//done
         public int longestStreak { get; set; } = 0;//done
         public double workoutCompletionRate { get; set; }//done
+        public int activeDays { get; set; }
+        public int totalSetsCompleted { get; set; }
+        public int totalRepsCompleted { get; set; }
+        public double totalWeightLifted { get; set; }
+        public int personalRecordsBroken { get; set; }
+        public bool weeklyGoalAchieved { get; set; }
     }
 }

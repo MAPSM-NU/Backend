@@ -28,6 +28,9 @@ namespace Gym_App.Infastructure.Context
         public DbSet<RefreshTokens> RefreshTokens { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<UserStats> UserStats { get; set; }
+        public DbSet<UserStatsDaily> UserStatsDaily { get; set; }
+        public DbSet<UserStatsWeekly> UserStatsWeekly { get; set; }
+        public DbSet<UserStatsMonthly> UserStatsMonthly { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -122,6 +125,28 @@ namespace Gym_App.Infastructure.Context
                 .WithOne(u => u.UserStats)
                 .HasForeignKey<UserStats>(us => us.userId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<UserStatsDaily>()
+                .HasOne(usd => usd.user)
+                .WithMany(u => u.UserStatsDaily)
+                .HasForeignKey(usd => usd.userId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<UserStatsDaily>().HasIndex(usd => new { usd.userId, usd.date }).IsUnique();
+
+            modelBuilder.Entity<UserStatsWeekly>()
+                .HasOne(usw => usw.user)
+                .WithMany(u => u.UserStatsWeekly)
+                .HasForeignKey(usw => usw.userId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<UserStatsWeekly>().HasIndex(usw => new { usw.userId, usw.weekNumber, usw.year }).IsUnique();
+
+            modelBuilder.Entity<UserStatsMonthly>()
+                .HasOne(usm => usm.user)
+                .WithMany(u => u.UserStatsMonthly)
+                .HasForeignKey(usm => usm.userId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<UserStatsMonthly>().HasIndex(usm => new {usm.userId, usm.monthName, usm.year}).IsUnique();
+            
         }
     }
 }

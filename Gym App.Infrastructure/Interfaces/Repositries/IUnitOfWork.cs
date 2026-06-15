@@ -24,6 +24,9 @@ public interface IUnitOfWork : IAsyncDisposable
     IExerciseInstanceRepository ExerciseInstance { get; }
     IPasswordResetTokenRepositry PasswordResetToken { get; }
     IUserStatsRepositry UserStats { get; } 
+    IUserStatDailyRepositry UserStatDaily {  get; }
+    IUserStatWeeklyRepositry UserStatWeekly {  get; }
+    IUserStatMonthlyRepositry UserStatMonthly { get; }
 
     /// <summary>
     /// Saves all changes made to repositories in a single database transaction

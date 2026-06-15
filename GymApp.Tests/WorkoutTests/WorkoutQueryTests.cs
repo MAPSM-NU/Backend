@@ -2,6 +2,7 @@
 using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
 using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -13,12 +14,14 @@ namespace GymApp.Tests.WorkoutTests
         private readonly Mock<ICachedAuthorizationService> _authorizationService;
         private readonly Mock<IWorkoutNotificationSink> _notificationService;
         private readonly Mock<ILogger<WorkoutService>> _logger;
+        private readonly Mock<IUserStatsService> _stats;
         public WorkoutQueryTests() : base("WorkoutTestsDatabase")
         {
             _authorizationService = new Mock<ICachedAuthorizationService>();
             _notificationService = new Mock<IWorkoutNotificationSink>();
             _logger = new Mock<ILogger<WorkoutService>>();
-            _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object, _notificationService.Object, _logger.Object);
+            _stats = new Mock<IUserStatsService>();
+            _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object, _notificationService.Object, _stats.Object, _logger.Object);
         }
         [Fact]
         public async Task GetWorkoutByIdTest()

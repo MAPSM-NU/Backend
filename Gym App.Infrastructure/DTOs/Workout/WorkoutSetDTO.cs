@@ -18,6 +18,7 @@ namespace Gym_App.Infrastructure.DTOs.Workout
         public bool IsCompleted { get; set; } = false;
         public int? ActualReps { get; set; }
         public float? ActualWeight { get; set; }
+        public int KcaloriesBurned {  get; set; }
 
     }
 }

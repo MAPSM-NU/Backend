@@ -7,7 +7,7 @@ using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
-using Gym_App.Infrastructure.DTOs.User;
+using Gym_App.Infrastructure.DTOs.UserStats;
 using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Http;

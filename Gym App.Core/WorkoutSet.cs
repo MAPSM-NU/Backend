@@ -27,6 +27,7 @@ namespace Gym_App.Domain
         [Column(TypeName = "decimal(5,2)")]
         [Range(0, 999.99, ErrorMessage = "Weight must be between 0 and 999.99.")]
         public decimal? ActualWeight { get; set; }
+        public int KCaloriesBurned {  get; set; }
 
         // Relationships
         public required Guid ExerciseInstanceId { get; set; }

@@ -8,6 +8,7 @@ using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
 using Gym_App.Infrastructure.DTOs.Exercise;
 using Gym_App.Infrastructure.DTOs.Workout;
+using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -18,13 +19,15 @@ namespace Gym_App.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICachedAuthorizationService _authorizationService;
         private readonly IWorkoutNotificationSink _notificationService;
+        private readonly IUserStatsService _stats;
         private readonly ILogger<WorkoutService> _logger;
 
-        public WorkoutService(IUnitOfWork unitOfWork, ICachedAuthorizationService authorizationService, IWorkoutNotificationSink notificationService, ILogger<WorkoutService> logger)
+        public WorkoutService(IUnitOfWork unitOfWork, ICachedAuthorizationService authorizationService, IWorkoutNotificationSink notificationService, IUserStatsService stats, ILogger<WorkoutService> logger)
         {
             _unitOfWork = unitOfWork;
             _authorizationService = authorizationService;
             _notificationService = notificationService;
+            _stats = stats;
             _logger = logger;
         }
 
@@ -425,48 +428,32 @@ namespace Gym_App.Application.Services
 
                 workout.IsCompleted = true;
                 workout.ActualEndTime = DateTime.UtcNow;
-                var utcnow = DateTime.UtcNow;
 
-                //stats update
-
-                var userStats = await _unitOfWork.UserStats.GetUserStatsByUserId(userId);
-
-                var exercisesBeforeUpdate = userStats.totalExercisesCompleted;
-                foreach (var exerciseInstance in workout.ExerciseInstances)
+                int exercisesCompleted = 0;
+                foreach(var exercise in workout.ExerciseInstances)
                 {
-                    if (exerciseInstance.IsCompleted)
-                    {
-                        userStats.totalExercisesCompleted++;
-                    }
+                    if (exercise.IsCompleted)
+                        exercisesCompleted++;
                 }
-                var exercisesInWorkout = workout.ExerciseInstances.Count;
-                var exercisesDone = exercisesBeforeUpdate == userStats.totalExercisesCompleted ? 0 : userStats.totalExercisesCompleted - exercisesBeforeUpdate;
-                if (exercisesInWorkout <= 0 || exercisesDone == 0 || ((double) exercisesDone / exercisesInWorkout) < 0.5)
-                {//Check if exercises are little to finish the the workout or the user done less than 50% of the exercises
-                    _logger.LogInformation($"User {userId} missed this workout as they completed only {exercisesDone} out of {exercisesInWorkout} exercises");
-                    return new SettersResponse { status = 0, msg = "Either you didn't finish atleast 50% of the exercises in the workout or there were less than 3" };
-                }
-                var startTime = workout.ActualStartTime;
-                var endTime = workout.ActualEndTime;
-                TimeSpan hoursInExercise = workout.ActualStartTime != null && workout.ActualEndTime != null
-                    ? (workout.ActualEndTime.Value - workout.ActualStartTime.Value)
-                    : TimeSpan.Zero;
-                userStats.totalHours += hoursInExercise.TotalHours;
-
-                userStats.totalWorkoutsCompleted++;
-                userStats.workoutStreak++;
-                if(userStats.workoutStreak > userStats.longestStreak)
+                if(exercisesCompleted <= workout.ExerciseInstances.Count / 2 || workout.ExerciseInstances.Count < 3)
                 {
-                    _logger.LogInformation($"New longest workout streak achieved: {userStats.workoutStreak} for user {userId}");
-                    userStats.longestStreak = userStats.workoutStreak;
+                    _logger.LogError($"User {workout.User.Id} has not finished atleast 50% of the exercises in workout {workout.Id}");
+                    return new SettersResponse { msg = "Either you didn't finish atleast 50% of the exercises in the workout or there were less than 3", status = 0 };
                 }
-                userStats.workoutCompletionRate = userStats.totalWorkoutsMissed == 0 ? 100 :
-                    (double)userStats.totalWorkoutsCompleted / (userStats.totalWorkoutsCompleted + userStats.totalWorkoutsMissed) * 100;
 
-                
-                
 
-                await _unitOfWork.UserStats.Update(userStats);
+                var result = await _stats.AddDailyStats(workout);
+                _logger.LogInformation(result.msg);
+
+                result = await _stats.AddWeeklyStats(user: workout.User);
+                _logger.LogInformation(result.msg);
+
+                result = await _stats.AddMonthlyStats(user: workout.User);
+                _logger.LogInformation(result.msg);
+
+                result = await _stats.AddAllTimeStats(workout);
+                _logger.LogInformation(result.msg);
+
                 await _unitOfWork.Workouts.Update(workout);
                 await _unitOfWork.SaveChangesAsync();
 

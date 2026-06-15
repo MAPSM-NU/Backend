@@ -201,8 +201,8 @@ namespace GymApp.Tests.UserStats
             );
             var weeklyStat2 = CreateTestWeeklyStat(
                 user,
-                DateOnly.FromDateTime(DateTime.Today.AddDays(7 - (int)DateTime.Today.DayOfWeek)),
-                ISOWeek.GetWeekOfYear(DateTime.Now.AddDays(7))
+                DateOnly.FromDateTime(DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek)),
+                ISOWeek.GetWeekOfYear(DateTime.Now.AddDays(-7))
             );
             await _unitOfWork.SaveChangesAsync();
 

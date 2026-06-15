@@ -4,6 +4,7 @@ using Gym_App.Infastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym_App.Migrations
 {
     [DbContext(typeof(DbBase))]
-    partial class DbBaseModelSnapshot : ModelSnapshot
+    [Migration("20260614180450_UserStatsAdditionalFeatures")]
+    partial class UserStatsAdditionalFeatures
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -185,9 +188,6 @@ namespace Gym_App.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("totalSetsCompleted")
-                        .HasColumnType("int");
-
-                    b.Property<int>("totalWorkoutCompleted")
                         .HasColumnType("int");
 
                     b.Property<Guid>("userId")
@@ -1026,9 +1026,6 @@ namespace Gym_App.Migrations
 
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("bit");
-
-                    b.Property<int>("KCaloriesBurned")
-                        .HasColumnType("int");
 
                     b.Property<string>("Notes")
                         .HasColumnType("varchar(50)");

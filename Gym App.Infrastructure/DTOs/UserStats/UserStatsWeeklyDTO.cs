@@ -1,12 +1,12 @@
 ﻿
 using Gym_App.Domain;
+using System.Globalization;
 
 namespace Gym_App.Infrastructure.DTOs.UserStats
 {
     public class UserStatsWeeklyDTO
     {
         public Guid userId { get; set; }
-        public required User user { get; set; }
         public int totalWorkoutsCompleted { get; set; } = 0;
         public int totalWorkoutsMissed { get; set; } = 0;
         public int totalExercisesCompleted { get; set; } = 0;
@@ -19,9 +19,9 @@ namespace Gym_App.Infrastructure.DTOs.UserStats
         public double totalWeightLifted { get; set; }
         public int personalRecordsBroken { get; set; }
         public bool weeklyGoalAchieved { get; set; }
-        public double IKcaloriesBurned { get; set; } = 0;
-        public DateOnly weekDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
-        public int year { get; set; } = DateTime.Now.Year;
+        public double KcaloriesBurned { get; set; } = 0;
+        public DateOnly weekDate { get; set; }
+        public int year { get; set; }
         public int weekNumber { get; set; }
     }
 }

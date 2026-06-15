@@ -5,6 +5,7 @@ using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infrastructure.DTOs.Exercise;
 using Gym_App.Infrastructure.DTOs.Workout;
+using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -16,12 +17,14 @@ namespace GymApp.Tests.WorkoutTests
         private readonly Mock<ICachedAuthorizationService> _authorizationService;
         private readonly Mock<IWorkoutNotificationSink> _notificationService;
         private readonly Mock<ILogger<WorkoutService>> _logger;
+        private readonly Mock<IUserStatsService> _stats;
         public WorkoutCreationTests() : base("WorkoutTestsDatabase")
         {
             _authorizationService = new Mock<ICachedAuthorizationService>();
             _notificationService = new Mock<IWorkoutNotificationSink>();
             _logger = new Mock<ILogger<WorkoutService>>();
-            _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object, _notificationService.Object, _logger.Object);
+            _stats = new Mock<IUserStatsService>();
+            _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object, _notificationService.Object, _stats.Object, _logger.Object);
         }
         //Creating workout with all its possibilities of failure
         [Fact]

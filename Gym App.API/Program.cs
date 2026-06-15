@@ -128,6 +128,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IUserStatsService, UserStatsService>();
 builder.Services.AddScoped<ITokenHandler, Gym_App.Application.Services.TokenHandler>();
 
 

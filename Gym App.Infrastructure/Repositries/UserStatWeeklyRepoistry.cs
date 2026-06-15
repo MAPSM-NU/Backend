@@ -17,12 +17,12 @@ namespace Gym_App.Infrastructure.Repositries
         }
         public async Task<UserStatsWeekly> GetUserStatsWeekly(Guid userId, int weekNumber, int year)
         {
-            return await table.FirstOrDefaultAsync(usw => usw.userId == userId && usw.weekNumber == weekNumber && usw.year == year);
+            return await table.Include(usw => usw.userStatsDaily).FirstOrDefaultAsync(usw => usw.userId == userId && usw.weekNumber == weekNumber && usw.year == year);
         }
 
         public async Task<List<UserStatsWeekly>> GetUserStatsWeeksList(Guid userId, List<int> weekNumbers, int year)
         {
-            return await table.Where(usw => usw.userId == userId && weekNumbers.Contains(usw.weekNumber) && usw.year == year).ToListAsync();
+            return await table.Include(usw => usw.userStatsDaily).Where(usw => usw.userId == userId && weekNumbers.Contains(usw.weekNumber) && usw.year == year).ToListAsync();
         }
     }
 }

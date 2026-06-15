@@ -1,11 +1,14 @@
 ﻿using Gym_App.Application.Authorization;
 using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
+using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infrastructure.DTOs.Exercise;
 using Gym_App.Infrastructure.DTOs.Workout;
+using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
+using User = Gym_App.Domain.User;
 
 namespace GymApp.Tests.WorkoutTests
 {
@@ -15,12 +18,14 @@ namespace GymApp.Tests.WorkoutTests
         private readonly Mock<ICachedAuthorizationService> _authorizationService;
         private readonly Mock<IWorkoutNotificationSink> _notificationService;
         private readonly Mock<ILogger<WorkoutService>> _logger;
+        private readonly Mock<IUserStatsService> _stats;
         public WorkoutProgressTests() : base("WorkoutTestsDatabase")
         {
             _authorizationService = new Mock<ICachedAuthorizationService>();
             _notificationService = new Mock<IWorkoutNotificationSink>();
             _logger = new Mock<ILogger<WorkoutService>>();
-            _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object, _notificationService.Object, _logger.Object);
+            _stats = new Mock<IUserStatsService>();
+            _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object, _notificationService.Object, _stats.Object, _logger.Object);
         }
         [Fact]
         public async Task StartWorkoutSuccessfully()
@@ -271,6 +276,20 @@ namespace GymApp.Tests.WorkoutTests
                     set.IsCompleted = true;
                 }
             }
+
+            _stats.Setup(y => y.AddDailyStats(
+                It.IsAny<Workout>())).
+                ReturnsAsync(new Gym_App.Infastructure.Transfer_Classes.SettersResponse { msg="k",status=2});
+            _stats.Setup(y=>y.AddMonthlyStats(
+                It.IsAny<User>())).
+                ReturnsAsync(new Gym_App.Infastructure.Transfer_Classes.SettersResponse { msg = "k", status = 2 });
+            _stats.Setup(y => y.AddWeeklyStats(
+                It.IsAny<User>())).
+                ReturnsAsync(new Gym_App.Infastructure.Transfer_Classes.SettersResponse { msg = "k", status = 2 });
+            _stats.Setup(y => y.AddAllTimeStats(
+                It.IsAny<Workout>())).
+                ReturnsAsync(new Gym_App.Infastructure.Transfer_Classes.SettersResponse { msg = "k", status = 2 });
+
             var result = await _workoutService.CompleteWorkoutAsync(workout.Id, user.Id);
             Assert.NotNull(result);
             Assert.Equal("Workout completed", result.msg);

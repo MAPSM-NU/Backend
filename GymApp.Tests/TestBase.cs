@@ -169,6 +169,7 @@ namespace GymApp.Tests
                 Notes = notes,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
+                KCaloriesBurned = 12
             };
             _unitOfWork.WorkoutSet.Create(workoutSet);
             return workoutSet;
@@ -271,6 +272,7 @@ namespace GymApp.Tests
                 totalReps = totalReps,
                 totalHours = totalHours,
                 totalExercisesCompleted = totalExercisesCompleted,
+                totalWorkoutCompleted = 1,
             };
             _unitOfWork.UserStatDaily.Create(dailyStat);
             return dailyStat;

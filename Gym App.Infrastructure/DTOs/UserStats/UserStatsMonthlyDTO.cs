@@ -7,7 +7,6 @@ namespace Gym_App.Infrastructure.DTOs.UserStats
     public class UserStatsMonthlyDTO
     {
         public Guid userId { get; set; }
-        public required User user { get; set; }
         public int totalWorkoutsCompleted { get; set; } = 0;
         public int totalWorkoutsMissed { get; set; } = 0;
         public int totalExercisesCompleted { get; set; } = 0;
@@ -21,10 +20,10 @@ namespace Gym_App.Infrastructure.DTOs.UserStats
         public double totalWeightLifted { get; set; }
         public int personalRecordsBroken { get; set; }
         public bool weeklyGoalAchieved { get; set; }
-        public double IKcaloriesBurned { get; set; } = 0;
-        public DateOnly monthDate { get; set; }
-        public string monthName { get; set; }
-        public int monthNumber {  get; set; }
-        public int year { get; set; }
+        public double KcaloriesBurned { get; set; } = 0;
+        public DateOnly monthDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+        public string monthName { get; set; } = DateTime.Now.ToString("MMMM");
+        public int monthNumber { get; set; } = DateTime.Now.Month;
+        public int year { get; set; } = DateTime.Now.Year;
     }
 }

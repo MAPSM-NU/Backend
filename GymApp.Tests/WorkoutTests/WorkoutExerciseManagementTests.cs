@@ -63,7 +63,8 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 1,
                         Notes = "This is a test exercise",
-                        Sets = sets
+                        Sets = sets,
+                        Muscles = ["muscle"],
                     },
                     new ExerciseDetailDTO
                     {
@@ -71,6 +72,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 2,
                         Notes = "This is a test exercise 2",
+                        Muscles = ["muscle"],
                         Sets = sets
                     },
                     new ExerciseDetailDTO
@@ -79,6 +81,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 3,
                         Notes = "This is a test exercise 3",
+                        Muscles = ["muscle"],
                         Sets = sets
                     },
                     new ExerciseDetailDTO
@@ -87,6 +90,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 4,
                         Notes = "This is a test exercise 4",
+                        Muscles = ["muscle"],
                         Sets = sets
                     },
                     new ExerciseDetailDTO
@@ -95,6 +99,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 5,
                         Notes = "This is a test exercise 5",
+                        Muscles = ["muscle"],
                         Sets = sets
                     }
                 }
@@ -126,6 +131,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 1,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -179,6 +185,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 1,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -214,6 +221,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = Guid.NewGuid(), // Non-existing exercise ID
                         ExerciseOrder = 1,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -251,6 +259,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id, // Valid exercise ID
                         ExerciseOrder = 1,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -268,6 +277,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = Guid.NewGuid(), // Non-existing exercise ID
                         ExerciseOrder = 2,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -321,6 +331,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 1,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = sets
                     },
                     new ExerciseDetailDTO
@@ -329,6 +340,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 2,
                         Notes = "This is a test exercise 2",
+                        Muscles = ["muscle"],
                         Sets = sets
                     }
                 }
@@ -358,6 +370,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 1,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -411,6 +424,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id,
                         ExerciseOrder = 1,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -446,6 +460,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = Guid.NewGuid(), // Non-existing exercise ID
                         ExerciseOrder = 1,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -483,6 +498,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = exercise.Id, // Valid exercise ID
                         ExerciseOrder = 1,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -500,6 +516,7 @@ namespace GymApp.Tests.WorkoutTests
                         ExerciseId = Guid.NewGuid(), // Non-existing exercise ID
                         ExerciseOrder = 2,
                         Notes = "This is a test exercise",
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO

@@ -8,5 +8,6 @@
         public required string VideoUrl { get; set; }
         public required string Category { get; set; }
         public required string Grip { get; set; }
+        public required IEnumerable<string> Muscles { get; set; }
     }
 }

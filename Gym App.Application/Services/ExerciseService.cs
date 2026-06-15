@@ -186,6 +186,7 @@ namespace Gym_App.Application.Services
                                 VideoUrl = e.VideoUrl,
                                 Category = e.Category,
                                 Grip = e.Grip,
+                                Muscles = e.Muscles.Select(m => m.Name),
                             }).FirstOrDefaultAsync();
 
             if (Exercise == null) 
@@ -214,6 +215,7 @@ namespace Gym_App.Application.Services
                                 VideoUrl = e.VideoUrl ?? "",
                                 Category = e.Category ?? "",
                                 Grip = e.Grip ?? "",
+                                Muscles = e.Muscles!.Select(m => m.Name),
                             }).FirstOrDefaultAsync();
 
             if (Exercise == null)
@@ -272,6 +274,7 @@ namespace Gym_App.Application.Services
                                     VideoUrl = e.VideoUrl,
                                     Category = e.Category,
                                     Grip = e.Grip,
+                                    Muscles = e.Muscles.Select(m => m.Name),
                                 };
 
             if (exercisequery.Count() == 0)
@@ -316,6 +319,7 @@ namespace Gym_App.Application.Services
                                             VideoUrl = e.VideoUrl,
                                             Category = e.Category,
                                             Grip = e.Grip,
+                                            Muscles = e.Muscles.Select(m => m.Name),
                                         });
 
             var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exercisesResponse, page, pageSize);
@@ -339,7 +343,8 @@ namespace Gym_App.Application.Services
                                            VideoUrl = e.VideoUrl,
                                            Category = e.Category,
                                            Grip = e.Grip,
-                                       });
+                                            Muscles = e.Muscles.Select(m => m.Name),
+                                        });
 
             var exercises = await PagedList<ExerciseViewDTO>.CreateAsync(exercisesResponse, page, pageSize);
             return new GettersResponse<ExerciseViewDTO>

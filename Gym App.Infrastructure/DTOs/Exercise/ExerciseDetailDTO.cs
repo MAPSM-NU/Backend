@@ -15,6 +15,7 @@ namespace Gym_App.Infrastructure.DTOs.Exercise
         public DateTime? StartedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
         public bool IsCompleted { get; set; }
+        public required IEnumerable<string> Muscles { get; set; }
         public IEnumerable<WorkoutSetDTO> Sets { get; set; }
     }
 }

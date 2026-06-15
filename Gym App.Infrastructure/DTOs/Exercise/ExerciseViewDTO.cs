@@ -10,5 +10,6 @@ namespace Gym_App.Infastructure.DTOs.Exercise
         public string? VideoUrl { get; set; }
         public string? Category { get; set; }
         public string? Grip { get; set; }
+        public required IEnumerable<string> Muscles { get; set; }
     }
 }

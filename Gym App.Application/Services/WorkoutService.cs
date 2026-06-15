@@ -732,6 +732,7 @@ namespace Gym_App.Application.Services
                         PlannedReps = (int)ei.PlannedReps!,
                         PlannedWeight = (int)ei.PlannedWeight!,
                         Notes = ei.Notes!,
+                        Muscles = ei.Exercise.Muscles!.Select(muscle => muscle.Name),
                         Sets = ei.Sets!.Select(ws => new WorkoutSetDTO
                         {
                             SetId = ws.Id,
@@ -789,6 +790,7 @@ namespace Gym_App.Application.Services
                     PlannedReps = (int)ei.PlannedReps!,
                     PlannedWeight = (int)ei.PlannedWeight!,
                     Notes = ei.Notes!,
+                    Muscles = ei.Exercise.Muscles!.Select(muscle => muscle.Name),
                     Sets = ei.Sets!.Select(ws => new WorkoutSetDTO
                     {
                         SetId = ws.Id,
@@ -877,6 +879,7 @@ namespace Gym_App.Application.Services
                     PlannedReps = (int)e.PlannedReps!,
                     PlannedWeight = (int)e.PlannedWeight!,
                     ExerciseOrder = e.ExerciseOrder,
+                    Muscles = e.Exercise.Muscles!.Select(muscle => muscle.Name),
                     Sets = e.Sets.Select(s => new WorkoutSetDTO
                     {
                         SetId = s.Id,
@@ -949,6 +952,7 @@ namespace Gym_App.Application.Services
                         PlannedReps = (int)ei.PlannedReps,
                         PlannedWeight = (int)ei.PlannedWeight,
                         Notes = ei.Notes,
+                        Muscles = ei.Exercise.Muscles!.Select(muscle => muscle.Name),
                         Sets = ei.Sets.Select(ws => new WorkoutSetDTO
                         {
                             SetId = ws.Id,

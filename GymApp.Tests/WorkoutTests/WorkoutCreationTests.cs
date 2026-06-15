@@ -1,6 +1,7 @@
 ﻿using Gym_App.Application.Authorization;
 using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
+using Gym_App.Domain;
 using Gym_App.Infastructure.DTOs.WorkoutDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infrastructure.DTOs.Exercise;
@@ -50,7 +51,7 @@ namespace GymApp.Tests.WorkoutTests
                         Notes = "Test notes",
                         PlannedReps = 10,
                         PlannedWeight = 50.2022f,
-
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -156,6 +157,7 @@ namespace GymApp.Tests.WorkoutTests
                         Notes = "Test notes",
                         PlannedReps = 10,
                         PlannedWeight = 50,
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -197,6 +199,7 @@ namespace GymApp.Tests.WorkoutTests
                         Notes = "Test notes",
                         PlannedReps = 10,
                         PlannedWeight = 50,
+                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>() // No sets added
                     }
                 }

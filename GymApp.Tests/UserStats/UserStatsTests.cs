@@ -298,7 +298,7 @@ namespace GymApp.Tests.UserStats
             result = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
             Assert.Equal(2, result.status);
 
-            result = await _workoutService.CompleteWorkoutAsync(workout.Id, user.Id);
+            result = await _workoutService.CompleteWorkoutAsync(workout2.Id, user.Id);
             Assert.Equal("Workout completed", result.msg);
             Assert.Equal(2, result.status);
 

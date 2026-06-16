@@ -455,7 +455,7 @@ namespace Gym_App.Application.Services
                     return new SettersResponse { status = 0, msg = "Workout hasn't even started yet" };
 
                 if (workout.IsCompleted)
-                    return new SettersResponse { status = 0, msg = "Workout is done" };
+                    return new SettersResponse { status = 0, msg = "Workout is already done" };
 
                 workout.IsCompleted = true;
                 workout.ActualEndTime = DateTime.UtcNow;
@@ -1136,26 +1136,26 @@ namespace Gym_App.Application.Services
                     }
                     if(requestType.Update.Contains(setDto.requestType.ToLower()))
                     {
-                        if (setDto.Reps != 0)
+                        if (setDto.Reps != 0 && setDto.Reps != workoutSet.Reps)
                         {
                             workoutSet.Reps = setDto.Reps;
                             changesHappened = true;
                         }
                                 
 
-                        if (setDto.Weight != 0)
+                        if (setDto.Weight != 0 && workoutSet.Weight != setDto.Weight)
                         {
                             workoutSet.Weight = setDto.Weight;
                             changesHappened = true;
                         }
 
-                        if (setDto.RestSeconds != 0)
+                        if (setDto.RestSeconds != 0 && workoutSet.RestSeconds != setDto.RestSeconds)
                         {
                             workoutSet.RestSeconds = setDto.RestSeconds;
                             changesHappened = true;
                         }
 
-                        if (!string.IsNullOrEmpty(setDto.Notes))
+                        if (!string.IsNullOrEmpty(setDto.Notes) && workoutSet.Notes != setDto.Notes)
                         {
                             workoutSet.Notes = setDto.Notes;
                             changesHappened = true;

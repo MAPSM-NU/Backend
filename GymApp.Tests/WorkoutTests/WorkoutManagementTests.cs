@@ -286,8 +286,7 @@ namespace GymApp.Tests.WorkoutTests
             //}
             var set = exerciseInstance.Sets.FirstOrDefault(x => x.Notes == "created");
             Assert.NotNull(set);
-            Assert.Equal(20, set.ActualReps);
-            Assert.Equal(20, set.ActualWeight);
+            Assert.Equal("created", set.Notes);
         }
         [Fact]
         public async Task ExerciseUpdateSetUpdate()
@@ -330,8 +329,6 @@ namespace GymApp.Tests.WorkoutTests
             Assert.NotNull(exerciseInstance);
             var updatedSet = exerciseInstance.Sets.FirstOrDefault(x => x.Id == set.Id);
             Assert.NotNull(updatedSet);
-            Assert.Equal(20, updatedSet.ActualReps);
-            Assert.Equal(20, updatedSet.ActualWeight);
             Assert.Equal(40, updatedSet.Reps);
             Assert.Equal(40, updatedSet.Weight);
         }

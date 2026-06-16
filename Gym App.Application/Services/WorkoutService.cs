@@ -122,6 +122,9 @@ namespace Gym_App.Application.Services
                             IsCompleted = false,
                             CreatedAt = DateTime.Now,
                             UpdatedAt = DateTime.Now,
+                            ActualReps = 0,
+                            ActualWeight = 0,
+                            KCaloriesBurned = 0,
                         };
 
                         await _unitOfWork.WorkoutSet.Create(workoutSet);
@@ -193,6 +196,9 @@ namespace Gym_App.Application.Services
                             IsCompleted = false,
                             CreatedAt = DateTime.Now,
                             UpdatedAt = DateTime.Now,
+                            ActualReps = 0,
+                            ActualWeight = 0,
+                            KCaloriesBurned = 0,
                         };
                         await _unitOfWork.WorkoutSet.Create(workoutSet);
                     }
@@ -333,10 +339,13 @@ namespace Gym_App.Application.Services
                 if (!workout.hasStarted)
                     return new SettersResponse { status = 0, msg = "Workout hasn't started" };
 
-                workout.IsCompleted = progressDto.IsCompleted;
+                if(workout.IsCompleted)
+                    return new SettersResponse { status = 0, msg = "Workout is already done" };
 
-                _unitOfWork.Workouts.Update(workout);
-
+                List<ExerciseInstance> exercisesDone = new List<ExerciseInstance>();
+                List<WorkoutSet> setsDone = new List<WorkoutSet>();
+                int exerciseRepeatedValues = 0;
+                int setRepeatedValues = 0;
                 
                 // Update exercise instances and sets
                 foreach (var exerciseProgress in progressDto.Exercises)
@@ -346,13 +355,19 @@ namespace Gym_App.Application.Services
 
                     if (exerciseInstance != null)
                     {
-                        if(exerciseInstance.StartedAt != null)
+                        if (exercisesDone.Contains(exerciseInstance))
+                        {
+                            _logger.LogWarning($"user {userId} send the same exact exercise instance {exerciseInstance.Id} - {exerciseInstance.Exercise.Name} to be updated multiple times");
+                            exerciseRepeatedValues++;
+                            continue;
+                        }
+                        if(exerciseProgress.StartedAt != null)
                         {
                             _logger.LogInformation($"Starting exercise instance {exerciseInstance.Id} as part of workout progress update");
                             exerciseInstance.StartedAt = exerciseProgress.StartedAt;
                         }
 
-                        if(exerciseInstance.IsCompleted != exerciseProgress.IsCompleted)
+                        if(exerciseProgress.IsCompleted == true)
                         {
                             _logger.LogInformation($"Updating completion status for exercise instance {exerciseInstance.Id} as part of workout progress update");
                             exerciseInstance.IsCompleted = exerciseProgress.IsCompleted;
@@ -364,7 +379,8 @@ namespace Gym_App.Application.Services
                             exerciseInstance.CompletedAt = exerciseProgress.CompletedAt;
                         }
 
-                        _unitOfWork.ExerciseInstance.Update(exerciseInstance);
+                        exercisesDone.Add(exerciseInstance);
+                        await _unitOfWork.ExerciseInstance.Update(exerciseInstance);
 
                         if(exerciseProgress.Sets == null)
                         {
@@ -375,23 +391,29 @@ namespace Gym_App.Application.Services
                         foreach (var setProgress in exerciseProgress.Sets)
                         {
                             var workoutSet = await _unitOfWork.WorkoutSet.GetById(setProgress.SetId);
+
+                            if (setsDone.Contains(workoutSet))
+                            {
+                                _logger.LogWarning($"user {userId} send the same exact exercise instance {exerciseInstance.Id} - {exerciseInstance.Exercise.Name} to be updated multiple times");
+                                setRepeatedValues++;
+                                continue;
+                            }
                             if (workoutSet != null)
                             {
                                 workoutSet.IsCompleted = setProgress.IsCompleted;
                                 workoutSet.ActualReps = setProgress.ActualReps;
                                 workoutSet.ActualWeight = setProgress.ActualWeight;
                                 workoutSet.Notes = setProgress.Notes;
+                                workoutSet.KCaloriesBurned = setProgress.KCaloriesBurned;
 
                                 await _unitOfWork.WorkoutSet.Update(workoutSet);
 
                                 // Detect if this is a new PR
-                                if (setProgress.ActualWeight.HasValue && setProgress.ActualReps.HasValue)
-                                {
-                                    await DetectAndCreatePersonalRecordAsync(
-                                        userId,
-                                        exerciseInstance,
-                                        workoutSet);
-                                }
+                                
+                                await DetectAndCreatePersonalRecordAsync(
+                                    userId,
+                                    exerciseInstance,
+                                    workoutSet);
                             }
                         }
                     }
@@ -399,6 +421,12 @@ namespace Gym_App.Application.Services
                 await _unitOfWork.SaveChangesAsync();
 
                 _logger.LogInformation($"Workout progress updated for {progressDto.WorkoutId}");
+
+                if(exerciseRepeatedValues > 0 || setRepeatedValues > 0)
+                {
+                    _logger.LogInformation($"There has been a total repetition of {exerciseRepeatedValues} for exercises and {setRepeatedValues} for sets");
+                    return new SettersResponse { status = 2, msg = "There are some repeated values given but nevertheless progress have been updated" };
+                }
 
                 return new SettersResponse { status = 2, msg = "Progress updated successfully" };
             }
@@ -426,6 +454,9 @@ namespace Gym_App.Application.Services
                 if (!workout.hasStarted)
                     return new SettersResponse { status = 0, msg = "Workout hasn't even started yet" };
 
+                if (workout.IsCompleted)
+                    return new SettersResponse { status = 0, msg = "Workout is done" };
+
                 workout.IsCompleted = true;
                 workout.ActualEndTime = DateTime.UtcNow;
 
@@ -435,7 +466,7 @@ namespace Gym_App.Application.Services
                     if (exercise.IsCompleted)
                         exercisesCompleted++;
                 }
-                if(exercisesCompleted <= workout.ExerciseInstances.Count / 2 || workout.ExerciseInstances.Count < 3)
+                if(exercisesCompleted < workout.ExerciseInstances.Count / 2 || workout.ExerciseInstances.Count < 3)
                 {
                     _logger.LogError($"User {workout.User.Id} has not finished atleast 50% of the exercises in workout {workout.Id}");
                     return new SettersResponse { msg = "Either you didn't finish atleast 50% of the exercises in the workout or there were less than 3", status = 0 };
@@ -577,7 +608,10 @@ namespace Gym_App.Application.Services
                        Weight = (decimal?)setDto.Weight,
                        RestSeconds = setDto.RestSeconds,
                        Notes = setDto.Notes,
-                       IsCompleted = false
+                       IsCompleted = false,
+                       ActualReps = 0,
+                       ActualWeight = 0,
+                       KCaloriesBurned = 0,
                    };
 
                    await _unitOfWork.WorkoutSet.Create(workoutSet);
@@ -637,7 +671,10 @@ namespace Gym_App.Application.Services
                             RestSeconds = set.RestSeconds,
                             Notes = set.Notes,
                             IsCompleted = false,
-                            SetNumber = set.SetNumber
+                            SetNumber = set.SetNumber,
+                            ActualReps = 0,
+                            ActualWeight = 0,
+                            KCaloriesBurned = 0,
                         };
                         await _unitOfWork.WorkoutSet.Create(workoutSet);
                     }
@@ -1082,8 +1119,9 @@ namespace Gym_App.Application.Services
                             RestSeconds = setDto.RestSeconds,
                             Notes = setDto.Notes,
                             IsCompleted = setDto.IsCompleted,
-                            ActualReps = setDto.ActualReps,
-                            ActualWeight = setDto.ActualWeight
+                            ActualReps = 0,
+                            ActualWeight = 0,
+                            KCaloriesBurned = 0,
                         };
                         _logger.LogInformation($"Creating new workout set for ExerciseInstanceId {setDto.SetId}");
                         changesHappened = true;
@@ -1098,26 +1136,26 @@ namespace Gym_App.Application.Services
                     }
                     if(requestType.Update.Contains(setDto.requestType.ToLower()))
                     {
-                        if (workoutSet.Reps != setDto.Reps)
+                        if (setDto.Reps != 0)
                         {
                             workoutSet.Reps = setDto.Reps;
                             changesHappened = true;
                         }
                                 
 
-                        if (workoutSet.Weight != setDto.Weight)
+                        if (setDto.Weight != 0)
                         {
                             workoutSet.Weight = setDto.Weight;
                             changesHappened = true;
                         }
 
-                        if (workoutSet.RestSeconds != setDto.RestSeconds)
+                        if (setDto.RestSeconds != 0)
                         {
                             workoutSet.RestSeconds = setDto.RestSeconds;
                             changesHappened = true;
                         }
 
-                        if (workoutSet.Notes != setDto.Notes)
+                        if (!string.IsNullOrEmpty(setDto.Notes))
                         {
                             workoutSet.Notes = setDto.Notes;
                             changesHappened = true;
@@ -1128,17 +1166,6 @@ namespace Gym_App.Application.Services
                             changesHappened = true;
                         }
 
-                        if (workoutSet.ActualReps != setDto.ActualReps)
-                        {
-                            workoutSet.ActualReps = setDto.ActualReps;
-                            changesHappened = true;
-                        }
-
-                        if (workoutSet.ActualWeight != setDto.ActualWeight)
-                        {
-                            workoutSet.ActualWeight = setDto.ActualWeight;
-                            changesHappened = true;
-                        }
                         _logger.LogInformation($"Updating workout set with ID {setDto.SetId}" + (changesHappened ? " with changes" : " without changes"));
                         await _unitOfWork.WorkoutSet.Update(workoutSet);
                     }
@@ -1170,9 +1197,6 @@ namespace Gym_App.Application.Services
         {
             try
             {
-                if (!workoutSet.ActualWeight.HasValue || !workoutSet.ActualReps.HasValue)
-                    return;
-
                 var exercise = await _unitOfWork.Exercises.GetById(exerciseInstance.ExerciseId);
                 if (exercise == null)
                     return;
@@ -1208,8 +1232,8 @@ namespace Gym_App.Application.Services
                     {
                         UserId = userId,
                         ExerciseId = exerciseInstance.ExerciseId,
-                        Weight = workoutSet.ActualWeight.Value,
-                        Reps = workoutSet.ActualReps.Value,
+                        Weight = workoutSet.ActualWeight,
+                        Reps = workoutSet.ActualReps,
                         AchievedDate = DateTime.UtcNow,
                         WorkoutSetId = workoutSet.Id,
                         NotificationSent = false

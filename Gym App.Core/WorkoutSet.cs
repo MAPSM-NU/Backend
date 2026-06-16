@@ -23,11 +23,11 @@ namespace Gym_App.Domain
         public bool IsCompleted { get; set; } = false;
         [Range(0, 999, ErrorMessage = "Reps must be between 0 and 999")]
         //Reps done
-        public int? ActualReps { get; set; }
+        public required int ActualReps { get; set; } = 0;
         [Column(TypeName = "decimal(5,2)")]
         [Range(0, 999.99, ErrorMessage = "Weight must be between 0 and 999.99.")]
-        public decimal? ActualWeight { get; set; }
-        public int KCaloriesBurned {  get; set; }
+        public required decimal ActualWeight { get; set; } = 0;
+        public int KCaloriesBurned { get; set; } = 0;
 
         // Relationships
         public required Guid ExerciseInstanceId { get; set; }

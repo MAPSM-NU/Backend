@@ -16,7 +16,5 @@ namespace Gym_App.Infrastructure.DTOs.Workout
         public int? RestSeconds { get; set; }
         public string? Notes { get; set; }
         public bool IsCompleted { get; set; } = false;
-        public int? ActualReps { get; set; }
-        public decimal? ActualWeight { get; set; }
     }
 }

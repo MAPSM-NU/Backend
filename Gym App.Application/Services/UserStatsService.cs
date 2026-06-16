@@ -45,10 +45,15 @@ namespace Gym_App.Application.Services
                     foreach (var set in exercise.Sets!)
                     {
                         dailyStat.totalSetsCompleted++;
-                        dailyStat.totalReps += (int)set.ActualReps!;
+                        dailyStat.totalReps += set.ActualReps;
                         dailyStat.totalWeightLifted += (double)set.ActualWeight!;
                         dailyStat.KcaloriesBurned += set.KCaloriesBurned;
                     }
+                }
+                if (workout.ActualStartTime.HasValue && workout.ActualEndTime.HasValue)
+                {
+                    var hourDifference_ = (workout.ActualEndTime.Value - workout.ActualStartTime.Value).TotalHours;
+                    dailyStat.totalHours = hourDifference_;
                 }
                 dailyStat.totalWorkoutCompleted++;
                 await _unitOfWork.UserStatDaily.Create(dailyStat);
@@ -67,8 +72,12 @@ namespace Gym_App.Application.Services
                     dailyStat.KcaloriesBurned += set.KCaloriesBurned;
                 }
             }
+            if (workout.ActualStartTime.HasValue && workout.ActualEndTime.HasValue)
+            {
+                var hourDifference_ = (workout.ActualEndTime.Value - workout.ActualStartTime.Value).TotalHours;
+                dailyStat.totalHours = hourDifference_;
+            }
             dailyStat.totalWorkoutCompleted++;
-
             await _unitOfWork.UserStatDaily.Update(dailyStat);
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Daily stat done", status = 2 };
@@ -113,6 +122,7 @@ namespace Gym_App.Application.Services
                     weeklyStats.totalSetsCompleted += item.totalSetsCompleted;
                     weeklyStats.totalWeightLifted += item.totalWeightLifted;
                     weeklyStats.workoutCompletionRate = weeklyStats.totalWorkoutsMissed == 0 ? 100 : weeklyStats.totalWorkoutsCompleted / (weeklyStats.totalWorkoutsCompleted + weeklyStats.totalWorkoutsMissed) * 100;
+                    weeklyStats.totalHours += item.totalHours;
                     weeklyStats.userStatsDaily.Add(item);
                 }
                 await _unitOfWork.UserStatWeekly.Create(weeklyStats);
@@ -129,6 +139,7 @@ namespace Gym_App.Application.Services
                 weeklyStats.totalSetsCompleted += item.totalSetsCompleted;
                 weeklyStats.totalWeightLifted += item.totalWeightLifted;
                 weeklyStats.workoutCompletionRate = weeklyStats.totalWorkoutsMissed == 0 ? 100 : weeklyStats.totalWorkoutsCompleted / (weeklyStats.totalWorkoutsCompleted + weeklyStats.totalWorkoutsMissed) * 100;
+                weeklyStats.totalHours += item.totalHours;
                 if (!weeklyStats.userStatsDaily.Contains(item)) 
                 { 
                     weeklyStats.userStatsDaily.Add(item);
@@ -169,6 +180,7 @@ namespace Gym_App.Application.Services
                     totalWorkoutsCompleted = usd.totalWorkoutCompleted,
                     totalSetsCompleted = usd.totalSetsCompleted,
                     totalWeightLifted = usd.totalWeightLifted,
+                    totalHours = usd.totalHours,
                     workoutCompletionRate = 100,
                 };
                 weeklyStats.userStatsDaily.Add(usd);
@@ -188,7 +200,7 @@ namespace Gym_App.Application.Services
             weeklyStats.totalSetsCompleted += usd.totalSetsCompleted;
             weeklyStats.totalWeightLifted += usd.totalWeightLifted;
             weeklyStats.workoutCompletionRate = weeklyStats.totalWorkoutsMissed == 0 ? 100 : weeklyStats.totalWorkoutsCompleted / (weeklyStats.totalWorkoutsCompleted + weeklyStats.totalWorkoutsMissed) * 100;
-
+            weeklyStats.totalHours += usd.totalHours;
             await _unitOfWork.UserStatWeekly.Update(weeklyStats);
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Weekly stat updated", status = 2 };
@@ -240,6 +252,7 @@ namespace Gym_App.Application.Services
                     monthStat.totalWorkoutsMissed += usw.totalWorkoutsMissed;
                     monthStat.totalWeightLifted += usw.totalWeightLifted;
                     monthStat.totalSetsCompleted += usw.totalSetsCompleted;
+                    monthStat.totalHours += usw.totalHours;
                     monthStat.userStatsWeekly.Add(usw);
                 }
                 monthStat.workoutCompletionRate = monthStat.totalWorkoutsMissed == 0 ? 100 : monthStat.totalWorkoutsCompleted / (monthStat.totalWorkoutsCompleted + monthStat.totalWorkoutsMissed) * 100;
@@ -257,6 +270,7 @@ namespace Gym_App.Application.Services
                 monthStat.totalWorkoutsMissed += usw.totalWorkoutsMissed;
                 monthStat.totalWeightLifted += usw.totalWeightLifted;
                 monthStat.totalSetsCompleted += usw.totalSetsCompleted;
+                monthStat.totalHours += usw.totalHours;
                 if (!monthStat.userStatsWeekly.Contains(usw))
                 {
                     monthStat.userStatsWeekly.Add(usw);
@@ -302,6 +316,7 @@ namespace Gym_App.Application.Services
                 monthStat.totalWorkoutsMissed += usw.totalWorkoutsMissed;
                 monthStat.totalWeightLifted += usw.totalWeightLifted;
                 monthStat.totalSetsCompleted += usw.totalSetsCompleted;
+                monthStat.totalHours += usw.totalHours;
                 monthStat.userStatsWeekly.Add(usw);
                 monthStat.workoutCompletionRate = monthStat.totalWorkoutsMissed == 0 ? 100 : monthStat.totalWorkoutsCompleted / (monthStat.totalWorkoutsCompleted + monthStat.totalWorkoutsMissed) * 100;
                 await _unitOfWork.UserStatMonthly.Create(monthStat);
@@ -316,6 +331,7 @@ namespace Gym_App.Application.Services
             monthStat.totalWeightLifted += usw.totalWeightLifted;
             monthStat.totalSetsCompleted += usw.totalSetsCompleted;
             monthStat.workoutCompletionRate = monthStat.totalWorkoutsMissed == 0 ? 100 : monthStat.totalWorkoutsCompleted / (monthStat.totalWorkoutsCompleted + monthStat.totalWorkoutsMissed) * 100;
+            monthStat.totalHours += usw.totalHours;
             if (!monthStat.userStatsWeekly.Contains(usw))
             {
                 monthStat.userStatsWeekly.Add(usw);

@@ -37,7 +37,7 @@ namespace GymApp.Tests.WorkoutTests
             sets.Add(new WorkoutSetManagementDTO
             {
                 SetId = workout.ExerciseInstances.First().Sets.First().Id,
-                requestType = ""
+                requestType = "",
             });
             var exercisedto = new ExerciseManagementDTO
             {
@@ -70,7 +70,7 @@ namespace GymApp.Tests.WorkoutTests
             sets.Add(new WorkoutSetManagementDTO
             {
                 SetId = workout.ExerciseInstances.First().Sets.First().Id,
-                requestType = ""
+                requestType = "",
             });
             var exercisedto = new ExerciseManagementDTO
             {
@@ -98,7 +98,7 @@ namespace GymApp.Tests.WorkoutTests
             sets.Add(new WorkoutSetManagementDTO
             {
                 SetId = workout.ExerciseInstances.First().Sets.First().Id,
-                requestType = ""
+                requestType = "",
             });
             var exercisedto = new ExerciseManagementDTO
             {
@@ -128,8 +128,6 @@ namespace GymApp.Tests.WorkoutTests
                 requestType = "",
                 SetNumber = 1,
                 RestSeconds = 10,
-                ActualReps = 20,
-                ActualWeight = 20,
                 IsCompleted = true
             });
             var exercisedto = new ExerciseManagementDTO
@@ -165,8 +163,6 @@ namespace GymApp.Tests.WorkoutTests
                 requestType = "",
                 SetNumber = 1,
                 RestSeconds = 10,
-                ActualReps = 20,
-                ActualWeight = 20,
                 IsCompleted = true
             });
             var exercisedto = new ExerciseManagementDTO
@@ -195,8 +191,6 @@ namespace GymApp.Tests.WorkoutTests
                 requestType = "",
                 SetNumber = 1,
                 RestSeconds = 10,
-                ActualReps = 20,
-                ActualWeight = 20,
                 IsCompleted = true
             });
             var exercisedto = new ExerciseManagementDTO
@@ -227,8 +221,6 @@ namespace GymApp.Tests.WorkoutTests
                 requestType = "",
                 SetNumber = 1,
                 RestSeconds = 10,
-                ActualReps = 20,
-                ActualWeight = 20,
                 IsCompleted = true
             });
             var exercisedto = new ExerciseManagementDTO
@@ -260,8 +252,6 @@ namespace GymApp.Tests.WorkoutTests
                 requestType = "create",
                 SetNumber = 1,
                 RestSeconds = 10,
-                ActualReps = 20,
-                ActualWeight = 20,
                 IsCompleted = true
             });
             var exercisedto = new ExerciseManagementDTO
@@ -315,8 +305,6 @@ namespace GymApp.Tests.WorkoutTests
                 requestType = "update",
                 SetNumber = 1,
                 RestSeconds = 10,
-                ActualReps = 20,
-                ActualWeight = 20,
                 Reps = 40,
                 Weight = 40,
                 IsCompleted = true
@@ -362,8 +350,6 @@ namespace GymApp.Tests.WorkoutTests
                 requestType = "update",
                 SetNumber = 1,
                 RestSeconds = 10,
-                ActualReps = 20,
-                ActualWeight = 20,
                 Reps = 40,
                 Weight = 40,
                 IsCompleted = true
@@ -399,8 +385,6 @@ namespace GymApp.Tests.WorkoutTests
                 requestType = "update",
                 SetNumber = workout.ExerciseInstances.First().Sets.First().SetNumber,
                 RestSeconds = workout.ExerciseInstances.First().Sets.First().RestSeconds,
-                ActualReps = workout.ExerciseInstances.First().Sets.First().ActualReps,
-                ActualWeight = workout.ExerciseInstances.First().Sets.First().ActualWeight,
                 Reps = workout.ExerciseInstances.First().Sets.First().Reps,
                 Weight = workout.ExerciseInstances.First().Sets.First().Weight,
                 IsCompleted = workout.ExerciseInstances.First().Sets.First().IsCompleted
@@ -437,8 +421,6 @@ namespace GymApp.Tests.WorkoutTests
                 requestType = "delete",
                 SetNumber = 1,
                 RestSeconds = 10,
-                ActualReps = 20,
-                ActualWeight = 20,
                 Reps = 40,
                 Weight = 40,
                 IsCompleted = true

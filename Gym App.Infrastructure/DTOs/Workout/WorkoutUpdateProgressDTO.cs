@@ -8,7 +8,6 @@ namespace Gym_App.Infrastructure.DTOs.Workout
     public class WorkoutUpdateProgressDTO
     {
         public Guid WorkoutId { get; set; }
-        public bool IsCompleted { get; set; }
         public IEnumerable<ExerciseUpdateProgressDTO> Exercises { get; set; }
     }
 }

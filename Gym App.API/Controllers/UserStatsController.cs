@@ -23,7 +23,7 @@ namespace Gym_App.Controllers
             else if (result.status == 1)
                 return Forbid();
             else
-                return Ok(new { message = result.msg });
+                return Ok(result.Value);
         }
         [HttpGet("weekly-stat/{userId}")]
         public async Task<IActionResult> GetWeeklyResult([FromRoute] Guid userId, [FromQuery] int weekNumber, int year)
@@ -35,7 +35,7 @@ namespace Gym_App.Controllers
             else if (result.status == 1)
                 return Forbid();
             else
-                return Ok(new { message = result.msg });
+                return Ok(result.Value);
         }
         [HttpGet("monthly-stat/{userId}")]
         public async Task<IActionResult> GetmonthlyResult([FromRoute] Guid userId, [FromQuery] string monthName, int year)
@@ -47,7 +47,7 @@ namespace Gym_App.Controllers
             else if (result.status == 1)
                 return Forbid();
             else
-                return Ok(new { message = result.msg });
+                return Ok(result.Value);
         }
         [HttpGet("all-time-stats/{userId}")]
         public async Task<IActionResult> GetmonthlyResult([FromRoute] Guid userId)
@@ -59,7 +59,7 @@ namespace Gym_App.Controllers
             else if (result.status == 1)
                 return Forbid();
             else
-                return Ok(new { message = result.msg });
+                return Ok(result.Value);
         }
 
     }

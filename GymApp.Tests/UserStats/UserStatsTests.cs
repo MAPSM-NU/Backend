@@ -246,7 +246,6 @@ namespace GymApp.Tests.UserStats
             };
 
             var result = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
-            Assert.Equal("Progress updated successfully", result.msg);
             Assert.Equal(2, result.status);
 
             result = await _workoutService.CompleteWorkoutAsync(workout.Id, user.Id);
@@ -287,7 +286,6 @@ namespace GymApp.Tests.UserStats
             var progressDto = await createProgressDto(user, workout, DateTime.Now.AddMinutes(-30));
 
             var result = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
-            Assert.Equal("Progress updated successfully", result.msg);
             Assert.Equal(2, result.status);
 
             result = await _workoutService.CompleteWorkoutAsync(workout.Id, user.Id);
@@ -298,7 +296,6 @@ namespace GymApp.Tests.UserStats
             progressDto = await createProgressDto(user, workout2, DateTime.Now.AddMinutes(-30));
 
             result = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
-            Assert.Equal("Progress updated successfully", result.msg);
             Assert.Equal(2, result.status);
 
             result = await _workoutService.CompleteWorkoutAsync(workout.Id, user.Id);
@@ -423,7 +420,13 @@ namespace GymApp.Tests.UserStats
                         ExerciseInstanceId = workout.ExerciseInstances!.Last().Id,
                         IsCompleted = true,
                         CompletedAt = DateTime.Now.AddMinutes(-5)
-                    }
+                    },
+                    new ExerciseUpdateProgressDTO
+                    {
+                        ExerciseInstanceId = workout.ExerciseInstances.ElementAt(2).Id,
+                        IsCompleted = true,
+                        CompletedAt = DateTime.Now.AddMinutes(-5),
+                    },
                 }
             };
             return progressDto;

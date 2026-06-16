@@ -90,7 +90,7 @@ namespace GymApp.Tests.WorkoutTests
                 {
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances.First().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances.First().Id,
                         StartedAt = DateTime.UtcNow,
                         IsCompleted = true,
                         Sets = new List<WorkoutSetProgressUpdateDTO>
@@ -127,7 +127,7 @@ namespace GymApp.Tests.WorkoutTests
                 {
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances.First().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances.First().Id,
                         StartedAt = DateTime.UtcNow,
                         IsCompleted = true,
                         Sets = new List<WorkoutSetProgressUpdateDTO>
@@ -164,7 +164,7 @@ namespace GymApp.Tests.WorkoutTests
                 {
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances.First().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances.First().Id,
                         StartedAt = DateTime.UtcNow,
                         IsCompleted = true,
                         Sets = new List<WorkoutSetProgressUpdateDTO>
@@ -201,7 +201,7 @@ namespace GymApp.Tests.WorkoutTests
                 {
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances.First().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances.First().Id,
                         StartedAt = DateTime.UtcNow,
                         IsCompleted = true,
                         Sets = new List<WorkoutSetProgressUpdateDTO>
@@ -237,7 +237,7 @@ namespace GymApp.Tests.WorkoutTests
                 {
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances.First().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances.First().Id,
                         StartedAt = DateTime.UtcNow,
                         IsCompleted = true,
                         Sets = new List<WorkoutSetProgressUpdateDTO>

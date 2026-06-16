@@ -342,7 +342,7 @@ namespace Gym_App.Application.Services
                 foreach (var exerciseProgress in progressDto.Exercises)
                 {
                     var exerciseInstance = await _unitOfWork.ExerciseInstance.GetWithSetsAsync(
-                        exerciseProgress.ExerciseId);
+                        exerciseProgress.ExerciseInstanceId);
 
                     if (exerciseInstance != null)
                     {

@@ -148,7 +148,7 @@ namespace GymApp.Tests.UserStats
                 {
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances!.First().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances!.First().Id,
                         IsCompleted = true,
                         CompletedAt = DateTime.Now.AddMinutes(-10)
                     }
@@ -185,13 +185,13 @@ namespace GymApp.Tests.UserStats
                 {
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances!.First().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances!.First().Id,
                         IsCompleted = true,
                         CompletedAt = DateTime.Now.AddMinutes(-10)
                     },
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances!.Last().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances!.Last().Id,
                         IsCompleted = true,
                         CompletedAt = DateTime.Now.AddMinutes(-5)
                     }
@@ -232,13 +232,13 @@ namespace GymApp.Tests.UserStats
                 {
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances!.First().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances!.First().Id,
                         IsCompleted = true,
                         CompletedAt = DateTime.Now.AddMinutes(-10)
                     },
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances!.Last().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances!.Last().Id,
                         IsCompleted = true,
                         CompletedAt = DateTime.Now.AddMinutes(-5)
                     }
@@ -414,13 +414,13 @@ namespace GymApp.Tests.UserStats
                 {
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances!.First().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances!.First().Id,
                         IsCompleted = true,
                         CompletedAt = DateTime.Now.AddMinutes(-10)
                     },
                     new ExerciseUpdateProgressDTO
                     {
-                        ExerciseId = workout.ExerciseInstances!.Last().Id,
+                        ExerciseInstanceId = workout.ExerciseInstances!.Last().Id,
                         IsCompleted = true,
                         CompletedAt = DateTime.Now.AddMinutes(-5)
                     }

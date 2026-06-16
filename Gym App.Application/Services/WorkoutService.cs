@@ -810,7 +810,78 @@ namespace Gym_App.Application.Services
                 Value = workoutDTO
             };
         }
+        public async Task<GettersResponse<WorkoutViewDTO>> GetUsersWorkouts(Guid userId, string searchTerm, string sortColumn, string OrderBy, int page = 1, int pageSize = 10)
+        {
+            if(userId == Guid.Empty)
+            {
+                _logger.LogError("User tried to access their workouts but the userId was empty");
+                return new GettersResponse<WorkoutViewDTO> { msg = "Invalid userId", status = 0 };
+            }
 
+            var authResult = await _authorizationService.IsUserAsync(userId);
+            if (!authResult)
+                return new GettersResponse<WorkoutViewDTO> { status = 1, msg = "Unauthorized" };
+
+            var workouts = _unitOfWork.Workouts.GetAll().Where(w => w.User.Id == userId);
+            
+            if(!string.IsNullOrEmpty(searchTerm))
+                workouts = _unitOfWork.Workouts.Search(searchTerm, workouts);
+
+            if(!string.IsNullOrEmpty(sortColumn))
+                workouts = _unitOfWork.Workouts.FilterSortColumn(sortColumn, OrderBy, workouts);
+
+            var workoutsDto =  workouts.Select(w => new WorkoutViewDTO
+             {
+                 Day = w.Day,
+                 Date = w.Date,
+                 ScheduledStartTime = w.ScheduledStartTime,
+                 Description = w.Description,
+                 Difficulty = w.Difficulty,
+                 Exercises = w.ExerciseInstances.Select(e => new ExerciseDetailDTO
+                 {
+                     ExerciseId = e.ExerciseId,
+                     StartedAt = e.StartedAt,
+                     CompletedAt = e.CompletedAt,
+                     ExerciseOrder = e.ExerciseOrder,
+                     Id = e.Id,
+                     IsCompleted = e.IsCompleted,
+                     Muscles = e.Exercise.Muscles.Select(m => m.Name),
+                     Name = e.Exercise.Name,
+                     Notes = e.Notes,
+                     PlannedReps = (int)e.PlannedReps,
+                     PlannedWeight = (int)e.PlannedReps,
+                     Sets = e.Sets.Select(s => new WorkoutSetDTO
+                     {
+                         SetId = s.Id,
+                         SetNumber = s.SetNumber,
+                         RestSeconds = s.RestSeconds,
+                         ActualReps = s.ActualReps,
+                         ActualWeight = (float)s.ActualWeight!,
+                         IsCompleted = s.IsCompleted,
+                         KcaloriesBurned = s.KCaloriesBurned,
+                         Notes = s.Notes,
+                         Reps = s.Reps,
+                         Weight = (float)s.Weight!
+                     })
+                 }),
+                 Name = w.Name,
+                 UserID = userId,
+                 WorkoutID = w.Id
+             });
+            if (workouts.Count() == 0)
+            {
+                _logger.LogError( $"User tried to access their workouts with id {userId} but no exercises returned");
+                return new GettersResponse<WorkoutViewDTO> { msg = "No exercises", status = 0 };
+            }
+            var pagedWorkouts = await PagedList<WorkoutViewDTO>.CreateAsync(workoutsDto, page, pageSize);
+
+            return new GettersResponse<WorkoutViewDTO>
+            {
+                status = 2,
+                msg = "Successful",
+                Data = pagedWorkouts
+            };
+        }
         public async Task<GettersResponse<ExerciseDetailDTO>> GetExercisesOfWorkout(Guid WorkoutID, int page, string sortColumn, string OrderBy, string searchTerm, int pageSize)
         {
             //Getting the workout and its exercises from repository

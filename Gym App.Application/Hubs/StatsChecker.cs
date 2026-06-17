@@ -18,7 +18,7 @@ namespace Gym_App.Application.Hubs
     {
         private readonly IServiceScopeFactory _serviceProvider;
         private readonly ILogger<StatsChecker> _logger;
-        private readonly TimeSpan _interval = TimeSpan.FromMinutes(1); // Check every 12 hours
+        private readonly TimeSpan _interval = TimeSpan.FromHours(12); // Check every 12 hours
         public StatsChecker(IServiceScopeFactory serviceProvider, ILogger<StatsChecker> logger)
         {
             _serviceProvider = serviceProvider;

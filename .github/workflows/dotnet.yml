@@ -9,6 +9,12 @@ on:
   pull_request:
     branches: [ "master" ]
 
+# Permissions needed to create the visual Test Statistics tab in GitHub
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+
 jobs:
   build:
 
@@ -16,13 +22,27 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+        
     - name: Restore dependencies
       run: dotnet restore
+      
     - name: Build
       run: dotnet build --no-restore
+      
+    # Runs the tests and outputs a structured xml data file (.trx)
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --results-directory TestResults
+
+    # Consumes the .trx file and turns it into a visual UI report
+    - name: Generate Test Report Dashboard
+      uses: dorny/test-reporter@v1
+      if: always() # Ensures stats are generated even if tests fail
+      with:
+        name: .NET Backend Test Statistics 
+        path: 'TestResults/test-results.trx' 
+        reporter: dotnet-trx

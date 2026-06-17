@@ -79,7 +79,7 @@ This project showcases:
 ✓ Connected user tracking
 ```
 
-### 4. **File Management System** 🖼️
+### 4. **File Management System** 
 
 **What Was Built:**
 - Static file serving with URL generation
@@ -96,8 +96,30 @@ This project showcases:
 ✓ Automatic directory creation
 ✓ Error handling and logging
 ```
+### 5. **Email Sender System**
+**What Was Built:**
+- Email sender scoped service that can be called anywhere in the backend
+- Based on Fluent Email for ease of use
 
-### 5. **Comprehensive Unit Testing** 
+**Implemented Features:**
+```csharp
+✓ Introduction mails for users after sign up
+✓ Password forget system using passwordForgetToken and email sender service for OTP
+```
+
+### 6. **User Stats System**
+**What Was Built:**
+- User Stats service that runs only on certain points such as workout being completed or a workout missed
+- 4 entities: daily stats, weekly stats, monthly stats, all time stats
+- The heirarchy is daily->weekly->monthly->all time
+- Based on the hierarchy every class is the aggregate of the class before it
+**Implemented Features:**
+```csharp
+✓ Setting and getting of statistics
+✓ Can get individual statistics for days, weeks or months
+✓ Can query for a certain amount of days, weeks or months
+```
+### 7. **Comprehensive Unit Testing** 
 
 **What Was Built:**
 - Mock-based testing with Moq framework
@@ -108,7 +130,7 @@ This project showcases:
 ✓ Unit tests for every service and Module such as : authorization services, basic functionality and Websocket services (SignalR)
 ```
 
-### 6. **Database Architecture** 🗄️
+### 8. **Database Architecture** 
 
 **What Was Built:**
 - Entity Framework Core with SQL Server
@@ -140,7 +162,7 @@ This project showcases:
 - Data seeding from CSV files for exercises
 - Automatic timestamp tracking
 
-### 7. **Docker Containerization** (planned)
+### 9. **Docker Containerization** (planned)
 
 **What Was Built:**
 - Multi-stage Dockerfile for .NET 9
@@ -158,7 +180,7 @@ This project showcases:
 ✓ Signal handling: tini init system
 ```
 
-### 8. **Kubernetes Orchestration** (planned)
+### 10. **Kubernetes Orchestration** (planned)
 
 **What Was Built:**
 - Complete Kubernetes deployment manifests
@@ -178,7 +200,7 @@ This project showcases:
 ✓ Network policies (security)
 ```
 
-### 9. **CI/CD Pipeline** 
+### 11. **CI/CD Pipeline** 
 
 **What Was Built:**
 ```

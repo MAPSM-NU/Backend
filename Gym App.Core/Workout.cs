@@ -27,6 +27,7 @@ namespace Gym_App.Domain
         public DateTime? ActualEndTime { get; set; }
         public bool NotificationSent { get; set; } = false;
         public bool ReminderSent { get; set; } = false;
+        public bool isMissed { get; set; } = false;
 
         //Relationships
 

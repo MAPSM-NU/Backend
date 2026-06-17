@@ -2,8 +2,6 @@ using Gym_App.Application.Authorization;
 using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
 using Gym_App.Domain;
-using Gym_App.Infastructure.Context;
-using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infrastructure.DTOs.Exercise;
 using Gym_App.Infrastructure.DTOs.Workout;
@@ -38,8 +36,8 @@ namespace GymApp.Tests.UserStats
                 .AddSingleton(_unitOfWork)
                 .AddSingleton(_authorizationService.Object)
                 .AddSingleton(_notificationService.Object)
-                .AddSingleton(_logger.Object)
-                .AddSingleton(_loggerFactory.Object)
+                .AddLogging()
+                .AddScoped<IUserStatsService,UserStatsService>()
                 .BuildServiceProvider()
                 .GetRequiredService<IServiceScopeFactory>();
             _workoutService = new WorkoutService(_unitOfWork, _authorizationService.Object, _notificationService.Object, _userStatsService, _logger.Object);
@@ -58,7 +56,7 @@ namespace GymApp.Tests.UserStats
 
             var stats = await _unitOfWork.UserStats.GetUserStatsByUserId(user.Id);
             Assert.NotNull(stats);
-            Assert.Equal(200, stats.totalWorkoutsCompleted);
+            Assert.Equal(0, stats.totalWorkoutsCompleted);
             Assert.False(workout.IsCompleted);
             Assert.Equal(0, stats.workoutStreak);
             Assert.Equal(1, stats.totalWorkoutsMissed);
@@ -94,6 +92,61 @@ namespace GymApp.Tests.UserStats
             Assert.NotNull(stats);
             Assert.Equal(3, stats.totalWorkoutsMissed);
         }
+        [Fact]
+        public async Task CheckMissedWorkoutsForAllStats()
+        {
+            var user = CreateTestUser(CreateTestRole());
+            var workout = CreateTestWorkout(user);
+            foreach(var item in workout.ExerciseInstances)
+            {
+                item.IsCompleted = true;
+                foreach(var set in item.Sets)
+                {
+                    set.ActualReps = 12;
+                    set.ActualWeight = 12;
+                    set.KCaloriesBurned = 12;
+                    set.IsCompleted = true;
+                }
+            }
+            var workout1 = CreateTestWorkout(user);
+            workout1.ScheduledStartTime = DateTime.Today.AddDays(-1);    
+            await _unitOfWork.SaveChangesAsync();
+            await _userStatsService.AddDailyStats(workout);
+            await _userStatsService.AddWeeklyStats(user);
+            await _userStatsService.AddMonthlyStats(user);
+            await _userStatsService.AddAllTimeStats(workout);
+
+            var dailySets = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Now));
+            Assert.NotNull(dailySets);
+            Assert.Equal(1, dailySets.totalWorkoutCompleted);
+
+            var statsChecker = new StatsChecker(_serviceProvider, _loggerFactory.Object);
+            await statsChecker.CheckMissedWorkout();
+
+            dailySets = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Now.AddDays(-1)));
+            Assert.NotNull(dailySets);
+            Assert.Equal(0, dailySets.totalWorkoutCompleted);//0 since this is the daily stat for the workout the user missed
+            Assert.Equal(1, dailySets.totalWorkoutsMissed);
+
+            var weeklySets = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(user.Id, ISOWeek.GetWeekOfYear(DateTime.Now.AddDays(-1)), DateTime.Now.Year);
+            Assert.NotNull(weeklySets);
+            Assert.Equal(1, weeklySets.totalWorkoutsCompleted);
+            Assert.Equal(1, weeklySets.totalWorkoutsMissed);
+            Assert.Equal(50, weeklySets.workoutCompletionRate);
+
+            var monthlySets = await _unitOfWork.UserStatMonthly.GetUserStatsMonthly(user.Id, DateTime.Now.Month, DateTime.Now.Year);
+            Assert.NotNull(monthlySets);
+            Assert.Equal(1, monthlySets.totalWorkoutsCompleted);
+            Assert.Equal(1, monthlySets.totalWorkoutsMissed);
+            Assert.Equal(50, monthlySets.workoutCompletionRate);
+
+            var alltimeStats = await _unitOfWork.UserStats.GetUserStatsByUserId(user.Id);
+            Assert.NotNull(alltimeStats);
+            Assert.Equal(1, alltimeStats.totalWorkoutsCompleted);
+            Assert.Equal(1, alltimeStats.totalWorkoutsMissed);
+            Assert.Equal(50, alltimeStats.workoutCompletionRate);
+        }
+        
 
         // Workouts finished tests
 

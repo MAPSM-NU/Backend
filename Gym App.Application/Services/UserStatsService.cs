@@ -29,39 +29,13 @@ namespace Gym_App.Application.Services
                 _logger.LogError($"Given workout is or has important values as null");
                 return new SettersResponse { msg = "Given workout is or has important values as null", status = 0 };
             }
+            bool created = false;
             var dailyStat = await _unitOfWork.UserStatDaily.GetUserStatsDaily(workout.User.Id, DateOnly.FromDateTime(DateTime.Now));
             if(dailyStat == null)
             {
-                dailyStat = new UserStatsDaily
-                {
-                    user = workout.User,
-                    userId = workout.User.Id,
-                    date = DateOnly.FromDateTime(DateTime.Now),
-                    year = DateTime.Now.Year,
-                };
-                foreach (var exercise in workout.ExerciseInstances!)
-                {
-                    dailyStat.totalExercisesCompleted++;
-                    foreach (var set in exercise.Sets!)
-                    {
-                        dailyStat.totalSetsCompleted++;
-                        dailyStat.totalReps += set.ActualReps;
-                        dailyStat.totalWeightLifted += (double)set.ActualWeight!;
-                        dailyStat.KcaloriesBurned += set.KCaloriesBurned;
-                    }
-                }
-                if (workout.ActualStartTime.HasValue && workout.ActualEndTime.HasValue)
-                {
-                    var hourDifference_ = (workout.ActualEndTime.Value - workout.ActualStartTime.Value).TotalHours;
-                    dailyStat.totalHours = hourDifference_;
-                }
-                dailyStat.totalWorkoutCompleted++;
-                await _unitOfWork.UserStatDaily.Create(dailyStat);
-                await _unitOfWork.SaveChangesAsync();
-                return new SettersResponse { msg = "Daily stat created and done", status = 2 };
+                dailyStat = createDailyStatFromWorkout(workout, DateOnly.FromDateTime(DateTime.Now));
+                created = true;
             }
-
-            
             foreach(var exercise in workout.ExerciseInstances!)
             {
                 dailyStat.totalExercisesCompleted++;
@@ -78,7 +52,11 @@ namespace Gym_App.Application.Services
                 dailyStat.totalHours = hourDifference_;
             }
             dailyStat.totalWorkoutCompleted++;
-            await _unitOfWork.UserStatDaily.Update(dailyStat);
+
+            if (created)
+                await _unitOfWork.UserStatDaily.Create(dailyStat);
+            else
+                await _unitOfWork.UserStatDaily.Update(dailyStat);
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Daily stat done", status = 2 };
         }
@@ -90,11 +68,11 @@ namespace Gym_App.Application.Services
                 _logger.LogError("Empty User given in while trying to retrieve weekly stats");
                 return new SettersResponse { msg = "Empty user given", status = 0 };
             }
+
+            bool created = false;
             var weekStart = DateOnly.FromDateTime(DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek));
             var weekNumber = ISOWeek.GetWeekOfYear(DateTime.Now);
-
             var weeklyStats = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(user.Id, weekNumber, DateTime.Now.Year);
-
             var weeklyDailyStats = await _unitOfWork.UserStatDaily.GetUserStatsDaysList(user.Id, weekStart, weekStart.AddDays(7));
             if(weeklyDailyStats.Count == 0)
             {
@@ -104,52 +82,21 @@ namespace Gym_App.Application.Services
 
             if(weeklyStats == null)
             {
-                weeklyStats = new UserStatsWeekly
-                {
-                    user = user,
-                    userId = user.Id,
-                    weekDate = weekStart,
-                    weekNumber = weekNumber,
-                    year = DateTime.Now.Year,
-                };
-                foreach(var item in weeklyDailyStats)
-                {
-                    weeklyStats.activeDays++;
-                    weeklyStats.KcaloriesBurned += item.KcaloriesBurned;
-                    weeklyStats.totalExercisesCompleted += item.totalExercisesCompleted;
-                    weeklyStats.totalRepsCompleted += item.totalReps;
-                    weeklyStats.totalWorkoutsCompleted += item.totalWorkoutCompleted;
-                    weeklyStats.totalSetsCompleted += item.totalSetsCompleted;
-                    weeklyStats.totalWeightLifted += item.totalWeightLifted;
-                    weeklyStats.workoutCompletionRate = weeklyStats.totalWorkoutsMissed == 0 ? 100 : weeklyStats.totalWorkoutsCompleted / (weeklyStats.totalWorkoutsCompleted + weeklyStats.totalWorkoutsMissed) * 100;
-                    weeklyStats.totalHours += item.totalHours;
-                    weeklyStats.userStatsDaily.Add(item);
-                }
-                await _unitOfWork.UserStatWeekly.Create(weeklyStats);
-                await _unitOfWork.SaveChangesAsync();
-                return new SettersResponse { msg = "Weekly stat created and updated", status = 2 };
+                weeklyStats = createWeeklyStatFromUser(user, weekStart, weekNumber);
+                created = true;
             }
+
             clearWeeklyStat(weeklyStats); // clearing so items updated don't aggregate the values they already have with their newer values
-            foreach (var item in weeklyDailyStats)
-            {
-                weeklyStats.KcaloriesBurned += item.KcaloriesBurned;
-                weeklyStats.totalExercisesCompleted += item.totalExercisesCompleted;
-                weeklyStats.totalRepsCompleted += item.totalReps;
-                weeklyStats.totalWorkoutsCompleted += item.totalWorkoutCompleted;
-                weeklyStats.totalSetsCompleted += item.totalSetsCompleted;
-                weeklyStats.totalWeightLifted += item.totalWeightLifted;
-                weeklyStats.workoutCompletionRate = weeklyStats.totalWorkoutsMissed == 0 ? 100 : weeklyStats.totalWorkoutsCompleted / (weeklyStats.totalWorkoutsCompleted + weeklyStats.totalWorkoutsMissed) * 100;
-                weeklyStats.totalHours += item.totalHours;
-                if (!weeklyStats.userStatsDaily.Contains(item)) 
-                { 
-                    weeklyStats.userStatsDaily.Add(item);
-                    weeklyStats.activeDays++;
-                }
-            }
-            await _unitOfWork.UserStatWeekly.Update(weeklyStats);
+            weeklyStats = UpdateWeeklyStatFromDailyStats(weeklyStats, weeklyDailyStats);
+
+            if(created)
+                await _unitOfWork.UserStatWeekly.Create(weeklyStats);
+            else
+                await _unitOfWork.UserStatWeekly.Update(weeklyStats);
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Weekly stat updated", status = 2 };
         }
+
         public async Task<SettersResponse> AddWeeklyStats(UserStatsDaily usd)
         {
             //needs slight rework
@@ -158,10 +105,9 @@ namespace Gym_App.Application.Services
                 _logger.LogError("Empty User Daily Stats given in while trying to retrieve weekly stats");
                 return new SettersResponse { msg = "Empty User Daily Stats given", status = 0 };
             }
-
+            bool created = false;
             var weekStart = DateOnly.FromDateTime(DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek));
             var weekNumber = ISOWeek.GetWeekOfYear(DateTime.Now);
-
             var weeklyStats = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(usd.userId, weekNumber, DateTime.Now.Year);
 
             if (weeklyStats == null)
@@ -173,35 +119,20 @@ namespace Gym_App.Application.Services
                     weekDate = weekStart,
                     weekNumber = weekNumber,
                     year = DateTime.Now.Year,
-                    activeDays = 1,
-                    KcaloriesBurned = usd.KcaloriesBurned,
-                    totalExercisesCompleted = usd.totalExercisesCompleted,
-                    totalRepsCompleted = usd.totalReps,
-                    totalWorkoutsCompleted = usd.totalWorkoutCompleted,
-                    totalSetsCompleted = usd.totalSetsCompleted,
-                    totalWeightLifted = usd.totalWeightLifted,
-                    totalHours = usd.totalHours,
-                    workoutCompletionRate = 100,
                 };
-                weeklyStats.userStatsDaily.Add(usd);
-                await _unitOfWork.UserStatWeekly.Create(weeklyStats);
-                await _unitOfWork.SaveChangesAsync();
-                return new SettersResponse { msg = "Weekly stat created and updated", status = 2 };
+                created = true;
             }
             if (!weeklyStats.userStatsDaily.Contains(usd))
             {
                 weeklyStats.activeDays++;
                 weeklyStats.userStatsDaily.Add(usd);
             }
-            weeklyStats.KcaloriesBurned += usd.KcaloriesBurned;
-            weeklyStats.totalExercisesCompleted += usd.totalExercisesCompleted;
-            weeklyStats.totalRepsCompleted += usd.totalReps;
-            weeklyStats.totalWorkoutsCompleted += usd.totalWorkoutCompleted;
-            weeklyStats.totalSetsCompleted += usd.totalSetsCompleted;
-            weeklyStats.totalWeightLifted += usd.totalWeightLifted;
-            weeklyStats.workoutCompletionRate = weeklyStats.totalWorkoutsMissed == 0 ? 100 : weeklyStats.totalWorkoutsCompleted / (weeklyStats.totalWorkoutsCompleted + weeklyStats.totalWorkoutsMissed) * 100;
-            weeklyStats.totalHours += usd.totalHours;
-            await _unitOfWork.UserStatWeekly.Update(weeklyStats);
+            weeklyStats = UpdateWeeklyStatUsingUsd(weeklyStats, usd);
+
+            if (created)
+                await _unitOfWork.UserStatWeekly.Create(weeklyStats);
+            else
+                await _unitOfWork.UserStatWeekly.Update(weeklyStats);
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Weekly stat updated", status = 2 };
 
@@ -214,6 +145,7 @@ namespace Gym_App.Application.Services
                 _logger.LogError("Empty User given in while trying to retrieve Monthly stats");
                 return new SettersResponse { msg = "Empty User Daily Stats given", status = 0 };
             }
+            bool created = false;
             int monthNumber = DateTime.Now.Month;
             DateOnly monthStart = DateOnly.FromDateTime(DateTime.Now.AddDays(-DateTime.Now.Day));
             int monthStartWeek = monthNumber * 4;
@@ -233,52 +165,16 @@ namespace Gym_App.Application.Services
             }
             if (monthStat == null)
             {
-                monthStat = new UserStatsMonthly
-                {
-                    user = user,
-                    userId = user.Id,
-                    year = year,
-                    monthDate = monthStart,
-                    monthName = DateTime.Now.ToString("MMMM"),
-                    monthNumber = monthNumber,
-                };
-                foreach(var usw in monthWeeklyStats)
-                {
-                    monthStat.totalRepsCompleted += usw.totalRepsCompleted;
-                    monthStat.totalExercisesCompleted += usw.totalExercisesCompleted;
-                    monthStat.totalWorkoutsCompleted += usw.totalWorkoutsCompleted;
-                    monthStat.activeDays += usw.activeDays;
-                    monthStat.KcaloriesBurned += usw.KcaloriesBurned;
-                    monthStat.totalWorkoutsMissed += usw.totalWorkoutsMissed;
-                    monthStat.totalWeightLifted += usw.totalWeightLifted;
-                    monthStat.totalSetsCompleted += usw.totalSetsCompleted;
-                    monthStat.totalHours += usw.totalHours;
-                    monthStat.userStatsWeekly.Add(usw);
-                }
-                monthStat.workoutCompletionRate = monthStat.totalWorkoutsMissed == 0 ? 100 : monthStat.totalWorkoutsCompleted / (monthStat.totalWorkoutsCompleted + monthStat.totalWorkoutsMissed) * 100;
-                await _unitOfWork.UserStatMonthly.Create(monthStat);
-                await _unitOfWork.SaveChangesAsync();
-                return new SettersResponse { msg = "Month stat created and updated", status = 2 };
+                monthStat = createMonthlyStatFromUser(user, year, monthStart, monthNumber);
+                created = true;
             }
             clearMonthlyStat(monthStat);
-            foreach (var usw in monthWeeklyStats)
-            {
-                monthStat.totalRepsCompleted += usw.totalRepsCompleted;
-                monthStat.totalExercisesCompleted += usw.totalExercisesCompleted;
-                monthStat.totalWorkoutsCompleted += usw.totalWorkoutsCompleted;
-                monthStat.KcaloriesBurned += usw.KcaloriesBurned;
-                monthStat.totalWorkoutsMissed += usw.totalWorkoutsMissed;
-                monthStat.totalWeightLifted += usw.totalWeightLifted;
-                monthStat.totalSetsCompleted += usw.totalSetsCompleted;
-                monthStat.totalHours += usw.totalHours;
-                if (!monthStat.userStatsWeekly.Contains(usw))
-                {
-                    monthStat.userStatsWeekly.Add(usw);
-                    monthStat.activeDays += usw.activeDays;
-                }
-            }
-            monthStat.workoutCompletionRate = monthStat.totalWorkoutsMissed == 0 ? 100 : monthStat.totalWorkoutsCompleted / (monthStat.totalWorkoutsCompleted + monthStat.totalWorkoutsMissed) * 100;
-            await _unitOfWork.UserStatMonthly.Update(monthStat);
+            monthStat = UpdateMonthlyStatsFromWeeklyStats(monthStat, monthWeeklyStats);
+            
+            if (created)
+                await _unitOfWork.UserStatMonthly.Create(monthStat);
+            else
+                await _unitOfWork.UserStatMonthly.Update(monthStat);
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Month stat updated", status = 2 };
         }
@@ -290,6 +186,7 @@ namespace Gym_App.Application.Services
                 _logger.LogError("Empty User weekly Stats given in while trying to retrieve monthy stats");
                 return new SettersResponse { msg = "Empty User Weekly Stats given", status = 0 };
             }
+            bool created = false;
             int monthNumber = DateTime.Now.Month;
             DateOnly monthStart = DateOnly.FromDateTime(DateTime.Now.AddDays(-DateTime.Now.Day));
             int monthStartWeek = monthNumber * 4;
@@ -308,20 +205,7 @@ namespace Gym_App.Application.Services
                     monthName = DateTime.Now.ToString("MMMM"),
                     monthNumber = monthNumber,
                 };
-                monthStat.totalRepsCompleted += usw.totalRepsCompleted;
-                monthStat.totalExercisesCompleted += usw.totalExercisesCompleted;
-                monthStat.totalWorkoutsCompleted += usw.totalWorkoutsCompleted;
-                monthStat.activeDays += usw.activeDays;
-                monthStat.KcaloriesBurned += usw.KcaloriesBurned;
-                monthStat.totalWorkoutsMissed += usw.totalWorkoutsMissed;
-                monthStat.totalWeightLifted += usw.totalWeightLifted;
-                monthStat.totalSetsCompleted += usw.totalSetsCompleted;
-                monthStat.totalHours += usw.totalHours;
-                monthStat.userStatsWeekly.Add(usw);
-                monthStat.workoutCompletionRate = monthStat.totalWorkoutsMissed == 0 ? 100 : monthStat.totalWorkoutsCompleted / (monthStat.totalWorkoutsCompleted + monthStat.totalWorkoutsMissed) * 100;
-                await _unitOfWork.UserStatMonthly.Create(monthStat);
-                await _unitOfWork.SaveChangesAsync();
-                return new SettersResponse { msg = "Month stat created and updated", status = 2 };
+                created = true;
             }
             monthStat.totalRepsCompleted += usw.totalRepsCompleted;
             monthStat.totalExercisesCompleted += usw.totalExercisesCompleted;
@@ -337,7 +221,10 @@ namespace Gym_App.Application.Services
                 monthStat.userStatsWeekly.Add(usw);
                 monthStat.activeDays += usw.activeDays;
             }
-            await _unitOfWork.UserStatMonthly.Update(monthStat);
+            if (created)
+                await _unitOfWork.UserStatMonthly.Create(monthStat);
+            else
+                await _unitOfWork.UserStatMonthly.Update(monthStat);
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Month stat updated", status = 2 };
         }
@@ -400,6 +287,87 @@ namespace Gym_App.Application.Services
             await _unitOfWork.SaveChangesAsync();
             return new SettersResponse { msg = "Done", status = 2 };
         }
+
+        public async Task<SettersResponse> CheckMissedWorkout(Workout workout)
+        {
+            try
+            {
+
+                var dailyStat = await _unitOfWork.UserStatDaily.GetUserStatsDaily(workout.User.Id, DateOnly.FromDateTime(workout.ScheduledStartTime.Value));
+                if (dailyStat == null)
+                {
+                    dailyStat = createDailyStatFromWorkout(workout, DateOnly.FromDateTime(workout.ScheduledStartTime.Value));
+                    dailyStat.totalWorkoutsMissed++;
+                    await _unitOfWork.UserStatDaily.Create(dailyStat);
+                }
+                else
+                {
+                    dailyStat.totalWorkoutsMissed++;
+                    await _unitOfWork.UserStatDaily.Update(dailyStat);
+                }
+
+                var weekStart = DateOnly.FromDateTime(workout.ScheduledStartTime.Value.AddDays(-(int)workout.ScheduledStartTime.Value.DayOfWeek));
+                var weekNumber = ISOWeek.GetWeekOfYear(workout.ScheduledStartTime.Value);
+                var weeklyStat = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(workout.User.Id, weekNumber, workout.ScheduledStartTime.Value.Year);
+                if (weeklyStat == null)
+                {
+                    weeklyStat = createWeeklyStatFromUser(workout.User, weekStart, weekNumber);
+                    weeklyStat.totalWorkoutsMissed++;
+                    await _unitOfWork.UserStatWeekly.Create(weeklyStat);
+                }
+                else
+                {
+                    weeklyStat.totalWorkoutsMissed++;
+                    weeklyStat.workoutCompletionRate = (double)weeklyStat.totalWorkoutsCompleted / (weeklyStat.totalWorkoutsCompleted + weeklyStat.totalWorkoutsMissed) * 100;
+                    await _unitOfWork.UserStatWeekly.Update(weeklyStat);
+                }
+
+                DateOnly monthStart = DateOnly.FromDateTime(workout.ScheduledStartTime.Value.AddDays(-workout.ScheduledStartTime.Value.Day));
+                var monthStat = await _unitOfWork.UserStatMonthly.GetUserStatsMonthly(workout.User.Id, workout.ScheduledStartTime.Value.Month, workout.ScheduledStartTime.Value.Year);
+                if (monthStat == null)
+                {
+                    monthStat = createMonthlyStatFromUser(workout.User, workout.ScheduledStartTime.Value.Year, monthStart, workout.ScheduledStartTime.Value.Month);
+                    monthStat.totalWorkoutsMissed++;
+                    await _unitOfWork.UserStatMonthly.Create(monthStat);
+                }
+                else
+                {
+                    monthStat.totalWorkoutsMissed++;
+                    monthStat.workoutCompletionRate = (double)monthStat.totalWorkoutsCompleted / (monthStat.totalWorkoutsCompleted + monthStat.totalWorkoutsMissed) * 100;
+                    await _unitOfWork.UserStatMonthly.Update(monthStat);
+                }
+
+                var alltimeStat = await _unitOfWork.UserStats.GetUserStatsByUserId(workout.User.Id);
+                if (alltimeStat == null)
+                {
+                    alltimeStat = new UserStats
+                    {
+                        user = workout.User,
+                        totalWorkoutsMissed = 1
+                    };
+                    await _unitOfWork.UserStats.Create(alltimeStat);
+                }
+                else
+                {
+                    alltimeStat.totalWorkoutsMissed++;
+                    alltimeStat.workoutCompletionRate = (double)alltimeStat.totalWorkoutsCompleted / (alltimeStat.totalWorkoutsCompleted + alltimeStat.totalWorkoutsMissed) * 100;
+                    await _unitOfWork.UserStats.Update(alltimeStat);
+                }
+                
+                return new SettersResponse { msg = "Missed workout saved", status = 2 };
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Error checking missed workouts");
+                return new SettersResponse { msg = $"Error while checking workouts in user stats service : {ex.Message}", status = 0 };
+            }
+            
+        }
+        //-----------------------------------------------------------------------
+
+        //                    *********** Getters ***********
+
+        //-----------------------------------------------------------------------
         public async Task<GettersResponse<UserStatsDailyDTO>> GetDailyStats(Guid userId, DateOnly date)
         {
             if (userId == Guid.Empty)
@@ -549,6 +517,99 @@ namespace Gym_App.Application.Services
             return new GettersResponse<UserStatsDTO> { msg = "Here is the data", status = 2, Value = uswDto };
         }
 
+
+        // ***************** Helpers & Private Methods *****************
+
+        private UserStatsDaily createDailyStatFromWorkout(Workout workout, DateOnly date)
+        {
+            var dailyStat = new UserStatsDaily
+            {
+                user = workout.User,
+                userId = workout.User.Id,
+                date = date,
+                year = DateTime.Now.Year,
+            };
+            return dailyStat;
+        }
+        private UserStatsWeekly createWeeklyStatFromUser(User user, DateOnly weekStart, int weekNumber)
+        {
+            var weeklyStats = new UserStatsWeekly
+            {
+                user = user,
+                userId = user.Id,
+                weekDate = weekStart,
+                weekNumber = weekNumber,
+                year = DateTime.Now.Year,
+            };
+            return weeklyStats;
+        }
+        private UserStatsMonthly createMonthlyStatFromUser(User user, int year, DateOnly monthStart, int monthNumber)
+        {
+            var monthStat = new UserStatsMonthly
+            {
+                user = user,
+                userId = user.Id,
+                year = year,
+                monthDate = monthStart,
+                monthName = monthStart.AddDays(1).ToString("MMMM"),
+                monthNumber = monthNumber,
+            };
+            return monthStat;
+        }
+        private UserStatsWeekly UpdateWeeklyStatUsingUsd(UserStatsWeekly weeklyStats,  UserStatsDaily usd)
+        {
+            weeklyStats.KcaloriesBurned += usd.KcaloriesBurned;
+            weeklyStats.totalExercisesCompleted += usd.totalExercisesCompleted;
+            weeklyStats.totalRepsCompleted += usd.totalReps;
+            weeklyStats.totalWorkoutsCompleted += usd.totalWorkoutCompleted;
+            weeklyStats.totalSetsCompleted += usd.totalSetsCompleted;
+            weeklyStats.totalWeightLifted += usd.totalWeightLifted;
+            weeklyStats.workoutCompletionRate = weeklyStats.totalWorkoutsMissed == 0 ? 100 : weeklyStats.totalWorkoutsCompleted / (weeklyStats.totalWorkoutsCompleted + weeklyStats.totalWorkoutsMissed) * 100;
+            weeklyStats.totalHours += usd.totalHours;
+            return weeklyStats;
+        }
+        private UserStatsWeekly UpdateWeeklyStatFromDailyStats(UserStatsWeekly weeklyStats, List<UserStatsDaily> weeklyDailyStats)
+        {
+            foreach (var item in weeklyDailyStats)
+            {
+                weeklyStats.KcaloriesBurned += item.KcaloriesBurned;
+                weeklyStats.totalExercisesCompleted += item.totalExercisesCompleted;
+                weeklyStats.totalRepsCompleted += item.totalReps;
+                weeklyStats.totalWorkoutsCompleted += item.totalWorkoutCompleted;
+                weeklyStats.totalSetsCompleted += item.totalSetsCompleted;
+                weeklyStats.totalWeightLifted += item.totalWeightLifted;
+                weeklyStats.totalHours += item.totalHours;
+                if (!weeklyStats.userStatsDaily.Contains(item))
+                {
+                    weeklyStats.userStatsDaily.Add(item);
+                    weeklyStats.activeDays++;
+                }
+            }
+            weeklyStats.workoutCompletionRate = weeklyStats.totalWorkoutsMissed == 0 ? 100 : weeklyStats.totalWorkoutsCompleted / (weeklyStats.totalWorkoutsCompleted + weeklyStats.totalWorkoutsMissed) * 100;
+            return weeklyStats;
+        }
+        private UserStatsMonthly UpdateMonthlyStatsFromWeeklyStats(UserStatsMonthly monthStat, List<UserStatsWeekly> monthWeeklyStats)
+        {
+            foreach (var usw in monthWeeklyStats)
+            {
+                monthStat.totalRepsCompleted += usw.totalRepsCompleted;
+                monthStat.totalExercisesCompleted += usw.totalExercisesCompleted;
+                monthStat.totalWorkoutsCompleted += usw.totalWorkoutsCompleted;
+                monthStat.KcaloriesBurned += usw.KcaloriesBurned;
+                monthStat.totalWorkoutsMissed += usw.totalWorkoutsMissed;
+                monthStat.totalWeightLifted += usw.totalWeightLifted;
+                monthStat.totalSetsCompleted += usw.totalSetsCompleted;
+                monthStat.totalHours += usw.totalHours;
+                if (!monthStat.userStatsWeekly.Contains(usw))
+                {
+                    monthStat.userStatsWeekly.Add(usw);
+                    monthStat.activeDays += usw.activeDays;
+                }
+            }
+            monthStat.workoutCompletionRate = monthStat.totalWorkoutsMissed == 0 ? 100 : monthStat.totalWorkoutsCompleted / (monthStat.totalWorkoutsCompleted + monthStat.totalWorkoutsMissed) * 100;
+
+            return monthStat;
+        }
         private void clearWeeklyStat(UserStatsWeekly usw)
         {
             usw.totalSetsCompleted = 0;

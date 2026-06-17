@@ -739,8 +739,9 @@ namespace Gym_App.Application.Services
 
         //-----------------------------------------------------------------------
 
-        //        *********** Getters ***********
+        //                    *********** Getters ***********
 
+        //-----------------------------------------------------------------------
         public async Task<Guid> GetWorkoutId(Guid workoutID)
         {
             var workout = await _unitOfWork.Workouts.GetWorkoutById(workoutID);

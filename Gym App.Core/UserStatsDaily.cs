@@ -12,6 +12,7 @@ namespace Gym_App.Core
         public int totalExercisesCompleted { get; set; } = 0;
         public int totalSetsCompleted {  get; set; } = 0;
         public int totalWorkoutCompleted {  get; set; } = 0;
+        public int totalWorkoutsMissed {  get; set; } = 0;
         public double totalHours { get; set; } = 0;
         public int totalReps {  get; set; } = 0;
         public DateOnly date { get; set; } = DateOnly.FromDateTime(DateTime.Now);

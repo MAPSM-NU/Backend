@@ -1,6 +1,7 @@
 ﻿
 using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Repositries;
+using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,7 +18,7 @@ namespace Gym_App.Application.Hubs
     {
         private readonly IServiceScopeFactory _serviceProvider;
         private readonly ILogger<StatsChecker> _logger;
-        private readonly TimeSpan _interval = TimeSpan.FromHours(12); // Check every 12 hours
+        private readonly TimeSpan _interval = TimeSpan.FromMinutes(1); // Check every 12 hours
         public StatsChecker(IServiceScopeFactory serviceProvider, ILogger<StatsChecker> logger)
         {
             _serviceProvider = serviceProvider;
@@ -28,25 +29,30 @@ namespace Gym_App.Application.Hubs
         {
             await using var scope = _serviceProvider.CreateAsyncScope();
             var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var stats = scope.ServiceProvider.GetRequiredService<IUserStatsService>();
             try
             {
-
-                var yesterdayWorkouts = unitOfWork.Workouts.GetAll().Include(w => w.User).ThenInclude(u=>u.UserStats).Where(w =>
-                        w.ScheduledStartTime >= DateTime.Today.AddDays(-1) && w.ScheduledStartTime <= DateTime.Today && !w.IsCompleted
-                    );
+                bool anychange = false;
+                var yesterdayWorkouts = await unitOfWork.Workouts.GetAll().Include(w => w.User).Where(w =>
+                        w.ScheduledStartTime <= DateTime.Now.AddDays(-1)&&
+                        !w.IsCompleted &&
+                        !w.isMissed
+                    ).ToListAsync();
                 foreach (var workout in yesterdayWorkouts)
                 {
-                    workout.User.UserStats.totalWorkoutsMissed++;
-                    workout.User.UserStats.totalWorkoutsCompleted = 200;
-                    workout.User.UserStats.workoutStreak = 0;
-                    workout.User.UserStats.workoutCompletionRate = workout.User.UserStats.totalWorkoutsCompleted > 0 ? 
-                            (double)workout.User.UserStats.totalWorkoutsCompleted / (workout.User.UserStats.totalWorkoutsCompleted + workout.User.UserStats.totalWorkoutsMissed) * 100
-                        : 0;
-                    await unitOfWork.Workouts.Update(workout);
-                    _logger.LogInformation($"Workout {workout.Name} for user {workout.User.Name} was missed. Total missed workouts: {workout.User.UserStats.totalWorkoutsMissed}");
+                    var result = await stats.CheckMissedWorkout(workout);
+                    if (result.status != 2)
+                        _logger.LogError($"Error while checking for missed workouts : {result.msg}");
+                    else
+                    {
+                        anychange = true;
+                        _logger.LogInformation($"missed workout protocol successfully documented: {result.msg}");
+                        workout.isMissed = true;
+                        await unitOfWork.Workouts.Update(workout);
+                    }
                 }
-
-                await unitOfWork.SaveChangesAsync();
+                if(anychange)
+                    await unitOfWork.SaveChangesAsync();
             }
             catch (Exception ex)
             {

@@ -35,7 +35,7 @@ namespace GymApp.Tests.UserStats
             }
             await _unitOfWork.SaveChangesAsync();
             var result = await _userStatsService.AddDailyStats(workout);
-            Assert.Equal("Daily stat created and done", result.msg);
+            Assert.Equal("Daily stat done", result.msg);
             Assert.Equal(2, result.status);
 
             var stat = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Today));
@@ -70,7 +70,7 @@ namespace GymApp.Tests.UserStats
             }
             await _unitOfWork.SaveChangesAsync();
             var result = await _userStatsService.AddDailyStats(workout1);
-            Assert.Equal("Daily stat created and done", result.msg);
+            Assert.Equal("Daily stat done", result.msg);
             Assert.Equal(2, result.status);
 
             result = await _userStatsService.AddDailyStats(workout2);
@@ -113,7 +113,7 @@ namespace GymApp.Tests.UserStats
             await _unitOfWork.SaveChangesAsync();
 
             var result = await _userStatsService.AddWeeklyStats(dailySet1);
-            Assert.Equal("Weekly stat created and updated", result.msg);
+            Assert.Equal("Weekly stat updated", result.msg);
 
             result = await _userStatsService.AddWeeklyStats(dailySet2);
             Assert.Equal("Weekly stat updated", result.msg);
@@ -137,7 +137,7 @@ namespace GymApp.Tests.UserStats
             await _unitOfWork.SaveChangesAsync();
 
             var result = await _userStatsService.AddWeeklyStats(user);
-            Assert.Equal("Weekly stat created and updated", result.msg);
+            Assert.Equal("Weekly stat updated", result.msg);
 
             var stat = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(user.Id, ISOWeek.GetWeekOfYear(DateTime.Now), DateTime.Now.Year);
             Assert.NotNull(stat);
@@ -175,7 +175,7 @@ namespace GymApp.Tests.UserStats
             await _unitOfWork.SaveChangesAsync();
 
             var result = await _userStatsService.AddMonthlyStats(weeklyStat1);
-            Assert.Equal("Month stat created and updated", result.msg);
+            Assert.Equal("Month stat updated", result.msg);
 
             result = await _userStatsService.AddMonthlyStats(weeklyStat2);
             Assert.Equal("Month stat updated", result.msg);
@@ -207,7 +207,7 @@ namespace GymApp.Tests.UserStats
             await _unitOfWork.SaveChangesAsync();
 
             var result = await _userStatsService.AddMonthlyStats(user);
-            Assert.Equal("Month stat created and updated", result.msg);
+            Assert.Equal("Month stat updated", result.msg);
 
             var stat = await _unitOfWork.UserStatMonthly.GetUserStatsMonthly(user.Id, DateTime.Now.Month, DateTime.Now.Year);
             Assert.NotNull(stat);

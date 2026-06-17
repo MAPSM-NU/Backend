@@ -1,0 +1,41 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+# 💡 CRITICAL: Grant permission to write check runs (The Test tab)
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Pull down your code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Set up the .NET SDK Environment
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0' # Change to '9.0', '7.0', etc., depending on your target
+
+    # 3. Run tests and export them to a predictable .trx file
+    - name: Execute Tests
+      run: dotnet test --logger "trx;LogFileName=test-results.trx" --results-directory TestResults
+
+    # 4. Process the .trx file and create the GitHub Report UI
+    - name: Generate Test Report Dashboard
+      uses: dorny/test-reporter@v1
+      if: always() # 💡 CRITICAL: Runs even if step 3 fails!
+      with:
+        name: .NET Backend Test Statistics # The title of the tab in GitHub
+        path: 'TestResults/test-results.trx' # Path matching the output from step 3
+        reporter: dotnet-trx               # Instructs the parser to read .NET format

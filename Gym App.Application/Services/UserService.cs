@@ -7,6 +7,7 @@ using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
+using Gym_App.Infrastructure.DTOs.User;
 using Gym_App.Infrastructure.DTOs.UserStats;
 using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.AspNet.Identity;
@@ -245,6 +246,86 @@ public class UserService : IUserServise
             RefreshToken = refreshToken,
             msg = "Login successful"
         };
+    }
+    public async Task<SettersResponse> OnboardingData(OnboardDataCreationDTO data)
+    {
+        if(data.userId == Guid.Empty)
+        {
+            _logger.LogError("Onbording Data failed cause of faulty Id");
+            return new SettersResponse { msg = "Faulty Id", status = 0 };
+        }
+        var user = await _unitOfWork.Users.GetUserById(data.userId, false);
+        if(user == null)
+        {
+            _logger.LogError($"user not found using id {data.userId}");
+            return new SettersResponse { msg = "User not found", status = 0 };
+        }
+        var authResult = await _authorizationService.IsUserAsync(data.userId);
+        if (!authResult)
+        {
+            _logger.LogError($"Someone tryied manipulating user's {data.userId} data");
+            return new SettersResponse { msg = "Unauthorized", status = 1 };
+        }
+
+        bool fitnessChange, injuryChange, exerciseChange, medicalChange; fitnessChange = injuryChange = exerciseChange = medicalChange = false;
+
+        if (data.FitnessGoals.Count() > 0)
+        {
+            foreach (var item in data.FitnessGoals)
+            {
+                
+                var fitnessGoal = await _unitOfWork.FitnessGoals.GetFitnessGoalUsingName(item);
+                if (fitnessGoal == null) continue;
+                fitnessChange = true;
+                user.FitnessGoals.Add(fitnessGoal);
+            }
+        }
+
+        if (data.Injuries.Count() > 0)
+        {
+            foreach(var item in data.Injuries)
+            {
+                var injury = await _unitOfWork.Injuries.GetInjuryUsingName(item);
+                if (injury == null) continue;
+                injuryChange = true;
+                user.Injuries.Add(injury);
+            }
+        }
+
+        if (data.ExerciseRestrictions.Count() > 0)
+        {
+            foreach(var item in data.ExerciseRestrictions)
+            {
+                var exerciseRestriction = await _unitOfWork.ExerciseRestrictions.GetExerciseRestrictionUsingName(item);
+                if (exerciseRestriction == null) continue;
+                exerciseChange = true;
+                user.ExerciseRestrictions.Add(exerciseRestriction);
+            }
+        }
+        
+        if (data.MedicalConditions.Count() > 0)
+        {
+            foreach(var item in data.MedicalConditions)
+            {
+                var medicalCondition = await _unitOfWork.MedicalConditions.GetMedicalConditionUsingName(item);
+                if (medicalCondition == null) continue;
+                medicalChange = true;
+                user.MedicalConditions.Add(medicalCondition);
+            }
+        }
+
+        if(fitnessChange || medicalChange || injuryChange || exerciseChange)
+        {
+            await _unitOfWork.Users.Update(user);
+            await _unitOfWork.SaveChangesAsync();
+            return new SettersResponse { msg = "Onboard data saved", status = 2};
+        }
+        return new SettersResponse { msg = "Nothing new is added", status = 0 };
+        
+    }
+    public async Task<SettersResponse> UpdateOnboardData(UpdateOnboardDataList data)
+    {
+        throw new NotImplementedException();
     }
     public async Task<SettersResponse> ForgotPassword(string email)
     {

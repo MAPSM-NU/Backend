@@ -11,7 +11,7 @@ namespace Gym_App.Infrastructure.Repositries
         private readonly DbSet<FitnessGoals> table;
         public FitnessGoalsRepositry(DbBase context) : base(context)
         {
-            this.table = context.Set<FitnessGoals>();
+            table = context.Set<FitnessGoals>();
         }
 
         public async Task<FitnessGoals> GetFitnessGoalUsingName(string name)

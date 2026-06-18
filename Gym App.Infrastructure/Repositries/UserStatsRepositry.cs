@@ -10,16 +10,10 @@ namespace Gym_App.Infrastructure.Repositries
     {
         private readonly DbBase _context;
         private readonly DbSet<UserStats> table;
-        private readonly DbSet<UserStatsDaily> tableDaily;
-        private readonly DbSet<UserStatsWeekly> tableWeekly;
-        private readonly DbSet<UserStatsMonthly> tableMonthly;
         public UserStatsRepositry(DbBase context) : base(context)
         {
             _context = context;
             table = _context.Set<UserStats>();
-            tableDaily = _context.Set<UserStatsDaily>();
-            tableWeekly = _context.Set<UserStatsWeekly>();
-            tableMonthly = _context.Set<UserStatsMonthly>();
         }
         public async Task<UserStats> GetUserStatsByUserId(Guid userId)
         {

@@ -57,6 +57,10 @@ namespace Gym_App.Domain
         public ICollection<UserStatsDaily>? UserStatsDaily { get; set; } = new List<UserStatsDaily>();
         public ICollection<UserStatsWeekly>? UserStatsWeekly { get; set; } = new List<UserStatsWeekly>();
         public ICollection<UserStatsMonthly>? UserStatsMonthly { get; set; } = new List<UserStatsMonthly>();
+        public ICollection<FitnessGoals> FitnessGoals { get; set; } = new List<FitnessGoals>();
+        public ICollection<Injury> Injuries { get; set; } = new List<Injury>();
+        public ICollection<ExerciseRestrictions> ExerciseRestrictions { get; set; } = new List<ExerciseRestrictions>();
+        public ICollection<MedicalCondition> MedicalConditions { get; set; } = new List<MedicalCondition>();
 
     }
 }

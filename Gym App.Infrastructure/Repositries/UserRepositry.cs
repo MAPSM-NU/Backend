@@ -19,23 +19,59 @@ namespace Gym_App.Infastructure.Repositries
         public async Task<User> GetUserById(Guid userID, bool includeRole)
         {
             if (includeRole)
-                return await table.Include(u => u.Role).Include(u => u.UserStats).FirstOrDefaultAsync(u => u.Id == userID);
+                return await table.Include(u => u.Role)
+                    .Include(u => u.UserStats)
+                    .Include(u => u.FitnessGoals)
+                    .Include(u => u.Injuries)
+                    .Include(u => u.MedicalConditions)
+                    .Include(u => u.ExerciseRestrictions)
+                    .FirstOrDefaultAsync(u => u.Id == userID);
             else
-                return await table.Include(u => u.UserStats).FirstOrDefaultAsync(u => u.Id == userID);
+                return await table
+                    .Include(u => u.UserStats)
+                    .Include(u => u.FitnessGoals)
+                    .Include(u => u.Injuries)
+                    .Include(u => u.MedicalConditions)
+                    .Include(u => u.ExerciseRestrictions)
+                    .FirstOrDefaultAsync(u => u.Id == userID);
         }
         public async Task<User> GetUserByEmail(string email, bool includeRole)
         {
             if (includeRole)
-                return await table.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
+                return await table.Include(u => u.Role)
+                    .Include(u => u.UserStats)
+                    .Include(u => u.FitnessGoals)
+                    .Include(u => u.Injuries)
+                    .Include(u => u.MedicalConditions)
+                    .Include(u => u.ExerciseRestrictions)
+                    .FirstOrDefaultAsync(u => u.Email == email);
             else
-                return await table.FirstOrDefaultAsync(u => u.Email == email);
+                return await table
+                    .Include(u => u.UserStats)
+                    .Include(u => u.FitnessGoals)
+                    .Include(u => u.Injuries)
+                    .Include(u => u.MedicalConditions)
+                    .Include(u => u.ExerciseRestrictions)
+                    .FirstOrDefaultAsync(u => u.Email == email);
         }
         public async Task<User> GetUserByName(string name, bool includeRole)
         {
             if (includeRole)
-                return await table.Include(u => u.Role).FirstOrDefaultAsync(u => u.Name == name);
+                return await table.Include(u => u.Role)
+                    .Include(u => u.UserStats)
+                    .Include(u => u.FitnessGoals)
+                    .Include(u => u.Injuries)
+                    .Include(u => u.MedicalConditions)
+                    .Include(u => u.ExerciseRestrictions)
+                    .FirstOrDefaultAsync(u => u.Name == name);
             else
-                return await table.FirstOrDefaultAsync(u => u.Name == name);
+                return await table
+                    .Include(u => u.UserStats)
+                    .Include(u => u.FitnessGoals)
+                    .Include(u => u.Injuries)
+                    .Include(u => u.MedicalConditions)
+                    .Include(u => u.ExerciseRestrictions)
+                    .FirstOrDefaultAsync(u => u.Name == name);
         }
         public async Task<ICollection<User>> GetUsersByRole(Guid roleID)
         {

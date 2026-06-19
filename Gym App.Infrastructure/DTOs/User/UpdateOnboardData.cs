@@ -14,6 +14,7 @@ namespace Gym_App.Infrastructure.DTOs.User
     }
     public class UpdateOnboardDataList
     {
+        public Guid userId {  get; set; }
         public List<UpdateOnboardData> Data { get; set; } = new List<UpdateOnboardData>();
     }
     public enum OnboardDataType

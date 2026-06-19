@@ -432,7 +432,6 @@ namespace Gym_App.Application.Services
                     Id = u.Id,
                     Name = u.Name,
                     Email = u.Email,
-                    UserType = u.UserType
                 })
                 .AsQueryable();
 

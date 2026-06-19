@@ -1,6 +1,7 @@
 ﻿using Gym_App.Application.Authorization;
 using Gym_App.Application.Services;
 using Gym_App.Core;
+using Gym_App.Domain;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infrastructure.DTOs.User;
 using Gym_App.Infrastructure.Interfaces.Services;
@@ -106,7 +107,7 @@ namespace GymApp.Tests.UserTests
             var user = CreateTestUser(CreateTestRole());
             await AddOnboardingData();
             await _unitOfWork.SaveChangesAsync();
-            var updateDto = createUpdateOnboardDto();
+            var updateDto = createUpdateOnboardDto(user);
             _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
             var result = await _userServiceMock.UpdateOnboardData(updateDto);
             Assert.Equal(2, result.status);
@@ -133,7 +134,7 @@ namespace GymApp.Tests.UserTests
             var result = await _userServiceMock.OnboardingData(onboardData);
             Assert.Equal(2, result.status);
 
-            var updateDto = createUpdateOnboardDto("r","r");
+            var updateDto = createUpdateOnboardDto(user,"r","r");
             result = await _userServiceMock.UpdateOnboardData(updateDto);
             Assert.Equal(2, result.status);
 
@@ -150,7 +151,7 @@ namespace GymApp.Tests.UserTests
             await AddOnboardingData();
             await _unitOfWork.SaveChangesAsync();
             _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
-            var updateDto = createUpdateOnboardDto("r", "r");
+            var updateDto = createUpdateOnboardDto(user,"r", "r");
             var result = await _userServiceMock.UpdateOnboardData(updateDto);
             Assert.Equal(2, result.status);
 
@@ -167,14 +168,14 @@ namespace GymApp.Tests.UserTests
             await AddOnboardingData();
             await _unitOfWork.SaveChangesAsync();
             _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
-            var updateDto = createUpdateOnboardDto();
+            var updateDto = createUpdateOnboardDto(user);
             updateDto.Data.ElementAt(1).name = "wrong name";
             var result = await _userServiceMock.UpdateOnboardData(updateDto);
             Assert.Equal(2, result.status);
 
             user = await _unitOfWork.Users.GetUserById(user.Id, false);
-            Assert.Equal(0, user.FitnessGoals.Count);
-            Assert.Equal(1, user.ExerciseRestrictions.Count);
+            Assert.Equal(1, user.FitnessGoals.Count);
+            Assert.Equal(0, user.ExerciseRestrictions.Count);
             Assert.Equal(1, user.Injuries.Count);
             Assert.Equal(1, user.MedicalConditions.Count);
         }
@@ -185,7 +186,7 @@ namespace GymApp.Tests.UserTests
             await AddOnboardingData();
             await _unitOfWork.SaveChangesAsync();
             _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
-            var updateDto = createUpdateOnboardDto("r","r","r","r");
+            var updateDto = createUpdateOnboardDto(user,"r","r","r","r");
             var result = await _userServiceMock.UpdateOnboardData(updateDto);
             Assert.Equal(0, result.status);
 
@@ -195,7 +196,7 @@ namespace GymApp.Tests.UserTests
             Assert.Equal(0, user.Injuries.Count);
             Assert.Equal(0, user.MedicalConditions.Count);
 
-            updateDto = createUpdateOnboardDto();
+            updateDto = createUpdateOnboardDto(user);
             foreach (var item in updateDto.Data) item.name = "wrong name";
             result = await _userServiceMock.UpdateOnboardData(updateDto);
             Assert.Equal(0, result.status);
@@ -213,7 +214,7 @@ namespace GymApp.Tests.UserTests
             await AddOnboardingData();
             await _unitOfWork.SaveChangesAsync();
             _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
-            var updateDto = createUpdateOnboardDto();
+            var updateDto = createUpdateOnboardDto(user);
             foreach (var item in updateDto.Data) item.requestType = "wrong request";
             var result = await _userServiceMock.UpdateOnboardData(updateDto);
             Assert.Equal(0, result.status);
@@ -278,10 +279,11 @@ namespace GymApp.Tests.UserTests
             }
         }
 
-        private UpdateOnboardDataList createUpdateOnboardDto(string r1 = "c", string r2 = "c", string r3 = "c", string r4 = "c")
+        private UpdateOnboardDataList createUpdateOnboardDto(User user,string r1 = "c", string r2 = "c", string r3 = "c", string r4 = "c")
         {
             var updateOnboardDataDto = new UpdateOnboardDataList
             {
+                userId = user.Id,
                 Data = new List<UpdateOnboardData>
                 {
                     new UpdateOnboardData

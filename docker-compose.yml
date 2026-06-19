@@ -1,0 +1,6 @@
+services:
+  gymapp.api:
+    image: ${DOCKER_REGISTRY-}gymappapi
+    build:
+      context: .
+      dockerfile: Gym App.API/Dockerfile

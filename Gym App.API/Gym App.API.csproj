@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Gym_App</RootNamespace>
     <AssemblyName>Gym_App.API</AssemblyName>
+    <UserSecretsId>1fb38f23-c6e1-41b5-8a3a-4a7e0287fb58</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +32,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     <PackageReference Include="MimeKit" Version="4.15.1" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />

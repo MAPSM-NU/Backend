@@ -31,6 +31,10 @@ public class UnitOfWork : IUnitOfWork
     private IUserStatDailyRepositry? _userStatDailyRepositry;
     private IUserStatWeeklyRepositry? _userStatWeeklyRepositry;
     private IUserStatMonthlyRepositry? _userStatMonthlyRepositry;
+    private IFitnessGoalsRepositry? _fitnessGoalRepositry;
+    private IExerciseRestrictionsRepositry? _exerciseRestrictionsRepositry;
+    private IInjuryRepositry? _injuryRepositry;
+    private IMedicalConditionsRepositry? _medicalConditionsRepositry;
 
 
     public UnitOfWork(DbBase context)
@@ -87,6 +91,15 @@ public class UnitOfWork : IUnitOfWork
         => _userStatWeeklyRepositry ??= new UserStatWeeklyRepoistry(_context);
     public IUserStatMonthlyRepositry UserStatMonthly
         => _userStatMonthlyRepositry ??= new UserStatMonthlyRepositry(_context);
+    public IFitnessGoalsRepositry FitnessGoals
+        => _fitnessGoalRepositry ??= new FitnessGoalsRepositry(_context);
+    public IExerciseRestrictionsRepositry ExerciseRestrictions
+        => _exerciseRestrictionsRepositry ??= new ExerciseRestrictionsRepositry(_context);
+    public IInjuryRepositry Injuries
+        => _injuryRepositry ??= new InjuryRepositry(_context);
+    public IMedicalConditionsRepositry MedicalConditions
+        => _medicalConditionsRepositry ??= new MedicalConditionsRepositry(_context);
+
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

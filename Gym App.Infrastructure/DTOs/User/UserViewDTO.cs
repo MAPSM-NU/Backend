@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
+﻿
 namespace Gym_App.Infastructure.DTOs.UserDTOs
 {
     public class UserViewDTO
@@ -16,9 +14,11 @@ namespace Gym_App.Infastructure.DTOs.UserDTOs
         public string? Country { get; set; }
         public string? PhoneNumber { get; set; }
         public string? ProfilePictureUrl { get; set; }
-        public string? subscriptionPlan { get; set; }
         public int? HeightCm { get; set; }
         public int? WeightKg { get; set; }
-        public string? UserType { get; set; }
+        public List<string> FitnessGoals {  get; set; } = new List<string>();
+        public List<string> Injuries { get; set; } = new List<string>();
+        public List<string> medicalConditions { get; set; } = new List<string>();
+        public List<string> ExerciseRestrictions { get; set; } = new List<string>();
     }
 }

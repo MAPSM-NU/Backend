@@ -1,5 +1,6 @@
 ﻿using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infrastructure.DTOs.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,6 +15,24 @@ namespace Gym_App.Api.Controllers
         {
             _user = user;
             _authenticationService = authorizationService;
+        }
+        [HttpPut("onboarding-data")]
+        public async Task<IActionResult> onboardData([FromBody] OnboardDataCreationDTO data)
+        {
+            var result = await _user.OnboardingData(data);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else
+                return Ok(new { message = result.msg });
+        }
+        [HttpPut("update-onboarding-data")]
+        public async Task<IActionResult> updateOnboardData([FromBody] UpdateOnboardDataList data)
+        {
+            var result = await _user.UpdateOnboardData(data);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else
+                return Ok(new { message = result.msg });
         }
         [HttpPut("change-pfp")]
         public async Task<IActionResult> ChangePfp([FromForm] Guid userId, IFormFile pfp)

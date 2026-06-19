@@ -1,8 +1,6 @@
 ﻿using Gym_App.Domain;
 using Gym_App.Infastructure.Context;
-using Gym_App.Infastructure.DTOs.Notification;
 using Gym_App.Infastructure.Interfaces.Repositries;
-using MailKit.Search;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 

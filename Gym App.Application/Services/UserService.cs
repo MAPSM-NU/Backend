@@ -1,4 +1,5 @@
-﻿using Gym_App.Application.Authorization;
+﻿using FluentEmail.Core;
+using Gym_App.Application.Authorization;
 using Gym_App.Core;
 using Gym_App.Domain;
 using Gym_App.Domain.Entities;
@@ -7,8 +8,10 @@ using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Interfaces.Repositries;
 using Gym_App.Infastructure.Interfaces.Services;
 using Gym_App.Infastructure.Transfer_Classes;
+using Gym_App.Infrastructure.DTOs.User;
 using Gym_App.Infrastructure.DTOs.UserStats;
 using Gym_App.Infrastructure.Interfaces.Services;
+using Gym_App.Migrations;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -193,7 +196,7 @@ public class UserService : IUserServise
                 Expires = DateTime.Now.AddDays(4)
             };
 
-            var userStats = new UserStats
+            var userStats = new Core.UserStats
             {
                 userId = user.Id,
                 user = user,
@@ -208,7 +211,7 @@ public class UserService : IUserServise
 
             await _unitOfWork.SaveChangesAsync();
             _logger.LogInformation($"User created with email: {u.Email} and name: {u.Name}");
-            await _emailSender.IntroductionEmail(u.Email);
+            //await _emailSender.IntroductionEmail(u.Email);
             return new ResponseToken
             {
                 Status = 2,
@@ -245,6 +248,219 @@ public class UserService : IUserServise
             RefreshToken = refreshToken,
             msg = "Login successful"
         };
+    }
+    public async Task<SettersResponse> OnboardingData(OnboardDataCreationDTO data)
+    {
+        if(data.userId == Guid.Empty)
+        {
+            _logger.LogError("Onbording Data failed cause of faulty Id");
+            return new SettersResponse { msg = "Faulty Id", status = 0 };
+        }
+        var user = await _unitOfWork.Users.GetUserById(data.userId, false);
+        if(user == null)
+        {
+            _logger.LogError($"user not found using id {data.userId}");
+            return new SettersResponse { msg = "User not found", status = 0 };
+        }
+        var authResult = await _authorizationService.IsUserAsync(data.userId);
+        if (!authResult)
+        {
+            _logger.LogError($"Someone tryied manipulating user's {data.userId} data");
+            return new SettersResponse { msg = "Unauthorized", status = 1 };
+        }
+
+        bool fitnessChange, injuryChange, exerciseChange, medicalChange; fitnessChange = injuryChange = exerciseChange = medicalChange = false;
+
+        if (data.FitnessGoals.Count() > 0)
+        {
+            foreach (var item in data.FitnessGoals)
+            {
+                
+                var fitnessGoal = await _unitOfWork.FitnessGoals.GetFitnessGoalUsingName(item);
+                if (fitnessGoal == null) continue;
+                fitnessChange = true;
+                user.FitnessGoals.Add(fitnessGoal);
+            }
+        }
+
+        if (data.Injuries.Count() > 0)
+        {
+            foreach(var item in data.Injuries)
+            {
+                var injury = await _unitOfWork.Injuries.GetInjuryUsingName(item);
+                if (injury == null) continue;
+                injuryChange = true;
+                user.Injuries.Add(injury);
+            }
+        }
+
+        if (data.ExerciseRestrictions.Count() > 0)
+        {
+            foreach(var item in data.ExerciseRestrictions)
+            {
+                var exerciseRestriction = await _unitOfWork.ExerciseRestrictions.GetExerciseRestrictionUsingName(item);
+                if (exerciseRestriction == null) continue;
+                exerciseChange = true;
+                user.ExerciseRestrictions.Add(exerciseRestriction);
+            }
+        }
+        
+        if (data.MedicalConditions.Count() > 0)
+        {
+            foreach(var item in data.MedicalConditions)
+            {
+                var medicalCondition = await _unitOfWork.MedicalConditions.GetMedicalConditionUsingName(item);
+                if (medicalCondition == null) continue;
+                medicalChange = true;
+                user.MedicalConditions.Add(medicalCondition);
+            }
+        }
+
+        if(fitnessChange || medicalChange || injuryChange || exerciseChange)
+        {
+            await _unitOfWork.Users.Update(user);
+            await _unitOfWork.SaveChangesAsync();
+            return new SettersResponse { msg = "Onboard data saved", status = 2};
+        }
+        return new SettersResponse { msg = "Nothing new is added", status = 0 };
+        
+    }
+    public async Task<SettersResponse> UpdateOnboardData(UpdateOnboardDataList data)
+    {
+        try
+        {
+
+            if(data.userId == Guid.Empty || data.Data == null)
+            {
+                _logger.LogError($"Invalid data were given while trying to update Onboarding data");
+                return new SettersResponse { msg = "Invalid Data", status = 0 };
+            }
+
+            var user = await _unitOfWork.Users.GetUserById(data.userId, false);
+            if (user == null)
+            {
+                _logger.LogError($"user not found using id {data.userId}");
+                return new SettersResponse { msg = "User not found", status = 0 };
+            }
+            var authResult = await _authorizationService.IsUserAsync(data.userId);
+            if (!authResult)
+            {
+                _logger.LogError($"Someone tryied manipulating user's {data.userId} data");
+                return new SettersResponse { msg = "Unauthorized", status = 1 };
+            }
+            string type, request;
+            bool anychange = false;
+            foreach(var item in data.Data)
+            {
+                type = item.type.ToLower();request = item.requestType.ToLower();
+
+                if(type == OnboardDataType.FitnessGoals.ToString().ToLower() || type == OnboardDataType.f.ToString())
+                {
+                    var fitnessGoal = await _unitOfWork.FitnessGoals.GetFitnessGoalUsingName(item.name);
+                    if(fitnessGoal == null)
+                    {
+                        _logger.LogError($"user:{user.Id} gave wrong name for fitness goal: {item.name}");
+                        continue;
+                    }
+                    if ((request == requestType.c.ToString() || request == requestType.create.ToString()) && !user.FitnessGoals.Contains(fitnessGoal))
+                    {
+                        user.FitnessGoals.Add(fitnessGoal);
+                        anychange = true;
+                    }
+                    else if((request == requestType.r.ToString() || request== requestType.remove.ToString()) && user.FitnessGoals.Contains(fitnessGoal))
+                    {
+                        user.FitnessGoals.Remove(fitnessGoal);
+                        anychange = true;
+                    }
+                    _logger.LogError($"wrong request type given by user {user.Id} \n requestType: {request}");
+                    continue;
+                }
+                else if(type == OnboardDataType.Injury.ToString().ToLower() || type == OnboardDataType.i.ToString() )
+                {
+                    var injury = await _unitOfWork.Injuries.GetInjuryUsingName(item.name);
+                    if(injury == null)
+                    {
+                        _logger.LogError($"user:{user.Id} gave wrong name for injury: {item.name}");
+                        continue;
+                    }
+                    if ((request == requestType.c.ToString() || request == requestType.create.ToString()) && !user.Injuries.Contains(injury))
+                    {
+                        user.Injuries.Add(injury);
+                        anychange = true;
+                    }
+                    else if ((request == requestType.r.ToString() || request == requestType.remove.ToString()) && user.Injuries.Contains(injury))
+                    {
+                        user.Injuries.Remove(injury);
+                        anychange = true;
+                    }
+                    _logger.LogError($"wrong request type given by user {user.Id} \n requestType: {request}");
+                    continue;
+                }
+                else if(type == OnboardDataType.ExerciseRestrictions.ToString().ToLower() || type == OnboardDataType.e.ToString())
+                {
+                    var exerciseRestriction = await _unitOfWork.ExerciseRestrictions.GetExerciseRestrictionUsingName(item.name);
+                    if(exerciseRestriction == null)
+                    {
+                        _logger.LogError($"user:{user.Id} gave wrong name for exercise restriction: {item.name}");
+                        continue;
+                    }
+                    if ((request == requestType.c.ToString() || request == requestType.create.ToString()) && !user.ExerciseRestrictions.Contains(exerciseRestriction))
+                    {
+                        user.ExerciseRestrictions.Add(exerciseRestriction);
+                        anychange = true;
+                    }
+                    else if ((request == requestType.r.ToString() || request == requestType.remove.ToString()) && user.ExerciseRestrictions.Contains(exerciseRestriction))
+                    {
+                        user.ExerciseRestrictions.Remove(exerciseRestriction);
+                        anychange = true;
+                    }
+                    _logger.LogError($"wrong request type given by user {user.Id} \n requestType: {request}");
+                    continue;
+                }
+                else if(type == OnboardDataType.MeidcalCondition.ToString().ToLower() || type == OnboardDataType.m.ToString())
+                {
+                    var medicalCondition = await _unitOfWork.MedicalConditions.GetMedicalConditionUsingName(item.name);
+                    if (medicalCondition == null)
+                    {
+                        _logger.LogError($"user:{user.Id} gave wrong name for medical condition: {item.name}");
+                        continue;
+                    }
+                    if ((request == requestType.c.ToString() || request == requestType.create.ToString()) && !user.MedicalConditions.Contains(medicalCondition))
+                    {
+                        user.MedicalConditions.Add(medicalCondition);
+                        anychange = true;
+                    }
+                    else if ((request == requestType.r.ToString() || request == requestType.remove.ToString()) && user.MedicalConditions.Contains(medicalCondition))
+                    {
+                        user.MedicalConditions.Remove(medicalCondition);
+                        anychange = true;
+                    }
+                    _logger.LogError($"wrong request type given by user {user.Id} \n requestType: {request}");
+                    continue;
+                }
+                else
+                {
+                    _logger.LogError($"wrong type given by user {user.Id} \n Type: {request}");
+                    continue;
+                }
+            }
+            if (anychange)
+            {
+                await _unitOfWork.SaveChangesAsync();
+                return new SettersResponse { msg = "Changed made", status = 2 };
+            }
+            else
+            {
+                _logger.LogError($"User: {user.Id} tried to apply changes to onboarding info, but none of the data given were valid");
+                return new SettersResponse { msg = "no change happend due to wrong data", status = 0 };
+            }
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, $"An error occurred while updating the onboarding data");
+            return new SettersResponse { status = 0, msg = "An error occurred while processing the request." };
+        }
+        
     }
     public async Task<SettersResponse> ForgotPassword(string email)
     {
@@ -621,10 +837,12 @@ public class UserService : IUserServise
                 Country = userEntity.Country,
                 PhoneNumber = userEntity.PhoneNumber,
                 ProfilePictureUrl = userEntity.ProfilePictureUrl,
-                subscriptionPlan = userEntity.subscriptionPlan,
                 HeightCm = userEntity.HeightCm,
                 WeightKg = userEntity.WeightKg,
-                UserType = userEntity.UserType
+                FitnessGoals = userEntity.FitnessGoals.Select(f => f.Name).ToList(),
+                ExerciseRestrictions = userEntity.ExerciseRestrictions.Select(er => er.Name).ToList(),
+                Injuries = userEntity.Injuries.Select(i => i.Name).ToList(),
+                medicalConditions = userEntity.MedicalConditions.Select(mc => mc.Name).ToList()
             };
 
             return new GettersResponse<UserViewDTO>
@@ -666,7 +884,7 @@ public class UserService : IUserServise
             if(user.UserStats == null)
             {
                 _logger.LogWarning($"User stats not found for user. UserID: {userID}. Making new user stats.");
-                var userStats = new UserStats
+                var userStats = new Core.UserStats
                 {
                     userId = user.Id,
                     user = user,
@@ -819,10 +1037,12 @@ public class UserService : IUserServise
                     Country = u.Country,
                     PhoneNumber = u.PhoneNumber,
                     ProfilePictureUrl = u.ProfilePictureUrl,
-                    subscriptionPlan = u.subscriptionPlan,
                     HeightCm = u.HeightCm,
                     WeightKg = u.WeightKg,
-                    UserType = u.UserType
+                    FitnessGoals = u.FitnessGoals.Select(f => f.Name).ToList(),
+                    ExerciseRestrictions = u.ExerciseRestrictions.Select(er => er.Name).ToList(),
+                    Injuries = u.Injuries.Select(i => i.Name).ToList(),
+                    medicalConditions = u.MedicalConditions.Select(mc => mc.Name).ToList()
                 });
 
             var users = await PagedList<UserViewDTO>.CreateAsync(userResponse, page, pageSize);
@@ -863,10 +1083,12 @@ public class UserService : IUserServise
                                 Country = u.Country,
                                 PhoneNumber = u.PhoneNumber,
                                 ProfilePictureUrl = u.ProfilePictureUrl,
-                                subscriptionPlan = u.subscriptionPlan,
                                 HeightCm = u.HeightCm,
                                 WeightKg = u.WeightKg,
-                                UserType = u.UserType
+                                FitnessGoals = u.FitnessGoals.Select(f=> f.Name).ToList(),
+                                ExerciseRestrictions = u.ExerciseRestrictions.Select(er => er.Name).ToList(),
+                                Injuries = u.Injuries.Select(i => i.Name).ToList(),
+                                medicalConditions = u.MedicalConditions.Select(mc => mc.Name).ToList()
                             };
 
             if (!userQuery.Any())

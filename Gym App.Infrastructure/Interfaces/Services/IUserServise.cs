@@ -1,6 +1,7 @@
 ﻿using Gym_App.Domain.Entities;
 using Gym_App.Infastructure.DTOs.UserDTOs;
 using Gym_App.Infastructure.Transfer_Classes;
+using Gym_App.Infrastructure.DTOs.User;
 using Gym_App.Infrastructure.DTOs.UserStats;
 using Microsoft.AspNetCore.Http;
 
@@ -11,6 +12,8 @@ namespace Gym_App.Infastructure.Interfaces.Services
         Task<ResponseToken> CreateAdmin(UserCreationDTO user);   
         Task<ResponseToken> SignUpUser(UserCreationDTO user);
         Task<ResponseToken> SigninUser(string email, string password);
+        Task<SettersResponse> OnboardingData(OnboardDataCreationDTO data);
+        Task<SettersResponse> UpdateOnboardData(UpdateOnboardDataList data);
         Task<SettersResponse> ForgotPassword(string email);
         Task<SettersResponse> ResetPassword(string email,string otp, string newPassword);
         Task<SettersResponse> ChangePfp(Guid userID, IFormFile pfp);

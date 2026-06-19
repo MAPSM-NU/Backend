@@ -27,6 +27,10 @@ public interface IUnitOfWork : IAsyncDisposable
     IUserStatDailyRepositry UserStatDaily {  get; }
     IUserStatWeeklyRepositry UserStatWeekly {  get; }
     IUserStatMonthlyRepositry UserStatMonthly { get; }
+    IFitnessGoalsRepositry FitnessGoals {  get; }
+    IExerciseRestrictionsRepositry ExerciseRestrictions {  get; }
+    IInjuryRepositry Injuries { get; }
+    IMedicalConditionsRepositry MedicalConditions { get; }
 
     /// <summary>
     /// Saves all changes made to repositories in a single database transaction

@@ -9,15 +9,13 @@ namespace Gym_App.Api.Controllers
     public class AuthenticationController : Controller
     {
         private readonly IUserServise _userServiceService;
-        private readonly IEmailSender _emailSender;//Still have not made the email verification service
         private readonly ITokenHandler _tokenHandler;
-        public AuthenticationController(IUserServise userService , IEmailSender emailSender,ITokenHandler tokenHandler)
+        public AuthenticationController(IUserServise userService, ITokenHandler tokenHandler)
         {
             _userServiceService = userService;
-            _emailSender = emailSender;
             _tokenHandler = tokenHandler;
         }
-        [Authorize(Policy = "ElevatedPower")]
+        //[Authorize(Policy = "ElevatedPower")]
         [HttpPost("create-admin")]
         public async Task<IActionResult> CreateAdmin([FromBody] UserCreationDTO user)
         {

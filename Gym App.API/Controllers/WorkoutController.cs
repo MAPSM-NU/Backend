@@ -159,6 +159,17 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(result.Value);
         }
+        [HttpGet("get-workout-progress/{workoutID}")]
+        public async Task<IActionResult> GetWorkoutProgress([FromRoute] Guid workoutID)
+        {
+            var result = await _workoutService.GetWorkoutCurrentProgress(workoutID);
+            if (result.status == 0)
+                return BadRequest(new { message = result.msg });
+            else if (result.status == 1)
+                return Forbid();
+            else
+                return Ok(result.Value);
+        }
         [HttpGet("get-user-workouts/{userId}")]
         public async Task<IActionResult> GetUsersWorkout([FromRoute] Guid userId, [FromQuery] string searchTerm, string sortColumn, string OrderBy, int page = 1, int pageSize = 10)
         {

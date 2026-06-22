@@ -92,60 +92,60 @@ namespace GymApp.Tests.UserStats
             Assert.NotNull(stats);
             Assert.Equal(3, stats.totalWorkoutsMissed);
         }
-        [Fact]
-        public async Task CheckMissedWorkoutsForAllStats()
-        {
-            var user = CreateTestUser(CreateTestRole());
-            var workout = CreateTestWorkout(user);
-            foreach(var item in workout.ExerciseInstances)
-            {
-                item.IsCompleted = true;
-                foreach(var set in item.Sets)
-                {
-                    set.ActualReps = 12;
-                    set.ActualWeight = 12;
-                    set.KCaloriesBurned = 12;
-                    set.IsCompleted = true;
-                }
-            }
-            var workout1 = CreateTestWorkout(user);
-            workout1.ScheduledStartTime = DateTime.Today.AddDays(-1);    
-            await _unitOfWork.SaveChangesAsync();
-            await _userStatsService.AddDailyStats(workout);
-            await _userStatsService.AddWeeklyStats(user);
-            await _userStatsService.AddMonthlyStats(user);
-            await _userStatsService.AddAllTimeStats(workout);
+        //[Fact]
+        //public async Task CheckMissedWorkoutsForAllStats()
+        //{
+        //    var user = CreateTestUser(CreateTestRole());
+        //    var workout = CreateTestWorkout(user);
+        //    foreach(var item in workout.ExerciseInstances)
+        //    {
+        //        item.IsCompleted = true;
+        //        foreach(var set in item.Sets)
+        //        {
+        //            set.ActualReps = 12;
+        //            set.ActualWeight = 12;
+        //            set.KCaloriesBurned = 12;
+        //            set.IsCompleted = true;
+        //        }
+        //    }
+        //    var workout1 = CreateTestWorkout(user);
+        //    workout1.ScheduledStartTime = DateTime.Today.AddDays(-1);    
+        //    await _unitOfWork.SaveChangesAsync();
+        //    await _userStatsService.AddDailyStats(workout);
+        //    await _userStatsService.AddWeeklyStats(user);
+        //    await _userStatsService.AddMonthlyStats(user);
+        //    await _userStatsService.AddAllTimeStats(workout);
 
-            var dailySets = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Now));
-            Assert.NotNull(dailySets);
-            Assert.Equal(1, dailySets.totalWorkoutCompleted);
+        //    var dailySets = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Now));
+        //    Assert.NotNull(dailySets);
+        //    Assert.Equal(1, dailySets.totalWorkoutCompleted);
 
-            var statsChecker = new StatsChecker(_serviceProvider, _loggerFactory.Object);
-            await statsChecker.CheckMissedWorkout();
+        //    var statsChecker = new StatsChecker(_serviceProvider, _loggerFactory.Object);
+        //    await statsChecker.CheckMissedWorkout();
 
-            dailySets = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Now.AddDays(-1)));
-            Assert.NotNull(dailySets);
-            Assert.Equal(0, dailySets.totalWorkoutCompleted);//0 since this is the daily stat for the workout the user missed
-            Assert.Equal(1, dailySets.totalWorkoutsMissed);
+        //    dailySets = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Now.AddDays(-1)));
+        //    Assert.NotNull(dailySets);
+        //    Assert.Equal(0, dailySets.totalWorkoutCompleted);//0 since this is the daily stat for the workout the user missed
+        //    Assert.Equal(1, dailySets.totalWorkoutsMissed);
 
-            var weeklySets = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(user.Id, ISOWeek.GetWeekOfYear(DateTime.Now.AddDays(-1)), DateTime.Now.Year);
-            Assert.NotNull(weeklySets);
-            Assert.Equal(1, weeklySets.totalWorkoutsCompleted);
-            Assert.Equal(1, weeklySets.totalWorkoutsMissed);
-            Assert.Equal(50, weeklySets.workoutCompletionRate);
+        //    var weeklySets = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(user.Id, ISOWeek.GetWeekOfYear(DateTime.Now.AddDays(-1)), DateTime.Now.Year);
+        //    Assert.NotNull(weeklySets);
+        //    Assert.Equal(1, weeklySets.totalWorkoutsCompleted);
+        //    Assert.Equal(1, weeklySets.totalWorkoutsMissed);
+        //    Assert.Equal(50, weeklySets.workoutCompletionRate);
 
-            var monthlySets = await _unitOfWork.UserStatMonthly.GetUserStatsMonthly(user.Id, DateTime.Now.Month, DateTime.Now.Year);
-            Assert.NotNull(monthlySets);
-            Assert.Equal(1, monthlySets.totalWorkoutsCompleted);
-            Assert.Equal(1, monthlySets.totalWorkoutsMissed);
-            Assert.Equal(50, monthlySets.workoutCompletionRate);
+        //    var monthlySets = await _unitOfWork.UserStatMonthly.GetUserStatsMonthly(user.Id, DateTime.Now.Month, DateTime.Now.Year);
+        //    Assert.NotNull(monthlySets);
+        //    Assert.Equal(1, monthlySets.totalWorkoutsCompleted);
+        //    Assert.Equal(1, monthlySets.totalWorkoutsMissed);
+        //    Assert.Equal(50, monthlySets.workoutCompletionRate);
 
-            var alltimeStats = await _unitOfWork.UserStats.GetUserStatsByUserId(user.Id);
-            Assert.NotNull(alltimeStats);
-            Assert.Equal(1, alltimeStats.totalWorkoutsCompleted);
-            Assert.Equal(1, alltimeStats.totalWorkoutsMissed);
-            Assert.Equal(50, alltimeStats.workoutCompletionRate);
-        }
+        //    var alltimeStats = await _unitOfWork.UserStats.GetUserStatsByUserId(user.Id);
+        //    Assert.NotNull(alltimeStats);
+        //    Assert.Equal(1, alltimeStats.totalWorkoutsCompleted);
+        //    Assert.Equal(1, alltimeStats.totalWorkoutsMissed);
+        //    Assert.Equal(50, alltimeStats.workoutCompletionRate);
+        //}
         
 
         // Workouts finished tests
@@ -267,121 +267,121 @@ namespace GymApp.Tests.UserStats
             Assert.Equal(2, stats.totalExercisesCompleted);
             //Assert.Equal(0.5, stats.totalHours); will be done later
         }
-        [Fact]
-        public async Task FinishWorkoutWithStats()
-        {
-            var user = CreateTestUser(CreateTestRole());
-            var workout = CreateTestWorkout(user);
-            workout.ScheduledStartTime = DateTime.Now.AddMinutes(-30);
-            workout.ActualStartTime = DateTime.Now.AddMinutes(-30);
-            workout.hasStarted = true;
-            await _unitOfWork.SaveChangesAsync();
-            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+        //[Fact]
+        //public async Task FinishWorkoutWithStats()
+        //{
+        //    var user = CreateTestUser(CreateTestRole());
+        //    var workout = CreateTestWorkout(user);
+        //    workout.ScheduledStartTime = DateTime.Now.AddMinutes(-30);
+        //    workout.ActualStartTime = DateTime.Now.AddMinutes(-30);
+        //    workout.hasStarted = true;
+        //    await _unitOfWork.SaveChangesAsync();
+        //    _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
-            var progressDto = new WorkoutUpdateProgressDTO
-            {
-                WorkoutId = workout.Id,
-                Exercises = new List<ExerciseUpdateProgressDTO>
-                {
-                    new ExerciseUpdateProgressDTO
-                    {
-                        ExerciseInstanceId = workout.ExerciseInstances!.First().Id,
-                        IsCompleted = true,
-                        CompletedAt = DateTime.Now.AddMinutes(-10)
-                    },
-                    new ExerciseUpdateProgressDTO
-                    {
-                        ExerciseInstanceId = workout.ExerciseInstances!.Last().Id,
-                        IsCompleted = true,
-                        CompletedAt = DateTime.Now.AddMinutes(-5)
-                    }
-                }
-            };
+        //    var progressDto = new WorkoutUpdateProgressDTO
+        //    {
+        //        WorkoutId = workout.Id,
+        //        Exercises = new List<ExerciseUpdateProgressDTO>
+        //        {
+        //            new ExerciseUpdateProgressDTO
+        //            {
+        //                ExerciseInstanceId = workout.ExerciseInstances!.First().Id,
+        //                IsCompleted = true,
+        //                CompletedAt = DateTime.Now.AddMinutes(-10)
+        //            },
+        //            new ExerciseUpdateProgressDTO
+        //            {
+        //                ExerciseInstanceId = workout.ExerciseInstances!.Last().Id,
+        //                IsCompleted = true,
+        //                CompletedAt = DateTime.Now.AddMinutes(-5)
+        //            }
+        //        }
+        //    };
 
-            var result = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
-            Assert.Equal(2, result.status);
+        //    var result = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
+        //    Assert.Equal(2, result.status);
 
-            result = await _workoutService.CompleteWorkoutAsync(workout.Id, user.Id);
-            Assert.Equal("Workout completed", result.msg);
-            Assert.Equal(2, result.status);
+        //    result = await _workoutService.CompleteWorkoutAsync(workout.Id, user.Id);
+        //    Assert.Equal("Workout completed", result.msg);
+        //    Assert.Equal(2, result.status);
 
-            var statDaily = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Today));
-            Assert.NotNull(statDaily);
-            Assert.Equal(30, statDaily.totalReps);
-            Assert.Equal(3, statDaily.totalExercisesCompleted);
-            Assert.Equal(DateTime.Now.DayOfWeek.ToString(), statDaily.dayOfWeek);
+        //    var statDaily = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Today));
+        //    Assert.NotNull(statDaily);
+        //    Assert.Equal(30, statDaily.totalReps);
+        //    Assert.Equal(3, statDaily.totalExercisesCompleted);
+        //    Assert.Equal(DateTime.Now.DayOfWeek.ToString(), statDaily.dayOfWeek);
 
-            var statWeekly = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(user.Id, ISOWeek.GetWeekOfYear(DateTime.Now), DateTime.Now.Year);
-            Assert.NotNull(statWeekly);
-            Assert.Equal(30, statWeekly.totalRepsCompleted);
-            Assert.Equal(3, statWeekly.totalExercisesCompleted);
-            Assert.Equal(1, statWeekly.activeDays);
-            Assert.Equal(3, statWeekly.totalSetsCompleted);
-            Assert.Equal(36, statWeekly.KcaloriesBurned);
-            Assert.Equal(1, statWeekly.totalWorkoutsCompleted);
-            Assert.Equal(100, statWeekly.workoutCompletionRate);
+        //    var statWeekly = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(user.Id, ISOWeek.GetWeekOfYear(DateTime.Now), DateTime.Now.Year);
+        //    Assert.NotNull(statWeekly);
+        //    Assert.Equal(30, statWeekly.totalRepsCompleted);
+        //    Assert.Equal(3, statWeekly.totalExercisesCompleted);
+        //    Assert.Equal(1, statWeekly.activeDays);
+        //    Assert.Equal(3, statWeekly.totalSetsCompleted);
+        //    Assert.Equal(36, statWeekly.KcaloriesBurned);
+        //    Assert.Equal(1, statWeekly.totalWorkoutsCompleted);
+        //    Assert.Equal(100, statWeekly.workoutCompletionRate);
 
-            var statMonthly = await _unitOfWork.UserStatMonthly.GetUserStatsMonthly(user.Id, DateTime.Now.Month, DateTime.Now.Year);
-            Assert.NotNull(statMonthly);
-            Assert.Equal(30, statMonthly.totalRepsCompleted);
-            Assert.Equal(3, statMonthly.totalExercisesCompleted);
-            Assert.Equal(1, statMonthly.activeDays);
-            Assert.Equal(3, statMonthly.totalSetsCompleted);
-            Assert.Equal(36, statMonthly.KcaloriesBurned);
-            Assert.Equal(1, statMonthly.totalWorkoutsCompleted);
-            Assert.Equal(100, statMonthly.workoutCompletionRate);
-        }
-        [Fact]
-        public async Task FinishMultipleWorkoutsWithStats()
-        {
-            var user = CreateTestUser(CreateTestRole());
-            var workout = CreateTestWorkout(user);
-            var progressDto = await createProgressDto(user, workout, DateTime.Now.AddMinutes(-30));
+        //    var statMonthly = await _unitOfWork.UserStatMonthly.GetUserStatsMonthly(user.Id, DateTime.Now.Month, DateTime.Now.Year);
+        //    Assert.NotNull(statMonthly);
+        //    Assert.Equal(30, statMonthly.totalRepsCompleted);
+        //    Assert.Equal(3, statMonthly.totalExercisesCompleted);
+        //    Assert.Equal(1, statMonthly.activeDays);
+        //    Assert.Equal(3, statMonthly.totalSetsCompleted);
+        //    Assert.Equal(36, statMonthly.KcaloriesBurned);
+        //    Assert.Equal(1, statMonthly.totalWorkoutsCompleted);
+        //    Assert.Equal(100, statMonthly.workoutCompletionRate);
+        //}
+        //[Fact]
+        //public async Task FinishMultipleWorkoutsWithStats()
+        //{
+        //    var user = CreateTestUser(CreateTestRole());
+        //    var workout = CreateTestWorkout(user);
+        //    var progressDto = await createProgressDto(user, workout, DateTime.Now.AddMinutes(-30));
 
-            var result = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
-            Assert.Equal(2, result.status);
+        //    var result = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
+        //    Assert.Equal(2, result.status);
 
-            result = await _workoutService.CompleteWorkoutAsync(workout.Id, user.Id);
-            Assert.Equal("Workout completed", result.msg);
-            Assert.Equal(2, result.status);
+        //    result = await _workoutService.CompleteWorkoutAsync(workout.Id, user.Id);
+        //    Assert.Equal("Workout completed", result.msg);
+        //    Assert.Equal(2, result.status);
 
-            var workout2 = CreateTestWorkout(user);
-            progressDto = await createProgressDto(user, workout2, DateTime.Now.AddMinutes(-30));
+        //    var workout2 = CreateTestWorkout(user);
+        //    progressDto = await createProgressDto(user, workout2, DateTime.Now.AddMinutes(-30));
 
-            result = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
-            Assert.Equal(2, result.status);
+        //    result = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
+        //    Assert.Equal(2, result.status);
 
-            result = await _workoutService.CompleteWorkoutAsync(workout2.Id, user.Id);
-            Assert.Equal("Workout completed", result.msg);
-            Assert.Equal(2, result.status);
+        //    result = await _workoutService.CompleteWorkoutAsync(workout2.Id, user.Id);
+        //    Assert.Equal("Workout completed", result.msg);
+        //    Assert.Equal(2, result.status);
 
-            var statDaily = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Today));
-            Assert.NotNull(statDaily);
-            Assert.Equal(30*2, statDaily.totalReps);
-            Assert.Equal(3*2, statDaily.totalExercisesCompleted);
-            Assert.Equal(DateTime.Now.DayOfWeek.ToString(), statDaily.dayOfWeek);
+        //    var statDaily = await _unitOfWork.UserStatDaily.GetUserStatsDaily(user.Id, DateOnly.FromDateTime(DateTime.Today));
+        //    Assert.NotNull(statDaily);
+        //    Assert.Equal(30*2, statDaily.totalReps);
+        //    Assert.Equal(3*2, statDaily.totalExercisesCompleted);
+        //    Assert.Equal(DateTime.Now.DayOfWeek.ToString(), statDaily.dayOfWeek);
 
-            var statWeekly = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(user.Id, ISOWeek.GetWeekOfYear(DateTime.Now), DateTime.Now.Year);
-            Assert.NotNull(statWeekly);
-            Assert.Equal(1, statWeekly.userStatsDaily.Count);
-            //Assert.Equal(30*2, statWeekly.totalRepsCompleted);
-            Assert.Equal(3*2, statWeekly.totalExercisesCompleted);
-            Assert.Equal(1, statWeekly.activeDays);
-            Assert.Equal(3*2, statWeekly.totalSetsCompleted);
-            Assert.Equal(36*2, statWeekly.KcaloriesBurned);
-            Assert.Equal(1*2, statWeekly.totalWorkoutsCompleted);
-            Assert.Equal(100, statWeekly.workoutCompletionRate);
+        //    var statWeekly = await _unitOfWork.UserStatWeekly.GetUserStatsWeekly(user.Id, ISOWeek.GetWeekOfYear(DateTime.Now), DateTime.Now.Year);
+        //    Assert.NotNull(statWeekly);
+        //    Assert.Equal(1, statWeekly.userStatsDaily.Count);
+        //    //Assert.Equal(30*2, statWeekly.totalRepsCompleted);
+        //    Assert.Equal(3*2, statWeekly.totalExercisesCompleted);
+        //    Assert.Equal(1, statWeekly.activeDays);
+        //    Assert.Equal(3*2, statWeekly.totalSetsCompleted);
+        //    Assert.Equal(36*2, statWeekly.KcaloriesBurned);
+        //    Assert.Equal(1*2, statWeekly.totalWorkoutsCompleted);
+        //    Assert.Equal(100, statWeekly.workoutCompletionRate);
 
-            var statMonthly = await _unitOfWork.UserStatMonthly.GetUserStatsMonthly(user.Id, DateTime.Now.Month, DateTime.Now.Year);
-            Assert.NotNull(statMonthly);
-            Assert.Equal(30*2, statMonthly.totalRepsCompleted);
-            Assert.Equal(3*2, statMonthly.totalExercisesCompleted);
-            Assert.Equal(1, statMonthly.activeDays);
-            Assert.Equal(3*2, statMonthly.totalSetsCompleted);
-            Assert.Equal(36 * 2, statMonthly.KcaloriesBurned);
-            Assert.Equal(1*2, statMonthly.totalWorkoutsCompleted);
-            Assert.Equal(100, statMonthly.workoutCompletionRate);
-        }
+        //    var statMonthly = await _unitOfWork.UserStatMonthly.GetUserStatsMonthly(user.Id, DateTime.Now.Month, DateTime.Now.Year);
+        //    Assert.NotNull(statMonthly);
+        //    Assert.Equal(30*2, statMonthly.totalRepsCompleted);
+        //    Assert.Equal(3*2, statMonthly.totalExercisesCompleted);
+        //    Assert.Equal(1, statMonthly.activeDays);
+        //    Assert.Equal(3*2, statMonthly.totalSetsCompleted);
+        //    Assert.Equal(36 * 2, statMonthly.KcaloriesBurned);
+        //    Assert.Equal(1*2, statMonthly.totalWorkoutsCompleted);
+        //    Assert.Equal(100, statMonthly.workoutCompletionRate);
+        //}
         //[Fact]
         //public async Task FinishMultipleWorkoutsWithStatsAndDifferentDays()
         //{

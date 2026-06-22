@@ -402,7 +402,7 @@ namespace Gym_App.Application.Services
                             {
                                 workoutSet.IsCompleted = setProgress.IsCompleted;
                                 workoutSet.ActualReps = setProgress.ActualReps;
-                                workoutSet.ActualWeight = setProgress.ActualWeight;
+                                workoutSet.ActualWeight = (decimal)setProgress.ActualWeight;
                                 workoutSet.Notes = setProgress.Notes;
                                 workoutSet.KCaloriesBurned = setProgress.KCaloriesBurned;
 
@@ -748,6 +748,60 @@ namespace Gym_App.Application.Services
             return workout?.User.Id ?? Guid.Empty;
         }
 
+        public async Task<GettersResponse<WorkoutViewProgressDTO>> GetWorkoutCurrentProgress(Guid workoutId)
+        {
+            if(workoutId == Guid.Empty)
+            {
+                _logger.LogError("Empty workout Id while trying to acces current Progress Data");
+                return new GettersResponse<WorkoutViewProgressDTO>{ status = 0, msg = "Invalid workout data" };
+            }
+
+            var workout = await _unitOfWork.Workouts.GetWorkoutById(workoutId);
+            if(workout == null)
+            {
+                _logger.LogError($"Couldnt find workout with Id {workoutId} while trying to get workout Progress");
+                return new GettersResponse<WorkoutViewProgressDTO> { status = 0, msg = "Not found" };
+            }
+
+            var authResult = await _authorizationService.IsUserAsync(workout.User.Id);
+            if (!authResult)
+            {
+                _logger.LogError($"malicious access over user {workout.User.Id} workout {workout.Id}");
+                return new GettersResponse<WorkoutViewProgressDTO> { status = 1, msg = "Unauthorized" };
+            }
+
+            var dto = new WorkoutViewProgressDTO
+            {
+                workoutId = workoutId,
+                isCompleted = workout.IsCompleted,
+                isMissed = workout.isMissed,
+                StartedAt = workout.ActualStartTime.HasValue ? null : workout.ActualStartTime,
+                exercises = workout.ExerciseInstances!.Select(e => new ExerciseViewProgressDTO
+                {
+                    ExerciseID = e.ExerciseId,
+                    ExerciseInstanceId = e.Id,
+                    Category = e.Exercise.Category,
+                    Description = e.Exercise.Description,
+                    Difficulty = e.Exercise.Difficulty,
+                    Grip = e.Exercise.Grip,
+                    IsCompleted = e.IsCompleted,
+                    StartedAt = e.StartedAt,
+                    Name = e.Exercise.Name,
+                    VideoUrl = e.Exercise.VideoUrl,
+                    Muscles = e.Exercise.Muscles.Select(e => e.Name).ToList(),
+                    Sets = e.Sets.Select(s => new WorkoutSetProgressUpdateDTO
+                    {
+                        SetId = s.Id,
+                        ActualReps = s.ActualReps,
+                        ActualWeight = (float)s.ActualWeight,
+                        IsCompleted = s.IsCompleted,
+                        KCaloriesBurned = s.KCaloriesBurned,
+                        Notes = s.Notes
+                    }).ToList()
+                }).ToList()
+            };
+            return new GettersResponse<WorkoutViewProgressDTO> { status = 2, Value = dto, msg = "Data returned successfully" };
+        }
         public async Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByName(string name)
         {
             //Getting workout by name from repository

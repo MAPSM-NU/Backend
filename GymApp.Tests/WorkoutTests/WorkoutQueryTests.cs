@@ -2,6 +2,8 @@
 using Gym_App.Application.Hubs;
 using Gym_App.Application.Services;
 using Gym_App.Infastructure.Interfaces.Services;
+using Gym_App.Infrastructure.DTOs.Exercise;
+using Gym_App.Infrastructure.DTOs.Workout;
 using Gym_App.Infrastructure.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -39,6 +41,63 @@ namespace GymApp.Tests.WorkoutTests
             Assert.Equal(workout.Difficulty, result.Value.Difficulty);
             Assert.Equal(workout.ExerciseInstances.Count, result.Value.Exercises.Count());
             Assert.Equal(workout.ExerciseInstances.First().Sets.Count, result.Value.Exercises.First().Sets.Count());
+        }
+        [Fact]
+        public async Task GetInProgressData()
+        {
+            var user = CreateTestUser(CreateTestRole());
+            var workout = CreateTestWorkout(user);
+            workout.hasStarted = true;
+            await _unitOfWork.SaveChangesAsync();
+            var progressDto = new WorkoutUpdateProgressDTO
+            {
+                WorkoutId = workout.Id,
+                Exercises = new List<ExerciseUpdateProgressDTO>
+                {
+                    new ExerciseUpdateProgressDTO
+                    {
+                        ExerciseInstanceId = workout.ExerciseInstances.First().Id,
+                        StartedAt = DateTime.UtcNow,
+                        IsCompleted = true,
+                        Sets = new List<WorkoutSetProgressUpdateDTO>
+                        {
+                            new WorkoutSetProgressUpdateDTO
+                            {
+                                SetId = workout.ExerciseInstances.First().Sets.First().Id,
+                                ActualReps = 30,
+                                ActualWeight = 30,
+                                IsCompleted = true,
+                                Notes = "Testing"
+                            }
+                        }
+                    }
+                },
+            };
+            _authorizationService.Setup(x => x.IsUserAsync(It.IsAny<Guid>())).ReturnsAsync(true);
+            var setResult = await _workoutService.UpdateWorkoutProgressAsync(user.Id, progressDto);
+            Assert.NotNull(setResult);
+            Assert.Equal("Progress updated successfully", setResult.msg);
+            Assert.Equal(2, setResult.status);
+
+            var getResult = await _workoutService.GetWorkoutCurrentProgress(workout.Id);
+            Assert.NotNull(getResult);
+            Assert.Equal(2, getResult.status);
+            var exercise = workout.ExerciseInstances.First();
+            var set = exercise.Sets.First();
+            var getExercise = getResult.Value.exercises.First();
+            var getSet = getExercise.Sets.First();
+
+            //exercise instance assertion
+            Assert.Equal(exercise.Exercise.Name, getExercise.Name);
+            Assert.Equal(exercise.Exercise.Muscles.Select(m => m.Name).ToList(), getExercise.Muscles);
+            Assert.Equal(exercise.IsCompleted, getExercise.IsCompleted);
+            Assert.Equal(exercise.StartedAt, getExercise.StartedAt);
+
+            //sets assertion
+            Assert.Equal(set.ActualReps, getSet.ActualReps);
+            Assert.Equal((float)set.ActualWeight, getSet.ActualWeight);
+            Assert.Equal(set.IsCompleted, getSet.IsCompleted);
+            Assert.Equal(set.KCaloriesBurned, getSet.KCaloriesBurned);
         }
         [Fact]
         public async Task GetWorkoutByIdWithInvalidIdTest()

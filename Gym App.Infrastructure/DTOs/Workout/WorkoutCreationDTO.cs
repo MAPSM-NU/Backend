@@ -14,7 +14,7 @@ namespace Gym_App.Infastructure.DTOs.WorkoutDTOs
         public int Duration { get; set; }
         public string? Difficulty { get; set; }
         public required string Day { get; set; }
-        public string? ScheduledStartTime { get; set; }
+        public DateTime? ScheduledStartTime { get; set; }
         public IEnumerable<ExerciseDetailDTO> ExerciseDetails { get; set; }
     }
 }

@@ -27,5 +27,6 @@ namespace Gym_App.Infastructure.Interfaces.Services
         public Task<GettersResponse<ExerciseDetailDTO>> GetExercisesOfWorkout(Guid WorkoutID,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
         public Task<GettersResponse<WorkoutViewDTO>> GetAllWorkouts(int page, int pageSize);
         public Task<Guid> GetWorkoutUserID(Guid WorkoutID);
+        public Task MakeAllScheduledDatesEqualData();
     }
 }

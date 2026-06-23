@@ -64,20 +64,16 @@ namespace Gym_App.Application.Services
                     NotificationSent = false
                 };
 
-                // Parse scheduled start time if provided
-                if (!string.IsNullOrEmpty(createWorkoutDto.ScheduledStartTime))
+                if (createWorkoutDto.ScheduledStartTime.HasValue)
                 {
-                    if(DateTime.TryParse(createWorkoutDto.ScheduledStartTime, out DateTime scheduledStart))
-                    {
-                        workout.ScheduledStartTime = scheduledStart;
-                    }
-                    else
-                    {
-                        _logger.LogWarning($"Invalid scheduled start time format: {createWorkoutDto.ScheduledStartTime}");
-                    }
+                    workout.ScheduledStartTime = createWorkoutDto.ScheduledStartTime;
+                }
+                else
+                {
+                    workout.ScheduledStartTime = createWorkoutDto.Date;
                 }
 
-                await _unitOfWork.Workouts.Create(workout);
+                    await _unitOfWork.Workouts.Create(workout);
                 
 
                 // Create exercise instances with sets
@@ -523,8 +519,11 @@ namespace Gym_App.Application.Services
             if (!string.IsNullOrEmpty(workout.Description))
                 WorkoutToBeUpdated.Description = workout.Description;
 
-            if (workout.Date != default)
-                WorkoutToBeUpdated.Date = workout.Date;
+            if (workout.Date.HasValue)
+            {
+                WorkoutToBeUpdated.Date = workout.Date.Value;
+                WorkoutToBeUpdated.ScheduledStartTime = workout.Date.Value;
+            }
 
             if (!string.IsNullOrEmpty(workout.Difficulty))
                 WorkoutToBeUpdated.Difficulty = workout.Difficulty;
@@ -1314,6 +1313,19 @@ namespace Gym_App.Application.Services
             }
         }
 
-        
+        public async Task MakeAllScheduledDatesEqualData()
+        {
+            var workouts = _unitOfWork.Workouts.GetAll();
+            foreach( var workout in workouts )
+            {
+                if (workout.ScheduledStartTime < DateTime.UtcNow.AddYears(-2))
+                {
+
+                    workout.ScheduledStartTime = workout.Date;
+                    await _unitOfWork.Workouts.Update(workout);
+                }
+            }
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }

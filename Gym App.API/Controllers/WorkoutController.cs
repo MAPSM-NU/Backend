@@ -205,5 +205,11 @@ namespace Gym_App.Api.Controllers
             else
                 return Ok(result.Data);
         }
+        [HttpGet("make-scheduleTime-to-date")]
+        public async Task<IActionResult> ChangescheduledTimes()
+        {
+            await _workoutService.MakeAllScheduledDatesEqualData();
+            return Ok();
+        }
     }
 }

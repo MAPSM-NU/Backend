@@ -171,9 +171,9 @@ namespace Gym_App.Api.Controllers
                 return Ok(result.Value);
         }
         [HttpGet("get-user-workouts/{userId}")]
-        public async Task<IActionResult> GetUsersWorkout([FromRoute] Guid userId, [FromQuery] string searchTerm, string sortColumn, string OrderBy, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> GetUsersWorkout([FromRoute] Guid userId, [FromQuery] DateTime startDate, DateTime endDate, string searchTerm, string sortColumn, string OrderBy, int page = 1, int pageSize = 10)
         {
-            var result = await _workoutService.GetUsersWorkouts(userId, searchTerm, sortColumn, OrderBy, page, pageSize);
+            var result = await _workoutService.GetUsersWorkouts(userId, startDate, endDate, searchTerm, sortColumn, OrderBy, page, pageSize);
             if (result.status == 0)
                 return BadRequest(new { message = result.msg });
             else if (result.status == 1)

@@ -23,7 +23,9 @@ namespace Gym_App.Domain.Transfer_Classes
             int pageSize)
         {
             int totalCount = await query.CountAsync();
-            var items = await query.Skip(pageSize*(page-1)).Take(pageSize).ToListAsync();
+            var items = await query.Skip(pageSize*(page-1))
+                .Take(pageSize)
+                .ToListAsync();
 
             return new(items, page, pageSize, totalCount);
         }

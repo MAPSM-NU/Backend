@@ -63,6 +63,16 @@ namespace Gym_App.Infastructure.Repositries
         {
             return await table.AnyAsync(w => w.Name == name);
         }
+        public IQueryable<Workout> FilterByStartDate(IQueryable<Workout> query, DateTime startDate)
+        {
+            return query
+                .Where(w => w.ScheduledStartTime >= startDate || w.Date >= startDate);
+        }
+        public IQueryable<Workout> FilterByEndDate(IQueryable<Workout> query, DateTime endDate)
+        {
+            return query
+                .Where(w => w.ScheduledStartTime < endDate || w.Date < endDate);
+        }
         public override IQueryable<Workout> FilterSortColumn(string columnName, string sortOrder, IQueryable<Workout> query)
         {
             Expression<Func<Workout, object>> keySelector = columnName.ToLower() switch

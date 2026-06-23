@@ -22,7 +22,7 @@ namespace Gym_App.Infastructure.Interfaces.Services
         public Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByName(string name);//not used
         public Task<GettersResponse<WorkoutViewDTO>> GetWorkoutByID(Guid ID);
         public Task<GettersResponse<WorkoutViewProgressDTO>> GetWorkoutCurrentProgress(Guid workoutId);
-        public Task<GettersResponse<WorkoutViewDTO>> GetUsersWorkouts(Guid userId, string searchTerm, string sortColumn, string OrderBy, int page = 1, int pageSize = 10);
+        public Task<GettersResponse<WorkoutViewDTO>> GetUsersWorkouts(Guid userId, DateTime? startDate, DateTime? endDate, string searchTerm, string sortColumn, string OrderBy, int page = 1, int pageSize = 10);
         public Task<GettersResponse<PersonalRecord>> GetUserPersonalRecordsAsync(Guid userId);
         public Task<GettersResponse<ExerciseDetailDTO>> GetExercisesOfWorkout(Guid WorkoutID,int page, string sortColumn, string OrderBy, string searchTerm, int pageSize);
         public Task<GettersResponse<WorkoutViewDTO>> GetAllWorkouts(int page, int pageSize);

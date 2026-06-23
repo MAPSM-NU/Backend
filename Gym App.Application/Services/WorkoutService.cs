@@ -902,7 +902,7 @@ namespace Gym_App.Application.Services
                 Value = workoutDTO
             };
         }
-        public async Task<GettersResponse<WorkoutViewDTO>> GetUsersWorkouts(Guid userId, string searchTerm, string sortColumn, string OrderBy, int page = 1, int pageSize = 10)
+        public async Task<GettersResponse<WorkoutViewDTO>> GetUsersWorkouts(Guid userId, DateTime? startDate, DateTime? endDate, string searchTerm, string sortColumn, string OrderBy, int page = 1, int pageSize = 10)
         {
             if(userId == Guid.Empty)
             {
@@ -915,7 +915,13 @@ namespace Gym_App.Application.Services
                 return new GettersResponse<WorkoutViewDTO> { status = 1, msg = "Unauthorized" };
 
             var workouts = _unitOfWork.Workouts.GetAll().Where(w => w.User.Id == userId);
-            
+
+            if (startDate.HasValue)
+                workouts = _unitOfWork.Workouts.FilterByStartDate(workouts, startDate.Value);
+
+            if (endDate.HasValue)
+                workouts =  _unitOfWork.Workouts.FilterByEndDate(workouts, endDate.Value);
+
             if(!string.IsNullOrEmpty(searchTerm))
                 workouts = _unitOfWork.Workouts.Search(searchTerm, workouts);
 

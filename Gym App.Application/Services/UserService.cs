@@ -1,5 +1,4 @@
-﻿using FluentEmail.Core;
-using Gym_App.Application.Authorization;
+﻿using Gym_App.Application.Authorization;
 using Gym_App.Core;
 using Gym_App.Domain;
 using Gym_App.Domain.Entities;
@@ -816,7 +815,7 @@ public class UserService : IUserServise
 
         try
         {
-            var userEntity = await _unitOfWork.Users.GetById(id);
+            var userEntity = await _unitOfWork.Users.GetUserById(id, false);
             if (userEntity == null)
                 return new GettersResponse<UserViewDTO>
                 {

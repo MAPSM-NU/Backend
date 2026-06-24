@@ -41,9 +41,9 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Monday",
                 Difficulty = "Medium",
                 Type = "Strength",
-                ExerciseDetails = new List<ExerciseDetailDTO>
+                ExerciseDetails = new List<ExerciseWorkoutCreationDTO>
                 {
-                    new ExerciseDetailDTO
+                    new ExerciseWorkoutCreationDTO
                     {
                         ExerciseId = exercise.Id,
                         IsCompleted = false,
@@ -51,7 +51,6 @@ namespace GymApp.Tests.WorkoutTests
                         Notes = "Test notes",
                         PlannedReps = 10,
                         PlannedWeight = 50.2022f,
-                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -147,9 +146,9 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Monday",
                 Difficulty = "Medium",
                 Type = "Strength",
-                ExerciseDetails = new List<ExerciseDetailDTO>
+                ExerciseDetails = new List<ExerciseWorkoutCreationDTO>
                 {
-                    new ExerciseDetailDTO
+                    new ExerciseWorkoutCreationDTO
                     {
                         ExerciseId = Guid.NewGuid(), // Non-existing exercise ID
                         IsCompleted = false,
@@ -157,7 +156,6 @@ namespace GymApp.Tests.WorkoutTests
                         Notes = "Test notes",
                         PlannedReps = 10,
                         PlannedWeight = 50,
-                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>
                         {
                             new WorkoutSetDTO
@@ -189,9 +187,9 @@ namespace GymApp.Tests.WorkoutTests
                 Day = "Monday",
                 Difficulty = "Medium",
                 Type = "Strength",
-                ExerciseDetails = new List<ExerciseDetailDTO>
+                ExerciseDetails = new List<ExerciseWorkoutCreationDTO>
                 {
-                    new ExerciseDetailDTO
+                    new ExerciseWorkoutCreationDTO
                     {
                         ExerciseId = exercise.Id,
                         IsCompleted = false,
@@ -199,7 +197,6 @@ namespace GymApp.Tests.WorkoutTests
                         Notes = "Test notes",
                         PlannedReps = 10,
                         PlannedWeight = 50,
-                        Muscles = ["muscle"],
                         Sets = new List<WorkoutSetDTO>() // No sets added
                     }
                 }

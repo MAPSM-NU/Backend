@@ -1,9 +1,8 @@
-﻿
-using Gym_App.Infrastructure.DTOs.Workout;
+﻿using Gym_App.Infrastructure.DTOs.Workout;
 
 namespace Gym_App.Infrastructure.DTOs.Exercise
 {
-    public class ExerciseDetailDTO
+    public class ExerciseWorkoutCreationDTO
     {
         public Guid Id { get; set; }
         public Guid ExerciseId { get; set; }
@@ -15,7 +14,6 @@ namespace Gym_App.Infrastructure.DTOs.Exercise
         public DateTime? StartedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
         public bool IsCompleted { get; set; }
-        public IEnumerable<string>? Muscles { get; set; }
         public IEnumerable<WorkoutSetDTO>? Sets { get; set; }
     }
 }
